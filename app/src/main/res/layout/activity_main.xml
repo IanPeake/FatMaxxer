@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="polar.com.alpha1.MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/timeView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="hh:mm:ss"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/colorText"
+            android:textAlignment="center"
+            android:gravity="center_horizontal"
+            android:textSize="48sp"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/hrTextView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:text="300"
+                android:textColor="@color/colorText"
+                android:layout_weight="1"
+                android:textAlignment="center"
+                android:textSize="48sp" />
+
+            <TextView
+                android:id="@+id/a1TextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:textAlignment="center"
+                android:text="1.0"
+                android:textColor="@color/colorText"
+                android:layout_weight="1"
+                android:textSize="56sp" />
+
+            <TextView
+                android:id="@+id/hrvTextView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:textSize="48sp"
+                android:textColor="@color/colorText"
+                android:text="100"
+                />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/artifactsView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="drop"
+            android:fontFamily="sans-serif"
+            android:gravity="center_horizontal"
+            android:textAlignment="center"
+            android:textColor="@color/colorText"
+            android:textSize="48sp" />
+
+        <!--
+        <com.jjoe64.graphview.GraphView
+            android:layout_width="match_parent"
+            android:layout_height="200dip"
+            android:id="@+id/graph"
+            />
+        -->
+
+        <Button
+            android:id="@+id/connect_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="connect" />
+
+        <Button
+            android:id="@+id/speech_on_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="Sound ON" />
+
+        <Button
+            android:id="@+id/speech_off_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="Sound OFF" />
+
+        <Button
+            android:id="@+id/testFeature_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="test feature" />
+
+        <Button
+            android:id="@+id/broadcast_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="broadcast" />
+
+        <Button
+            android:id="@+id/disconnect_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="disconnect" />
+
+        <Button
+            android:id="@+id/auto_connect_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="auto_connect_toggle" />
+
+        <Button
+            android:id="@+id/ecg_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ecg_stream" />
+
+        <Button
+            android:id="@+id/acc_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="acc_stream" />
+
+        <Button
+            android:id="@+id/gyr_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="gyro_stream" />
+
+        <Button
+            android:id="@+id/mag_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="magnetometer_stream" />
+
+        <Button
+            android:id="@+id/ohr_ppg_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ppg_stream" />
+
+        <Button
+            android:id="@+id/ohr_ppi_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ppi_stream" />
+
+        <Button
+            android:id="@+id/scan_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="scan devices" />
+
+        <Button
+            android:id="@+id/list_exercises"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="list exercises" />
+
+        <Button
+            android:id="@+id/read_exercise"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="read exercise" />
+
+        <Button
+            android:id="@+id/remove_exercise"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="remove exercise" />
+
+        <Button
+            android:id="@+id/start_h10_recording"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Start H10 recording" />
+
+        <Button
+            android:id="@+id/stop_h10_recording"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Stop H10 recording" />
+
+        <Button
+            android:id="@+id/h10_recording_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="H10 recording status" />
+
+        <Button
+            android:id="@+id/set_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Set time" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:textColor="@color/colorText"
+            android:layout_height="43dp"
+            android:text="TextView" />
+
+
+    </LinearLayout>
+</ScrollView>

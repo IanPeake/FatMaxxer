@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorText">#000055</color>
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF8021</color>
+    <color name="colorHighlight">#FF6666</color>
+    <color name="colorMaxIntensity">#FF5555</color>
+    <color name="colorMedIntensity">#9FDCA1E1</color>
+    <color name="colorFatMaxIntensity">#5BF55B</color>
+    <color name="colorEasyIntensity">#A600BCD4</color>
+</resources>
