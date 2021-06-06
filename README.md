@@ -1,6 +1,6 @@
 # FatMaxxer
 
-[![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Screenshot_20210606-151127_FatMax%20Optimiser.jpg)]
+[![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Screenshot_20210606-151127_FatMax%20Optimiser_downscaled.jpg)]
 
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis Alpha1 in real time.
