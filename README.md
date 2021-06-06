@@ -13,7 +13,7 @@ Artifact detection (RR interval changes too fast) and filtering.
 Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and DFA alpha1 and detected artifacts / nr samples (percentage %) in the window.
 
 Audio output advises HR, alpha1 and artifact rejection rate, adjusting to your work rate:
-RMSSD at low heart rates above threshold.
+RMSSD at low heart rates below threshold.
 Alpha1 at high heart rates above threshold.
 Artifact reporting above threshold / at higher intensity.
 Higher advice rates at higher intensity.
