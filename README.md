@@ -8,7 +8,7 @@ There is preliminary research that running or cycling at Alpha1==0.75 correspond
 
 Two minute rolling window for rmssd and alpha1. Alpha1 is evaluated every 20 seconds.
 
-Artifact detection (RR interval changes too fast).
+Artifact detection (RR interval changes too fast) and filtering.
 
 Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and DFA alpha1 and detected artifacts / nr samples (percentage %) in the window.
 
