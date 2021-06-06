@@ -10,18 +10,19 @@ Two minute rolling window for rmssd and alpha1. Alpha1 is evaluated every 20 sec
 
 Artifact detection (RR interval changes too fast) and filtering.
 
-Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and DFA alpha1 and detected artifacts / nr samples (percentage %) in the window.
+Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and DFA alpha1 and detected artifacts / number of samples (percentage %) in the window.
 
-Audio output advises HR, alpha1 and artifact rejection rate, adjusting to your work rate:
-RMSSD at low heart rates below threshold.
-Alpha1 at high heart rates above threshold.
+Audio output advises HR, alpha1 and detected artifact rate,
+adjusting to work rate---HR and/or alpha1.
+RMSSD at HRs below a given threshold.
+Alpha1 at HRs above a given threshold.
 Artifact reporting above threshold / at higher intensity.
-Higher advice rates at higher intensity.
-Audible WAV sample in real time on dropped artifact.
+More frequent advice at higher intensity.
+Audible WAV sample (click) on dropped artifact.
 
 Graph plots
-- green trace for alpha1 (values appear at 100x, e.g. 0.75 reads as 75, to share primary axis with HR)
-- red trace for heart rate
+- green trace for alpha1 (values are mapped to the range 0--200, e.g. 0.75 reads as 75, to share primary axis with HR.)
+- red trace for HR.
 - blue trace for RMSSD.
 
 Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to avert pausing.
