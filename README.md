@@ -25,6 +25,9 @@ Graph plots
 - green trace: ⍺1 (values shown multiplied by 100, e.g. 0.75 reads as 75, to share primary axis with HR.)
 - blue trace: artifacts
 
+Log file output in "external SD"; may not work on Android versions later than 9ish.
+- timestamp for artifacts*.log is corresponds to the last processed sample of the window
+
 Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to help.
 
 Based on

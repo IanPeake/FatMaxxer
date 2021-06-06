@@ -1,4 +1,4 @@
-timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,
+timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent
 1622959867631,,0,,1.0,0,1,0
 1622959869230,,2,,1.0,0,3,0
 1622959869693,,2,,1.0,0,4,0
