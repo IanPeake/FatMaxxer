@@ -3,7 +3,7 @@
 ![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled.jpg)
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
-There is preliminary research that running or cycling at Alpha1==0.75 corresponds to the first ventilatory threshold or FatMax
+There are promising signs that running or cycling at ⍺1==0.75 corresponds to the first ventilatory threshold or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 
 Two minute rolling window for rmssd and ⍺1. The value of ⍺1 is calculated every 20 seconds.
