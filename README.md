@@ -6,9 +6,9 @@ Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 in
 There is preliminary research that running or cycling at DFA 0.75 corresponds to the first ventilatory threshold or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 
-2 minute rolling window for alpha1, evaluated every 20 seconds.
+Two minute rolling window for rmssd and alpha1. Alpha1 is evaluated every 20 seconds.
 
-UI shows elapsed time, heart rate, DFA alpha1 and RMSSD.
+UI shows elapsed time, instantaneous heart rate, RMSSD and DFA alpha1 and detected artifacts / nr samples (percentage %) in the window.
 
 Audio output advises HR, alpha1 and artifact rejection rate, adjusting to your work rate:
 HR advice to assist with slow ramps.
