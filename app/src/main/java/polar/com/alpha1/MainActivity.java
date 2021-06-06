@@ -622,7 +622,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.addSeries(hrSeries);
         // REQUIRED
         graphView.getSecondScale().addSeries(artifactSeries);
-        graphView.getSecondScale().setMaxY(30);
+        graphView.getSecondScale().setMaxY(100);
         graphView.getSecondScale().setMinY(0);
         a1Series.setColor(Color.GREEN);
         hrSeries.setColor(Color.RED);
@@ -809,7 +809,7 @@ public class MainActivity extends AppCompatActivity {
                     throw new IllegalStateException(msg);
                 }
                 */
-                rmssdWindowed = round(getRMSSD(samples) * 100) / 100.0;
+                rmssdWindowed = getRMSSD(samples);
                 // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
                 hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
                 // Periodic actions: check alpha1 and issue voice update
@@ -850,7 +850,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 text_view.setText(logstring);
                 text_hr.setText(""+data.hr);
-                text_hrv.setText(""+rmssdWindowed);
+                text_hrv.setText(""+round(rmssdWindowed));
                 text_a1.setText(""+ alpha1RoundedWindowed);
                 if (alpha1RoundedWindowed < 0.5) {
                     text_a1.setBackgroundResource(R.color.colorMaxIntensity);
@@ -909,10 +909,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         connect.setOnClickListener(v -> {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
-            tryPolarConnect();
-            text_view.setText("Polar device: attempting CONNECT");
             tryPolarConnect();
         });
 
@@ -1173,17 +1169,21 @@ public class MainActivity extends AppCompatActivity {
             this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
         
-        // do we have to wait for some other setup tasks to finish...?
-        //tryPolarConnect();
+        // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
+        tryPolarConnect();
     }
 
     private void tryPolarConnect() {
-        try {
-            text_view.setText("Searching for "+DEVICE_ID);
-            api.connectToDevice(DEVICE_ID);
-        } catch (PolarInvalidArgument polarInvalidArgument) {
-            text_view.setText("PolarInvalidArgument: "+polarInvalidArgument);
-            polarInvalidArgument.printStackTrace();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
+        if (DEVICE_ID.length()>0) {
+            try {
+                text_view.setText("Searching for " + DEVICE_ID);
+                api.connectToDevice(DEVICE_ID);
+            } catch (PolarInvalidArgument polarInvalidArgument) {
+                text_view.setText("PolarInvalidArgument: " + polarInvalidArgument);
+                polarInvalidArgument.printStackTrace();
+            }
         }
     }
 
@@ -1239,11 +1239,11 @@ public class MainActivity extends AppCompatActivity {
         return -1;
     }
 
-    private int getRMSSD(double[] samples) {
+    private double getRMSSD(double[] samples) {
         double[] NNdiff = v_abs(v_differential(samples));
         //rmssd = round(np.sqrt(np.sum((NNdiff * NNdiff) / len(NNdiff))), 2)
         double rmssd = sqrt(v_sum(v_power_s2(NNdiff,2)) / NNdiff.length);
-        return (int)round(rmssd);
+        return round(rmssd * 100) / 100.0;
     }
 
     // pre: no artifacts(?)
@@ -1258,7 +1258,7 @@ public class MainActivity extends AppCompatActivity {
             long timeSinceLastSpokenUpdate_s = (long)(currentTime_ms - prevSpokenUpdate_ms) / 1000;
             long timeSinceLastSpokenArtifactsUpdate_s = (long)(currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
             double a1 = alpha1RoundedWindowed;
-            double rmssd = rmssdWindowed;
+            int rmssd = (int)round(rmssdWindowed);
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (timeSinceLastSpokenArtifactsUpdate_s > 10) {
@@ -1282,7 +1282,7 @@ public class MainActivity extends AppCompatActivity {
                     featuresUpdate = "Heart rate " + data.hr + ", Alpha one, " + alpha1RoundedWindowed + ",";
                 } else if (data.hr > 90 && timeSinceLastSpokenUpdate_s >= 60) {
                     featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + alpha1RoundedWindowed + ",";
-                } else {
+                } else if (timeSinceLastSpokenUpdate_s >= 60) {
                     featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd + ".";
                 }
             }

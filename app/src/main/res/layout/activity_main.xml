@@ -46,7 +46,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center_horizontal"
                 android:textAlignment="center"
-                android:text="a1"
+                android:text="⍺1"
                 android:textColor="@color/colorText"
                 android:layout_weight="1"
                 android:textSize="12sp" />
