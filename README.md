@@ -20,4 +20,5 @@ Graph plots
 - red trace for heart rate
 - blue trace for RMSSD.
 
-Very rough, but alpha1 does seem to approximate Marco Altini's Python output.
+Very rough, but alpha1 does seem to approximate Marco Altini's Python output
+(https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
