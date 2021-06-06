@@ -39,5 +39,4 @@ The calculation ⍺1 has been tested briefly to correspond to that code.
 - https://github.com/jjoe64/GraphView
 
 # Getting started
-- On first launch: enter Device ID into text field below "SET DEVICE ID", then press "SET DEVICE ID". App will attempt connection.
-- On all other launches, press "CONNECT"
+- On first launch: enter Device ID into text field below "SET DEVICE ID", then press "SET DEVICE ID". App will then attempt connection and on startup thereafter.
