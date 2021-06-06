@@ -25,10 +25,11 @@ Graph plots
 - green trace: ⍺1 (values shown multiplied by 100, e.g. 0.75 reads as 75, to share primary axis with HR.)
 - blue trace: artifacts
 
-Log file output in "external SD"; may not work on Android versions later than 9ish.
-- timestamp for artifacts*.log is corresponds to the last processed sample of the window
+Log file output to "external SD"; may not work on Android versions later than 9ish.
+- rr.log as per HRV Logger format
+- artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
-Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to help.
+Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to help. Proposed solution---persistent notification.
 
 Based on
 - Marco Altini's Python code
@@ -36,3 +37,7 @@ Based on
 The calculation ⍺1 has been tested briefly to correspond to that code.
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
 - https://github.com/jjoe64/GraphView
+
+# Getting started
+- On first use: enter Device ID into text field below "SET DEVICE ID", then press "SET DEVICE ID". App will attempt connection.
+- On starting other times, press "CONNECT"
