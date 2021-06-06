@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+// https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
@@ -489,7 +490,7 @@ public class MainActivity extends AppCompatActivity {
     private int totalRejected = 0;
     private boolean firstSample = false;
 
-    GraphView graph;
+    GraphView graphView;
 
     /**
      * Return date in specified format.
@@ -555,6 +556,7 @@ public class MainActivity extends AppCompatActivity {
 
         text_time = this.findViewById(R.id.timeView);
         text_hr = this.findViewById(R.id.hrTextView);
+        //text_hr.setText("\u2764"+"300");
         text_hrv = this.findViewById(R.id.hrvTextView);
         text_a1 = this.findViewById(R.id.a1TextView);
         text_artifacts = this.findViewById(R.id.artifactsView);
@@ -589,24 +591,31 @@ public class MainActivity extends AppCompatActivity {
         final MediaPlayer mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100,100);
 
-        graph = (GraphView) findViewById(R.id.graph);
+        graphView = (GraphView) findViewById(R.id.graph);
         LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
         LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
-        LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
-        graph.getViewport().setScrollable(true);
-        graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinY(25);
-        graph.getViewport().setMaxY(175);
-        graph.getGridLabelRenderer().setNumVerticalLabels(7);
-        graph.addSeries(a1Series);
-        graph.addSeries(hrSeries);
+        //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
+        LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
+        // activate horizontal zooming and scrolling
+        graphView.getViewport().setScalable(true);
+        graphView.getViewport().setScrollable(true);
+        graphView.getViewport().setXAxisBoundsManual(true);
+        graphView.getViewport().setMinX(0);
+        graphView.getViewport().setMaxX(119);
+        graphView.getViewport().setYAxisBoundsManual(true);
+        graphView.getViewport().setMinY(25);
+        graphView.getViewport().setMaxY(175);
+        graphView.getGridLabelRenderer().setNumVerticalLabels(7);
+        graphView.addSeries(a1Series);
+        graphView.addSeries(hrSeries);
         // REQUIRED
-        graph.getSecondScale().addSeries(hrvSeries);
-        graph.getSecondScale().setMaxY(100);
-        graph.getSecondScale().setMinY(0);
+        graphView.getSecondScale().addSeries(artifactSeries);
+        graphView.getSecondScale().setMaxY(30);
+        graphView.getSecondScale().setMinY(0);
         a1Series.setColor(Color.GREEN);
         hrSeries.setColor(Color.RED);
-        hrvSeries.setColor(Color.BLUE);
+        artifactSeries.setColor(Color.BLUE);
+        //hrvSeries.setColor(Color.BLUE);
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
@@ -838,9 +847,10 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
-                hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), false, 65535);
-                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1 * 100.0), false, 65535);
-                hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+                hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
+                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1 * 100.0), true, 65535);
+                //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+                artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercent), true, 65535);
 
                 Log.d(TAG,data.hr+" "+a1_r+" "+rmssd);
                 Log.d(TAG,logstring);
