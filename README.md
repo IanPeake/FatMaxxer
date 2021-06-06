@@ -29,7 +29,10 @@ Log file output to "external SD"; may not work on Android versions later than 9i
 - rr.log as per HRV Logger format
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
-Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to help. Proposed solution---persistent notification.
+Known issues:
+- Android pauses the app unpredictably. Interacting with the app regularly seems to help. Proposed solution---persistent notification.
+- Make spoken output customizable to your approx. HR zones
+- features.csv does not output SDNN
 
 Based on
 - Marco Altini's Python code
@@ -39,4 +42,6 @@ The calculation ⍺1 has been tested briefly to correspond to that code.
 - https://github.com/jjoe64/GraphView
 
 # Getting started
-- On first launch: enter Device ID into text field below "SET DEVICE ID", then press "SET DEVICE ID". App will then attempt connection and on startup thereafter.
+- Read and thoroughly understand how to use DFA ⍺1 (https://the5krunner.com/2021/02/25/important-training-news-dfa-alpha-1-new-threshold-discovery-method-with-hrv/) for training
+- On first launch: enter Device ID into text field below "SET DEVICE ID", then press "SET DEVICE ID". App will immediately attempt connection and also on startup thereafter.
+- Beware, the spoken output is currently hard-configured to work for my preferred MAF heart rate of approx. 130
