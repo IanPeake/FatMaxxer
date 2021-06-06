@@ -30,5 +30,5 @@ Main issue remaining: Android pauses the app unpredictably. Interacting with the
 Based on
 - Marco Altini's Python code
 (https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
-Very rough, but alpha1 does seem to approximate Marco's code.
+Alpha1 does seem to approximate Marco's code.
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
