@@ -2,6 +2,7 @@ package polar.com.alpha1;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -11,6 +12,7 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String API_LOGGER_TAG = "API LOGGER";
+    final String SHARED_PREFS_KEY = "polar_id";
 
     private final double[] samples1 = {667.0,674.0,688.0,704.0,690.0,688.0,671.0,652.0,644.0,636.0,631.0,639.0,637.0,634.0,642.0,642.0,
             653.0,718.0,765.0,758.0,729.0,713.0,691.0,677.0,694.0,695.0,692.0,684.0,685.0,677.0,667.0,657.0,648.0,632.0,
@@ -90,11 +93,14 @@ public class MainActivity extends AppCompatActivity {
     Disposable autoConnectDisposable;
     // Serial number?? 90E2D72B
     //String DEVICE_ID = "84B38E76BC"; //TODO replace with your device id
-    String DEVICE_ID = "90E2D72B"; //replace with your device id
+    //String DEVICE_ID = "90E2D72B"; //replace with your device id
+    String DEVICE_ID = "deviceId not set";
     PolarExerciseEntry exerciseEntry;
+    SharedPreferences sharedPreferences;
 
     Context thisContext = this;
     private int batteryLevel = 100;
+    private EditText input_deviceID;
 
     /*
     private void createNotificationChannel() {
@@ -513,6 +519,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sharedPreferences = this.getPreferences(Context.MODE_PRIVATE);
         // Notice PolarBleApi.ALL_FEATURES are enabled
         api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
         api.setPolarFilter(false);
@@ -521,6 +528,8 @@ public class MainActivity extends AppCompatActivity {
         final Button speech_on = this.findViewById(R.id.speech_on_button);
         final Button speech_off = this.findViewById(R.id.speech_off_button);
         final Button test_feature = this.findViewById(R.id.testFeature_button);
+        test_feature.setVisibility(View.GONE);
+        final Button setDeviceIDButton = this.findViewById(R.id.setDeviceIdButton);
         final Button broadcast = this.findViewById(R.id.broadcast_button);
         broadcast.setVisibility(View.GONE);
         final Button disconnect = this.findViewById(R.id.disconnect_button);
@@ -562,6 +571,7 @@ public class MainActivity extends AppCompatActivity {
         text_hrv = this.findViewById(R.id.hrvTextView);
         text_a1 = this.findViewById(R.id.a1TextView);
         text_artifacts = this.findViewById(R.id.artifactsView);
+        input_deviceID = this.findViewById(R.id.DEVICE_ID);
         text_view = this.findViewById(R.id.textView);
 
         //text.setTextSize(100);
@@ -659,7 +669,7 @@ public class MainActivity extends AppCompatActivity {
                                                @NonNull final Set<PolarBleApi.DeviceStreamingFeature> features) {
                 for(PolarBleApi.DeviceStreamingFeature feature : features) {
                     Log.d(TAG, "Streaming feature " + feature.toString() + " is ready");
-                    text_view.setText("Streaming feature " + feature.toString() + " is ready");
+                    //text_view.setText("Streaming feature " + feature.toString() + " is ready");
                 }
             }
 
@@ -899,6 +909,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         connect.setOnClickListener(v -> {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
+            tryPolarConnect();
             text_view.setText("Polar device: attempting CONNECT");
             tryPolarConnect();
         });
@@ -912,7 +925,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        test_feature.setOnClickListener(view -> {
+        setDeviceIDButton.setOnClickListener(view -> {
+            String deviceIdInput = input_deviceID.getText().toString();
+            DEVICE_ID = deviceIdInput;
+            Log.d(TAG,"Saving pref for User-input device ID: "+deviceIdInput);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(SHARED_PREFS_KEY, deviceIdInput);
+            editor.apply();
+            tryPolarConnect();
         });
 
         autoConnect.setOnClickListener(view -> {
@@ -1154,7 +1174,7 @@ public class MainActivity extends AppCompatActivity {
         }
         
         // do we have to wait for some other setup tasks to finish...?
-        tryPolarConnect();
+        //tryPolarConnect();
     }
 
     private void tryPolarConnect() {
