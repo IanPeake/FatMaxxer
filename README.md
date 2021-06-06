@@ -7,15 +7,16 @@ There is preliminary research that running or cycling at DFA 0.75 corresponds to
 
 2 minute rolling window for alpha1, evaluated every 20 seconds
 
-Graphical display shows elapsed time, heart rate, DFA alpha1 and RMSSD
+UI shows elapsed time, heart rate, DFA alpha1 and RMSSD.
 
-Audio output advises HR, alpha1 and artifact rejection rate.
+Audio output advises HR, alpha1 and artifact rejection rate, adjusting to your work rate:
+HR advice to assist with slow ramps.
+RMSSD at low heart rates.
+Higher advice rate at higher intensity.
 
-Graph view
+Graph plots
 - green trace for alpha1 (values appear at 100x, e.g. 0.75 reads as 75, to share primary axis with HR)
 - red trace for heart rate
 - blue trace for RMSSD
 
 Very rough, but it seems to approximate Marco Altini's Python code.
-
-Produces audio output of HR, Alpha1 and dropped artifacts.
