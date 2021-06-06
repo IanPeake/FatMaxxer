@@ -469,18 +469,20 @@ public class MainActivity extends AppCompatActivity {
     // have we started sampling?
     public boolean started = false;
     // last known alpha1 (default resting nominally 1.0)
-    double alpha1 = 1.0;
+    double alpha1Windowed = 1.0;
+    double rmssdWindowed = 0;
     // rounded alpha1
-    double a1_r;
-    int artifactsPercent;
+    double alpha1RoundedWindowed;
+    int artifactsPercentWindowed;
+    double hrWindowed;
     // maximum tolerable variance of adjacent RR intervals
     final double artifactCorrectionThreshold = 0.05;
-    // elapsed time in terms of cumulative sum of all seen RRs (redundant?)
+    // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
     private TextToSpeech ttobj;
     private boolean soundEnabled = false;
     // the last time (since epoch) a1 was evaluated
-    private long prev_a1_check = 0;
+    private long prevA1Timestamp = 0;
     private FileWriter rrLogStream;
     private FileWriter featureLogStream;
     private double prevrr = 0;
@@ -584,9 +586,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         rrLogStream = createLogFile("rr");
-        writeLogFile("timestamp,rr",rrLogStream,"rr");
+        writeLogFile("timestamp,rr,since_start",rrLogStream,"rr");
         featureLogStream = createLogFile("features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent",featureLogStream,"features");
 
         final MediaPlayer mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100,100);
@@ -730,7 +732,7 @@ public class MainActivity extends AppCompatActivity {
                 // FILTERING / RECORDING RR intervals
                 //
                 String rejected = "";
-                boolean haveRejections = false;
+                boolean haveArtifacts = false;
                 List<Integer> rrsMs = data.rrsMs;
                 for (int si = 0; si<data.rrsMs.size(); si++) {
                     double newrr = data.rrsMs.get(si);
@@ -750,12 +752,12 @@ public class MainActivity extends AppCompatActivity {
                         newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
                         Log.d(TAG, "reject artifact "+newrr);
                         rejected += "" + newrr;
-                        haveRejections = true;
+                        haveArtifacts = true;
                         totalRejected++;
                     }
                     prevrr = newrr;
                 }
-                String rejMsg = haveRejections ? (", Rejected: " + rejected) : "";
+                String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
                 Log.d(TAG, "Polar device HR value: " + data.hr + " rrsMs: " + data.rrsMs + " rr: " + data.rrs + " contact: " + data.contactStatus + "," + data.contactStatusSupported+" "+rejMsg);
                 int expired = 0;
                 // expire old samples
@@ -797,25 +799,27 @@ public class MainActivity extends AppCompatActivity {
                     throw new IllegalStateException(msg);
                 }
                 */
-                int rmssd = round(getRMSSD(samples));
+                rmssdWindowed = round(getRMSSD(samples) * 100) / 100.0;
+                // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
+                hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
                 // Periodic actions: check alpha1 and issue voice update
                 // - skip one period's worth after first HR update
                 // - only within the first two seconds of this period window
                 // - only when at least three seconds have elapsed since last invocation
                 // FIXME: what precisely is required for alpha1 to be well-defined?
                 // FIXME: The prev_a1_check now seems redundant
-                if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prev_a1_check + 3000)) {
-                    alpha1 = dfa_alpha1(samples,2,4,30);
-                    prev_a1_check = currentTimeMS;
+                if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prevA1Timestamp + 3000)) {
+                    alpha1Windowed = dfa_alpha1(samples,2,4,30);
+                    prevA1Timestamp = currentTimeMS;
                 }
-                a1_r = round(alpha1*100) / 100.0;
+                alpha1RoundedWindowed = round(alpha1Windowed *100) / 100.0;
                 //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
-                writeLogFile(""+timestamp+","+","+rmssd+","+","+a1_r+","+nrArtifacts+","+nrSamples+","+ artifactsPercent,featureLogStream,"features");
+                writeLogFile(""+timestamp+","+hrWindowed+","+rmssdWindowed+","+","+ alpha1RoundedWindowed +","+nrArtifacts+","+nrSamples+","+ artifactsPercentWindowed,featureLogStream,"features");
 
                 //
                 // DISPLAY // AUDIO // LOGGING
                 //
-                if (haveRejections && soundEnabled) {
+                if (haveArtifacts && soundEnabled) {
                     //spokenOutput("drop");
                     mp.start();
                 }
@@ -827,35 +831,35 @@ public class MainActivity extends AppCompatActivity {
                 logmsg.append(" battery "+batteryLevel);
                 String logstring = logmsg.toString();
 
-                artifactsPercent = (int)round(nrArtifacts * 100 / (double)nrSamples);
-                text_artifacts.setText(""+nrArtifacts+"/"+nrSamples+" ("+ artifactsPercent +"%)");
-                if (haveRejections) {
+                artifactsPercentWindowed = (int)round(nrArtifacts * 100 / (double)nrSamples);
+                text_artifacts.setText(""+nrArtifacts+"/"+nrSamples+" ("+ artifactsPercentWindowed +"%)");
+                if (haveArtifacts) {
                     text_artifacts.setBackgroundResource(R.color.colorHighlight);
                 } else {
                     text_artifacts.setBackgroundResource(R.color.colorBackground);
                 }
                 text_view.setText(logstring);
                 text_hr.setText(""+data.hr);
-                text_hrv.setText(""+rmssd);
-                text_a1.setText(""+a1_r);
-                if (a1_r < 0.5) {
+                text_hrv.setText(""+rmssdWindowed);
+                text_a1.setText(""+ alpha1RoundedWindowed);
+                if (alpha1RoundedWindowed < 0.5) {
                     text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                } else if (a1_r < 0.75) {
+                } else if (alpha1RoundedWindowed < 0.75) {
                     text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                } else if (a1_r < 1.0) {
+                } else if (alpha1RoundedWindowed < 1.0) {
                     text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
                 } else {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
                 hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
-                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1 * 100.0), true, 65535);
+                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
                 //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-                artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercent), true, 65535);
+                artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
 
-                Log.d(TAG,data.hr+" "+a1_r+" "+rmssd);
+                Log.d(TAG,data.hr+" "+ alpha1RoundedWindowed +" "+rmssdWindowed);
                 Log.d(TAG,logstring);
                 Log.d(TAG,""+(elapsed % alpha1EvalPeriod));
-                spokenUpdate(data, a1_r, rmssd, currentTimeMS);
+                spokenUpdate(data, currentTimeMS);
                 starting = false;
                 wakeLock.release();
             }
@@ -1230,41 +1234,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // FIXME: get rid of params, except for currentTime_ms
-    private void spokenUpdate(@NotNull PolarHrData data, double a1, int rmssd, long currentTime_ms) {
+    private void spokenUpdate(@NotNull PolarHrData data, long currentTime_ms) {
             long timeSinceLastSpokenUpdate_s = (long)(currentTime_ms - prevSpokenUpdate_ms) / 1000;
             long timeSinceLastSpokenArtifactsUpdate_s = (long)(currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
-            //if (timeSinceLastSpokenUpdate_s < 10) {
-            //    return;
-            //}
+            double a1 = alpha1RoundedWindowed;
+            double rmssd = rmssdWindowed;
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (timeSinceLastSpokenArtifactsUpdate_s > 10) {
-                if (artifactsPercent>5 && data.hr>80
-                        || artifactsPercent>20
+                if (artifactsPercentWindowed >5 && data.hr>80
+                        || artifactsPercentWindowed >20
                         || timeSinceLastSpokenArtifactsUpdate_s>60
                 ) {
                     if (data.hr > 130 || a1 < 0.85) {
-                        artifactsUpdate = " lost " + artifactsPercent;
+                        artifactsUpdate = " lost " + artifactsPercentWindowed;
                     } else {
-                        artifactsUpdate = " lost " + artifactsPercent + " percent ";
+                        artifactsUpdate = " lost " + artifactsPercentWindowed + " percent ";
                     }
                 }
             }
             if (timeSinceLastSpokenUpdate_s > 10) {
                 if (data.hr > 130 || a1 < 0.85) {
                     // abbreviated
-                    artifactsUpdate = " lost " + artifactsPercent;
-                    featuresUpdate = data.hr + " " + a1_r + " ";
-                } else if ((data.hr > 120 || a1_r < 1.0) && timeSinceLastSpokenUpdate_s >= 10) {
-                    featuresUpdate = "Heart rate " + data.hr + ", Alpha one, " + a1_r + ",";
+                    artifactsUpdate = " lost " + artifactsPercentWindowed;
+                    featuresUpdate = data.hr + " " + alpha1RoundedWindowed + " ";
+                } else if ((data.hr > 120 || alpha1RoundedWindowed < 1.0)) {
+                    featuresUpdate = "Heart rate " + data.hr + ", Alpha one, " + alpha1RoundedWindowed + ",";
                 } else if (data.hr > 90 && timeSinceLastSpokenUpdate_s >= 60) {
-                    featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + a1_r + ",";
+                    featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + alpha1RoundedWindowed + ",";
                 } else {
                     featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd + ".";
                 }
             }
             if (featuresUpdate.length()>0 || artifactsUpdate.length()>0) {
-                if (artifactsPercent > 5) {
+                if (artifactsPercentWindowed > 5) {
                     spokenOutput(artifactsUpdate + " " + featuresUpdate);
                 } else {
                     spokenOutput( featuresUpdate + " " + artifactsUpdate);

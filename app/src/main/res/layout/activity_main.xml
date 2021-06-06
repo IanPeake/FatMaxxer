@@ -28,6 +28,50 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/hrLabel"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:text="HR"
+                android:textColor="@color/colorText"
+                android:layout_weight="1"
+                android:textAlignment="center"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/a1Label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:textAlignment="center"
+                android:text="a1"
+                android:textColor="@color/colorText"
+                android:layout_weight="1"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/hrvLabel"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif"
+                android:gravity="center_horizontal"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:textColor="@color/colorText"
+                android:text="HRV"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
                 android:id="@+id/hrTextView"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -65,6 +109,17 @@
                 />
 
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/artifactsLabel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="artifacts"
+            android:fontFamily="sans-serif"
+            android:gravity="center_horizontal"
+            android:textAlignment="center"
+            android:textColor="@color/colorText"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/artifactsView"
