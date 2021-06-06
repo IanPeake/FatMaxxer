@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceFragmentCompat;
 
 // https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
@@ -101,6 +102,13 @@ public class MainActivity extends AppCompatActivity {
     Context thisContext = this;
     private int batteryLevel = 100;
     private EditText input_deviceID;
+
+    public class MySettingsFragment extends PreferenceFragmentCompat {
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.preferences, rootKey);
+        }
+    }
 
     /*
     private void createNotificationChannel() {
@@ -523,6 +531,13 @@ public class MainActivity extends AppCompatActivity {
         // Notice PolarBleApi.ALL_FEATURES are enabled
         api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
         api.setPolarFilter(false);
+
+        /*
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.settings_container, new MySettingsFragment())
+                .commit();
+        */
 
         final Button connect = this.findViewById(R.id.connect_button);
         final Button speech_on = this.findViewById(R.id.speech_on_button);

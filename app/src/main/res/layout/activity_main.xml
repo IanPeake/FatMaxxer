@@ -146,6 +146,28 @@
             android:text="connect" />
 
         <Button
+            android:id="@+id/setDeviceIdButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="set device id" />
+
+        <EditText
+            android:id="@+id/DEVICE_ID"
+            android:textAlignment="center"
+            android:gravity="center_horizontal"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="text"/>
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:textColor="@color/colorText"
+            android:layout_height="43dp"
+            android:text="TextView" />
+
+        <Button
             android:id="@+id/speech_on_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -267,29 +289,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Set time" />
-
-        <Button
-            android:id="@+id/setDeviceIdButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorText"
-            android:text="set device id" />
-
-        <EditText
-            android:id="@+id/DEVICE_ID"
-            android:textAlignment="center"
-            android:gravity="center_horizontal"
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:inputType="text"/>
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="match_parent"
-            android:textColor="@color/colorText"
-            android:layout_height="43dp"
-            android:text="TextView" />
-
 
     </LinearLayout>
 </ScrollView>
