@@ -2,6 +2,7 @@ package polar.com.alpha1;
 
 import android.Manifest;
 import android.content.Context;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,9 +16,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-//import com.jjoe64.graphview.GraphView;
-//import com.jjoe64.graphview.series.DataPoint;
-//import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 
 import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     Disposable autoConnectDisposable;
     // Serial number?? 90E2D72B
     //String DEVICE_ID = "84B38E76BC"; //TODO replace with your device id
-    String DEVICE_ID = "90E2D72B"; //TODO replace with your device id
+    String DEVICE_ID = "90E2D72B"; //replace with your device id
     PolarExerciseEntry exerciseEntry;
 
     Context thisContext = this;
@@ -448,6 +449,9 @@ public class MainActivity extends AppCompatActivity {
     // max hr 300bpm(!?) * 120s window
     public final int maxrrs = 300 * rrWindowSize;
     // circular buffer of recently recorded RRs
+    // FIXME: premature optimization is the root of all evil
+    // Not that much storage required, does not avoid the fundamental problem that
+    // our app gets paused anyway
     public double[] rr = new double[maxrrs];
     // timestamp of recently recorded RR (in ms since epoch)
     public long[] rr_timestamp = new long[maxrrs];
@@ -485,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
     private int totalRejected = 0;
     private boolean firstSample = false;
 
-    //GraphView graph;
+    GraphView graph;
 
     /**
      * Return date in specified format.
@@ -585,7 +589,6 @@ public class MainActivity extends AppCompatActivity {
         final MediaPlayer mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100,100);
 
-        /*
         graph = (GraphView) findViewById(R.id.graph);
         LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
         LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
@@ -604,7 +607,6 @@ public class MainActivity extends AppCompatActivity {
         a1Series.setColor(Color.GREEN);
         hrSeries.setColor(Color.RED);
         hrvSeries.setColor(Color.BLUE);
-         */
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
@@ -836,9 +838,9 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
-                //hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), false, 65535);
-                //a1Series.appendData(new DataPoint(elapsedSeconds, alpha1 * 100.0), false, 65535);
-                //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+                hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), false, 65535);
+                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1 * 100.0), false, 65535);
+                hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
 
                 Log.d(TAG,data.hr+" "+a1_r+" "+rmssd);
                 Log.d(TAG,logstring);
