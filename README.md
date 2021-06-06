@@ -25,7 +25,7 @@ Graph plots
 - green trace: ⍺1 (values shown multiplied by 100, e.g. 0.75 reads as 75, to share primary axis with HR.)
 - blue trace: artifacts
 
-Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to avert pausing.
+Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to help.
 
 Based on
 - Marco Altini's Python code
