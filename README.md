@@ -21,9 +21,9 @@ More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
 
 Graph plots
-- green trace for alpha1 (values are mapped to the range 0--200, e.g. 0.75 reads as 75, to share primary axis with HR.)
-- red trace for HR.
-- blue trace for RMSSD.
+- red trace: HR.
+- green trace: ⍺1 (values are mapped to the range 0--200, e.g. 0.75 reads as 75, to share primary axis with HR.)
+- blue trace: artifacts
 
 Main issue remaining: Android pauses the app unpredictably. Interacting with the app regularly seems to avert pausing.
 
