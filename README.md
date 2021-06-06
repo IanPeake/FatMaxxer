@@ -3,7 +3,7 @@
 ![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Screenshot_20210606-151127_FatMax%20Optimiser_downscale.jpg)
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 in real time.
-There is preliminary research that running or cycling at DFA 0.75 corresponds to the first ventilatory threshold or FatMax
+There is preliminary research that running or cycling at Alpha1==0.75 corresponds to the first ventilatory threshold or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 
 Two minute rolling window for rmssd and alpha1. Alpha1 is evaluated every 20 seconds.
