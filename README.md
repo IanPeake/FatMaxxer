@@ -12,6 +12,8 @@ Two minute rolling window for rmssd and ⍺1. The value of ⍺1 is calculated ev
 
 Artifact detection (RR interval changes too fast) and filtering.
 
+Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and ⍺1 and detected artifacts / number of samples (percentage %) in the window.
+
 Audio/notification updates for ⍺1, detected artifact rate, HR, etc.,
 adjusting to work rate---HR and/or ⍺1.
 RMSSD at HRs below a given threshold.
@@ -20,7 +22,8 @@ Artifact reporting above threshold / at higher intensity.
 More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
 
-Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and ⍺1 and detected artifacts / number of samples (percentage %) in the window.
+Notification photo on Garmin watch: https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg
+
 
 Graph plots
 - red trace: HR.
