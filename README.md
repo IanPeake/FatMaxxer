@@ -22,7 +22,7 @@ Artifact reporting above threshold / at higher intensity.
 More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
 
-Notification photo on Garmin watch: https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg
+Notification photo on Garmin watch: ![Garmin](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg)
 
 
 Graph plots
