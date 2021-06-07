@@ -1131,7 +1131,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     private void updateUserAsync(String update) {
-        if (sharedPreferences.getBoolean("notificationsEnabled", false)) {
+        if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
             notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
             notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
             notificationManager.notify("alpha1update", nextNotificationID, notificationBuilder.build());
