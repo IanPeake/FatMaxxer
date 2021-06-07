@@ -1,6 +1,8 @@
 package polar.com.alpha1;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -20,6 +22,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
@@ -29,7 +33,6 @@ import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
 import org.jetbrains.annotations.NotNull;
-import org.reactivestreams.Publisher;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,41 +40,32 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Function;
 import polar.com.sdk.api.PolarBleApi;
 import polar.com.sdk.api.PolarBleApiCallback;
 import polar.com.sdk.api.PolarBleApiDefaultImpl;
 import polar.com.sdk.api.errors.PolarInvalidArgument;
-import polar.com.sdk.api.model.PolarAccelerometerData;
 import polar.com.sdk.api.model.PolarDeviceInfo;
-import polar.com.sdk.api.model.PolarEcgData;
 import polar.com.sdk.api.model.PolarExerciseEntry;
-import polar.com.sdk.api.model.PolarGyroData;
 import polar.com.sdk.api.model.PolarHrData;
-import polar.com.sdk.api.model.PolarMagnetometerData;
-import polar.com.sdk.api.model.PolarOhrData;
-import polar.com.sdk.api.model.PolarOhrPPIData;
-import polar.com.sdk.api.model.PolarSensorSetting;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
-import static polar.com.sdk.api.model.PolarOhrData.OHR_DATA_TYPE.PPG3_AMBIENT1;
 
 public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String API_LOGGER_TAG = "API LOGGER";
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
+    private int nextNotificationID = 0;
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -111,6 +105,23 @@ public class MainActivity extends AppCompatActivity {
     Context thisContext = this;
     private int batteryLevel = 100;
     private EditText input_field;
+    private final String CHANNEL_ID = "FatMaxxerChannelID1";
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
 
     public static class MySettingsFragment extends PreferenceFragmentCompat {
         @Override
@@ -513,6 +524,8 @@ public class MainActivity extends AppCompatActivity {
     private long prevSpokenArtifactsUpdate_ms = 0;
     private int totalRejected = 0;
     private boolean thisIsFirstSample = false;
+    NotificationManagerCompat notificationManager;
+    NotificationCompat.Builder notificationBuilder;
 
     GraphView graphView;
 
@@ -571,6 +584,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         //setContentView(R.layout.activity_fragment_container);
         setContentView(R.layout.activity_main);
+
+        createNotificationChannel();
 
         /*
         getSupportFragmentManager()
@@ -657,7 +672,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onInit(int status) {
                 ttobj.setLanguage(Locale.UK);
-                spokenOutput("Voice output ready");
+                updateUserAsync("Voice output ready");
             }
         });
 
@@ -703,12 +718,25 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.settings_container, MySettingsFragment.class, null)
                 .commit();
 
+        notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+                .setContentTitle("FatMaxxer running")
+                .setContentText("FatMaxxer running")
+                .setSmallIcon(R.mipmap.fatmaxxer_small_icon)
+                .setOngoing(true)
+//                .setLargeIcon(aBitmap)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+        notificationManager = NotificationManagerCompat.from(this);
+
+        // notificationId is a unique int for each notification that you must define
+        notificationManager.notify(nextNotificationID, notificationBuilder.build());
+        nextNotificationID++;
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                    "MyApp::MyWakelockTag");
+        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+            "MyApp::MyWakelockTag");
 
-            api.setApiCallback(new PolarBleApiCallback() {
+        api.setApiCallback(new PolarBleApiCallback() {
 
                 @Override
                 public void blePowerStateChanged(boolean powered) {
@@ -897,6 +925,8 @@ public class MainActivity extends AppCompatActivity {
                     if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prevA1Timestamp + 3000)) {
                         alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
                         prevA1Timestamp = currentTimeMS;
+                        // notificationId is a unique int for each notification that you must define
+                        //nextNotificationID++;
                     }
                     alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
                     //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
@@ -1091,20 +1121,25 @@ public class MainActivity extends AppCompatActivity {
             }
             if (featuresUpdate.length() > 0 || artifactsUpdate.length() > 0) {
                 if (artifactsPercentWindowed > 5) {
-                    spokenOutput(artifactsUpdate + " " + featuresUpdate);
+                    updateUserAsync(artifactsUpdate + " " + featuresUpdate);
                 } else {
-                    spokenOutput(featuresUpdate + " " + artifactsUpdate);
+                    updateUserAsync(featuresUpdate + " " + artifactsUpdate);
                 }
                 if (featuresUpdate.length() > 0) prevSpokenUpdate_ms = currentTime_ms;
                 if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdate_ms = currentTime_ms;
             }
         }
 
-        private void spokenOutput(String update) {
-            if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
-                ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
-            }
+    private void updateUserAsync(String update) {
+        if (sharedPreferences.getBoolean("notificationsEnabled", false)) {
+            notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
+            notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
+            notificationManager.notify("alpha1update", nextNotificationID, notificationBuilder.build());
         }
+        if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
+            ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
