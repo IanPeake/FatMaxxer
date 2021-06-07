@@ -10,6 +10,9 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,6 +21,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 // https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
@@ -67,7 +71,12 @@ public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String API_LOGGER_TAG = "API LOGGER";
-    final String SHARED_PREFS_KEY = "polar_id";
+    public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
+
+    public MainActivity() {
+        //super(R.layout.activity_fragment_container);
+        super(R.layout.activity_main);
+    }
 
     private final double[] samples1 = {667.0,674.0,688.0,704.0,690.0,688.0,671.0,652.0,644.0,636.0,631.0,639.0,637.0,634.0,642.0,642.0,
             653.0,718.0,765.0,758.0,729.0,713.0,691.0,677.0,694.0,695.0,692.0,684.0,685.0,677.0,667.0,657.0,648.0,632.0,
@@ -101,9 +110,9 @@ public class MainActivity extends AppCompatActivity {
 
     Context thisContext = this;
     private int batteryLevel = 100;
-    private EditText input_deviceID;
+    private EditText input_field;
 
-    public class MySettingsFragment extends PreferenceFragmentCompat {
+    public static class MySettingsFragment extends PreferenceFragmentCompat {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.preferences, rootKey);
@@ -460,7 +469,7 @@ public class MainActivity extends AppCompatActivity {
     // 120s ring buffer
     public final int rrWindowSize = 120;
     // time between alpha1 calculations
-    public final int alpha1EvalPeriod = 20;
+    public int alpha1EvalPeriod;
     // max hr 300bpm(!?) * 120s window
     public final int maxrrs = 300 * rrWindowSize;
     // circular buffer of recently recorded RRs
@@ -490,11 +499,10 @@ public class MainActivity extends AppCompatActivity {
     int artifactsPercentWindowed;
     double hrWindowed;
     // maximum tolerable variance of adjacent RR intervals
-    final double artifactCorrectionThreshold = 0.05;
+    double artifactCorrectionThreshold;
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
     private TextToSpeech ttobj;
-    private boolean soundEnabled = false;
     // the last time (since epoch) a1 was evaluated
     private long prevA1Timestamp = 0;
     private FileWriter rrLogStream;
@@ -504,7 +512,7 @@ public class MainActivity extends AppCompatActivity {
     private long prevSpokenUpdate_ms = 0;
     private long prevSpokenArtifactsUpdate_ms = 0;
     private int totalRejected = 0;
-    private boolean firstSample = false;
+    private boolean thisIsFirstSample = false;
 
     GraphView graphView;
 
@@ -523,28 +531,73 @@ public class MainActivity extends AppCompatActivity {
         return formatter.format(calendar.getTime());
     }
 
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.options_menu, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //respond to menu item selection
+        Log.d(TAG, "onOptionsItemSelected...");
+        switch (item.getItemId()) {
+            case R.id.quitOption:
+                System.exit(0);
+//            case R.id.soundEnableMenuOption:
+//                Log.d(TAG,"soundEnableMenuOption");
+//                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
+//                sharedPreferences.edit().commit();
+//            case R.id.soundDisableMenuOption:
+//                Log.d(TAG,"soundDisableMenuOption");
+//                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
+//                sharedPreferences.edit().commit();
+            case R.id.connectOption:
+                tryPolarConnect();
+//            case R.id.settingsOption:
+//                //setContentView(R.layout.activity_settings);
+//                Log.d(TAG, "Settings...");
+//                text_view.setText("Settings");
+//                getSupportFragmentManager()
+//                    .beginTransaction()
+//                        .replace(R.id.settings_container, MySettingsFragment.class, null)
+//                        .commit();
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //setContentView(R.layout.activity_fragment_container);
         setContentView(R.layout.activity_main);
-        sharedPreferences = this.getPreferences(Context.MODE_PRIVATE);
-        // Notice PolarBleApi.ALL_FEATURES are enabled
-        api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
-        api.setPolarFilter(false);
 
         /*
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.settings_container, new MySettingsFragment())
+                .replace(R.id.graph_container, GraphFragment.class, null)
                 .commit();
-        */
+        getSupportFragmentManager().executePendingTransactions();
+         */
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        artifactCorrectionThreshold = Double.parseDouble(sharedPreferences.getString("artifactThreshold", "0.05"));
+        alpha1EvalPeriod =  Integer.parseInt(sharedPreferences.getString("alpha1CalcPeriod", "20"));
+
+        // Notice PolarBleApi.ALL_FEATURES are enabled
+        api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
+        api.setPolarFilter(false);
 
         final Button connect = this.findViewById(R.id.connect_button);
+        connect.setVisibility(View.GONE);
         final Button speech_on = this.findViewById(R.id.speech_on_button);
+        speech_on.setVisibility(View.GONE);
         final Button speech_off = this.findViewById(R.id.speech_off_button);
+        speech_off.setVisibility(View.GONE);
         final Button test_feature = this.findViewById(R.id.testFeature_button);
         test_feature.setVisibility(View.GONE);
         final Button setDeviceIDButton = this.findViewById(R.id.setDeviceIdButton);
+        setDeviceIDButton.setVisibility(View.GONE);
         final Button broadcast = this.findViewById(R.id.broadcast_button);
         broadcast.setVisibility(View.GONE);
         final Button disconnect = this.findViewById(R.id.disconnect_button);
@@ -586,14 +639,12 @@ public class MainActivity extends AppCompatActivity {
         text_hrv = this.findViewById(R.id.hrvTextView);
         text_a1 = this.findViewById(R.id.a1TextView);
         text_artifacts = this.findViewById(R.id.artifactsView);
-        input_deviceID = this.findViewById(R.id.DEVICE_ID);
         text_view = this.findViewById(R.id.textView);
 
         //text.setTextSize(100);
         //text.setMovementMethod(new ScrollingMovementMethod());
         // text.setText(message);
         text_view.setText("Text output goes here...");
-        //setContentView(text);
 
         testDFA_alpha1();
         testRMSSD_1();
@@ -611,12 +662,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         rrLogStream = createLogFile("rr");
-        writeLogFile("timestamp,rr,since_start",rrLogStream,"rr");
+        writeLogFile("timestamp,rr,since_start", rrLogStream, "rr");
         featureLogStream = createLogFile("features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent",featureLogStream,"features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent", featureLogStream, "features");
 
         final MediaPlayer mp = MediaPlayer.create(this, R.raw.artifact);
-        mp.setVolume(100,100);
+        mp.setVolume(100, 100);
 
         graphView = (GraphView) findViewById(R.id.graph);
         LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
@@ -644,178 +695,188 @@ public class MainActivity extends AppCompatActivity {
         artifactSeries.setColor(Color.BLUE);
         //hrvSeries.setColor(Color.BLUE);
 
+        //setContentView(R.layout.activity_settings);
+        Log.d(TAG, "Settings...");
+        text_view.setText("Settings");
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.settings_container, MySettingsFragment.class, null)
+                .commit();
+
+
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "MyApp::MyWakelockTag");
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                    "MyApp::MyWakelockTag");
 
-        api.setApiCallback(new PolarBleApiCallback() {
+            api.setApiCallback(new PolarBleApiCallback() {
 
-            @Override
-            public void blePowerStateChanged(boolean powered) {
-                Log.d(TAG, "BLE power: " + powered);
-            }
-
-            @Override
-            public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
-                text_view.setText("CONNECTED");
-                Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
-                DEVICE_ID = polarDeviceInfo.deviceId;
-            }
-
-            @Override
-            public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
-                Log.d(TAG, "Polar device CONNECTING: " + polarDeviceInfo.deviceId);
-                DEVICE_ID = polarDeviceInfo.deviceId;
-            }
-
-            @Override
-            public void deviceDisconnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
-                Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
-                ecgDisposable = null;
-                accDisposable = null;
-                gyrDisposable = null;
-                magDisposable = null;
-                ppgDisposable = null;
-                ppiDisposable = null;
-            }
-
-            @Override
-            public void streamingFeaturesReady(@NonNull final String identifier,
-                                               @NonNull final Set<PolarBleApi.DeviceStreamingFeature> features) {
-                for(PolarBleApi.DeviceStreamingFeature feature : features) {
-                    Log.d(TAG, "Streaming feature " + feature.toString() + " is ready");
-                    //text_view.setText("Streaming feature " + feature.toString() + " is ready");
+                @Override
+                public void blePowerStateChanged(boolean powered) {
+                    Log.d(TAG, "BLE power: " + powered);
                 }
-            }
 
-            @Override
-            public void hrFeatureReady(@NonNull String identifier) {
-                Log.d(TAG, "HR READY: " + identifier);
-                // hr notifications are about to start
-            }
-
-            @Override
-            public void disInformationReceived(@NonNull String identifier, @NonNull UUID uuid, @NonNull String value) {
-                Log.d(TAG, "uuid: " + uuid + " value: " + value);
-            }
-
-            @Override
-            public void batteryLevelReceived(@NonNull String identifier, int level) {
-                batteryLevel = level;
-                Log.d(TAG, "BATTERY LEVEL: " + level);
-            }
-
-
-            //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(thisContext);
-
-            private int getNrSamples() {
-                int nrSamples = (newestSample<oldestSample) ? (newestSample + maxrrs - oldestSample) : (newestSample - oldestSample);
-                return nrSamples;
-            }
-
-            // extract current history from circular buffer (ugh)
-            // FIXME: requires invariants
-            public double[] copySamples() {
-                double[] result = new double[getNrSamples()];
-                int next = 0;
-                // FIXME: unverified
-                for (int i = oldestSample; i != newestSample; i = (i+1) % rr.length) {
-                    result[next] = rr[i];
-                    next++;
+                @Override
+                public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
+                    text_view.setText("CONNECTED");
+                    Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
+                    //DEVICE_ID = polarDeviceInfo.deviceId;
                 }
-                return result;
-            }
 
-            private int getNrArtifacts() {
-                int result = 0;
-                for (int i = oldestArtifactSample; i != newestArtifactSample; i = (i+1) % dropped_ts.length) {
-                    result++;
+                @Override
+                public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
+                    Log.d(TAG, "Polar device CONNECTING: " + polarDeviceInfo.deviceId);
+                    //DEVICE_ID = polarDeviceInfo.deviceId;
                 }
-                return result;
-            }
 
-            @Override
-            public void hrNotificationReceived(@NonNull String identifier, @NonNull PolarHrData data) {
-                wakeLock.acquire();
-                Log.d(TAG,"hrNotificationReceived");
-                long currentTimeMS = System.currentTimeMillis();
-                long timestamp = currentTimeMS;
-                for (int rr : data.rrsMs) {
-                    String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-                    writeLogFile(msg, rrLogStream, "rr");
-                    logRRelapsedMS += rr;
-                    timestamp += rr;
+                @Override
+                public void deviceDisconnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
+                    Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
+                    ecgDisposable = null;
+                    accDisposable = null;
+                    gyrDisposable = null;
+                    magDisposable = null;
+                    ppgDisposable = null;
+                    ppiDisposable = null;
                 }
-                if (!started) {
-                    Log.d(TAG,"hrNotificationReceived: started!");
-                    started = true;
-                    starting = true;
-                    firstSample = true;
-                    firstSampleMS = currentTimeMS;
-                }
-                //
-                // FILTERING / RECORDING RR intervals
-                //
-                String rejected = "";
-                boolean haveArtifacts = false;
-                List<Integer> rrsMs = data.rrsMs;
-                for (int si = 0; si<data.rrsMs.size(); si++) {
-                    double newrr = data.rrsMs.get(si);
-                    double lowbound = prevrr * (1- artifactCorrectionThreshold);
-                    double upbound = prevrr * (1+ artifactCorrectionThreshold);
-                    Log.d(TAG, "prevrr "+prevrr+" lowbound "+lowbound+" upbound "+upbound);
-                    if (firstSample || lowbound < newrr && newrr < upbound) {
-                        Log.d(TAG, "accept "+newrr);
-                        // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
-                        rr[newestSample] = newrr;
-                        rr_timestamp[newestSample] = currentTimeMS;
-                        newestSample = (newestSample + 1) % maxrrs;
-                        firstSample = false;
-                    } else {
-                        Log.d(TAG,"drop...");
-                        dropped_ts[newestArtifactSample] = currentTimeMS;
-                        newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
-                        Log.d(TAG, "reject artifact "+newrr);
-                        rejected += "" + newrr;
-                        haveArtifacts = true;
-                        totalRejected++;
+
+                @Override
+                public void streamingFeaturesReady(@NonNull final String identifier,
+                                                   @NonNull final Set<PolarBleApi.DeviceStreamingFeature> features) {
+                    for (PolarBleApi.DeviceStreamingFeature feature : features) {
+                        Log.d(TAG, "Streaming feature " + feature.toString() + " is ready");
+                        //text_view.setText("Streaming feature " + feature.toString() + " is ready");
                     }
-                    prevrr = newrr;
                 }
-                String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
-                Log.d(TAG, "Polar device HR value: " + data.hr + " rrsMs: " + data.rrsMs + " rr: " + data.rrs + " contact: " + data.contactStatus + "," + data.contactStatusSupported+" "+rejMsg);
-                int expired = 0;
-                // expire old samples
-                Log.d(TAG,"Expire old RRs");
-                while (rr_timestamp[oldestSample] < currentTimeMS - rrWindowSize * 1000) {
-                    oldestSample = (oldestSample + 1) % maxrrs;
-                    expired++;
-                }
-                Log.d(TAG,"Expire old artifacts");
-                while (oldestArtifactSample != newestArtifactSample && dropped_ts[oldestArtifactSample] < currentTimeMS - rrWindowSize * 1000) {
-                    Log.d(TAG,"Expire at "+ oldestArtifactSample);
-                    oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
-                }
-                long elapsedMS = (currentTimeMS - firstSampleMS);
-                Log.d(TAG,"elapsedMS "+elapsedMS);
-                //
-                long elapsedSeconds = elapsedMS / 1000;
-                long absSeconds = Math.abs(elapsedSeconds);
-                String positive = String.format(
-                        "%02d:%02d:%02d",
-                        absSeconds / 3600,
-                        (absSeconds % 3600) / 60,
-                        absSeconds % 60);
-                text_time.setText(positive);
 
-                //
-                // FEATURES
-                //
-                long elapsed = elapsedMS / 1000;
-                int nrSamples = getNrSamples();
-                int nrArtifacts = getNrArtifacts();
-                double[] samples = copySamples();
-                Log.d(TAG, "Samples: "+v_toString(samples));
+                @Override
+                public void hrFeatureReady(@NonNull String identifier) {
+                    Log.d(TAG, "HR READY: " + identifier);
+                    // hr notifications are about to start
+                }
+
+                @Override
+                public void disInformationReceived(@NonNull String identifier, @NonNull UUID uuid, @NonNull String value) {
+                    Log.d(TAG, "uuid: " + uuid + " value: " + value);
+                }
+
+                @Override
+                public void batteryLevelReceived(@NonNull String identifier, int level) {
+                    batteryLevel = level;
+                    Log.d(TAG, "BATTERY LEVEL: " + level);
+                }
+
+
+                //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(thisContext);
+
+                private int getNrSamples() {
+                    int nrSamples = (newestSample < oldestSample) ? (newestSample + maxrrs - oldestSample) : (newestSample - oldestSample);
+                    return nrSamples;
+                }
+
+                // extract current history from circular buffer (ugh)
+                // FIXME: requires invariants
+                public double[] copySamples() {
+                    double[] result = new double[getNrSamples()];
+                    int next = 0;
+                    // FIXME: unverified
+                    for (int i = oldestSample; i != newestSample; i = (i + 1) % rr.length) {
+                        result[next] = rr[i];
+                        next++;
+                    }
+                    return result;
+                }
+
+                private int getNrArtifacts() {
+                    int result = 0;
+                    for (int i = oldestArtifactSample; i != newestArtifactSample; i = (i + 1) % dropped_ts.length) {
+                        result++;
+                    }
+                    return result;
+                }
+
+                @Override
+                public void hrNotificationReceived(@NonNull String identifier, @NonNull PolarHrData data) {
+                    wakeLock.acquire();
+                    Log.d(TAG, "hrNotificationReceived");
+
+                    long currentTimeMS = System.currentTimeMillis();
+                    long timestamp = currentTimeMS;
+                    for (int rr : data.rrsMs) {
+                        String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
+                        writeLogFile(msg, rrLogStream, "rr");
+                        logRRelapsedMS += rr;
+                        timestamp += rr;
+                    }
+                    if (!started) {
+                        Log.d(TAG, "hrNotificationReceived: started!");
+                        started = true;
+                        starting = true;
+                        thisIsFirstSample = true;
+                        firstSampleMS = currentTimeMS;
+                    }
+                    //
+                    // FILTERING / RECORDING RR intervals
+                    //
+                    String rejected = "";
+                    boolean haveArtifacts = false;
+                    List<Integer> rrsMs = data.rrsMs;
+                    for (int si = 0; si < data.rrsMs.size(); si++) {
+                        double newrr = data.rrsMs.get(si);
+                        double lowbound = prevrr * (1 - artifactCorrectionThreshold);
+                        double upbound = prevrr * (1 + artifactCorrectionThreshold);
+                        Log.d(TAG, "prevrr " + prevrr + " lowbound " + lowbound + " upbound " + upbound);
+                        if (thisIsFirstSample || lowbound < newrr && newrr < upbound) {
+                            Log.d(TAG, "accept " + newrr);
+                            // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
+                            rr[newestSample] = newrr;
+                            rr_timestamp[newestSample] = currentTimeMS;
+                            newestSample = (newestSample + 1) % maxrrs;
+                            thisIsFirstSample = false;
+                        } else {
+                            Log.d(TAG, "drop...");
+                            dropped_ts[newestArtifactSample] = currentTimeMS;
+                            newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
+                            Log.d(TAG, "reject artifact " + newrr);
+                            rejected += "" + newrr;
+                            haveArtifacts = true;
+                            totalRejected++;
+                        }
+                        prevrr = newrr;
+                    }
+                    String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
+                    Log.d(TAG, "Polar device HR value: " + data.hr + " rrsMs: " + data.rrsMs + " rr: " + data.rrs + " contact: " + data.contactStatus + "," + data.contactStatusSupported + " " + rejMsg);
+                    int expired = 0;
+                    // expire old samples
+                    Log.d(TAG, "Expire old RRs");
+                    while (rr_timestamp[oldestSample] < currentTimeMS - rrWindowSize * 1000) {
+                        oldestSample = (oldestSample + 1) % maxrrs;
+                        expired++;
+                    }
+                    Log.d(TAG, "Expire old artifacts");
+                    while (oldestArtifactSample != newestArtifactSample && dropped_ts[oldestArtifactSample] < currentTimeMS - rrWindowSize * 1000) {
+                        Log.d(TAG, "Expire at " + oldestArtifactSample);
+                        oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
+                    }
+                    long elapsedMS = (currentTimeMS - firstSampleMS);
+                    Log.d(TAG, "elapsedMS " + elapsedMS);
+                    //
+                    long elapsedSeconds = elapsedMS / 1000;
+                    long absSeconds = Math.abs(elapsedSeconds);
+                    String positive = String.format(
+                            "%02d:%02d:%02d",
+                            absSeconds / 3600,
+                            (absSeconds % 3600) / 60,
+                            absSeconds % 60);
+                    text_time.setText(positive);
+
+                    //
+                    // FEATURES
+                    //
+                    long elapsed = elapsedMS / 1000;
+                    int nrSamples = getNrSamples();
+                    int nrArtifacts = getNrArtifacts();
+                    double[] samples = copySamples();
+                    Log.d(TAG, "Samples: " + v_toString(samples));
                 /*
                 int firstArtifactIndex = v_containsArtifacts(samples);
                 if (firstArtifactIndex >= 0) {
@@ -824,381 +885,108 @@ public class MainActivity extends AppCompatActivity {
                     throw new IllegalStateException(msg);
                 }
                 */
-                rmssdWindowed = getRMSSD(samples);
-                // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
-                hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
-                // Periodic actions: check alpha1 and issue voice update
-                // - skip one period's worth after first HR update
-                // - only within the first two seconds of this period window
-                // - only when at least three seconds have elapsed since last invocation
-                // FIXME: what precisely is required for alpha1 to be well-defined?
-                // FIXME: The prev_a1_check now seems redundant
-                if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prevA1Timestamp + 3000)) {
-                    alpha1Windowed = dfa_alpha1(samples,2,4,30);
-                    prevA1Timestamp = currentTimeMS;
-                }
-                alpha1RoundedWindowed = round(alpha1Windowed *100) / 100.0;
-                //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
-                writeLogFile(""+timestamp+","+hrWindowed+","+rmssdWindowed+","+","+ alpha1RoundedWindowed +","+nrArtifacts+","+nrSamples+","+ artifactsPercentWindowed,featureLogStream,"features");
+                    rmssdWindowed = getRMSSD(samples);
+                    // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
+                    hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
+                    // Periodic actions: check alpha1 and issue voice update
+                    // - skip one period's worth after first HR update
+                    // - only within the first two seconds of this period window
+                    // - only when at least three seconds have elapsed since last invocation
+                    // FIXME: what precisely is required for alpha1 to be well-defined?
+                    // FIXME: The prev_a1_check now seems redundant
+                    if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prevA1Timestamp + 3000)) {
+                        alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
+                        prevA1Timestamp = currentTimeMS;
+                    }
+                    alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
+                    //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
+                    writeLogFile("" + timestamp + "," + hrWindowed + "," + rmssdWindowed + "," + "," + alpha1RoundedWindowed + "," + nrArtifacts + "," + nrSamples + "," + artifactsPercentWindowed, featureLogStream, "features");
 
-                //
-                // DISPLAY // AUDIO // LOGGING
-                //
-                if (haveArtifacts && soundEnabled) {
-                    //spokenOutput("drop");
-                    mp.start();
-                }
-                StringBuilder logmsg = new StringBuilder();
-                logmsg.append(elapsed+"s");
-                logmsg.append(", rrsMs: " + data.rrsMs);
-                logmsg.append(rejMsg);
-                logmsg.append(", total rejected: " + totalRejected);
-                logmsg.append(" battery "+batteryLevel);
-                String logstring = logmsg.toString();
+                    //
+                    // DISPLAY // AUDIO // LOGGING
+                    //
+                    if (haveArtifacts && sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
+                        //spokenOutput("drop");
+                        mp.start();
+                    }
+                    StringBuilder logmsg = new StringBuilder();
+                    logmsg.append(elapsed + "s");
+                    logmsg.append(", rrsMs: " + data.rrsMs);
+                    logmsg.append(rejMsg);
+                    logmsg.append(", total rejected: " + totalRejected);
+                    logmsg.append(" battery " + batteryLevel);
+                    String logstring = logmsg.toString();
 
-                artifactsPercentWindowed = (int)round(nrArtifacts * 100 / (double)nrSamples);
-                text_artifacts.setText(""+nrArtifacts+"/"+nrSamples+" ("+ artifactsPercentWindowed +"%)");
-                if (haveArtifacts) {
-                    text_artifacts.setBackgroundResource(R.color.colorHighlight);
-                } else {
-                    text_artifacts.setBackgroundResource(R.color.colorBackground);
-                }
-                text_view.setText(logstring);
-                text_hr.setText(""+data.hr);
-                text_hrv.setText(""+round(rmssdWindowed));
-                text_a1.setText(""+ alpha1RoundedWindowed);
-                if (alpha1RoundedWindowed < 0.5) {
-                    text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                } else if (alpha1RoundedWindowed < 0.75) {
-                    text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                } else if (alpha1RoundedWindowed < 1.0) {
-                    text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
-                } else {
-                    text_a1.setBackgroundResource(R.color.colorEasyIntensity);
-                }
-                hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
-                a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
-                //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-                artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
+                    artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
+                    text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%)");
+                    if (haveArtifacts) {
+                        text_artifacts.setBackgroundResource(R.color.colorHighlight);
+                    } else {
+                        text_artifacts.setBackgroundResource(R.color.colorBackground);
+                    }
+                    text_view.setText(logstring);
+                    text_hr.setText("" + data.hr);
+                    text_hrv.setText("" + round(rmssdWindowed));
+                    text_a1.setText("" + alpha1RoundedWindowed);
+                    if (alpha1RoundedWindowed < 0.5) {
+                        text_a1.setBackgroundResource(R.color.colorMaxIntensity);
+                    } else if (alpha1RoundedWindowed < 0.75) {
+                        text_a1.setBackgroundResource(R.color.colorMedIntensity);
+                    } else if (alpha1RoundedWindowed < 1.0) {
+                        text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
+                    } else {
+                        text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+                    }
+                    hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
+                    a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
+                    //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+                    artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
 
-                Log.d(TAG,data.hr+" "+ alpha1RoundedWindowed +" "+rmssdWindowed);
-                Log.d(TAG,logstring);
-                Log.d(TAG,""+(elapsed % alpha1EvalPeriod));
-                spokenUpdate(data, currentTimeMS);
-                starting = false;
-                wakeLock.release();
+                    Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
+                    Log.d(TAG, logstring);
+                    Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
+                    spokenUpdate(data, currentTimeMS);
+                    starting = false;
+                    wakeLock.release();
+                }
+
+                @Override
+                public void polarFtpFeatureReady(@NonNull String s) {
+                    Log.d(TAG, "FTP ready");
+                }
+            });
+
+            speech_on.setOnClickListener(v -> {
+                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
+            });
+
+            speech_off.setOnClickListener(v -> {
+                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
+            });
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
+                this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
 
-            @Override
-            public void polarFtpFeatureReady(@NonNull String s) {
-                Log.d(TAG, "FTP ready");
-            }
-        });
-
-        speech_on.setOnClickListener(v -> {
-            soundEnabled = true;
-            spokenOutput("Speech enabled");
-            text_view.setText("Speech enabled");
-        });
-
-        speech_off.setOnClickListener(v -> {
-            soundEnabled = false;
-            text_view.setText("Speech disabled");
-        });
-
-        broadcast.setOnClickListener(v -> {
-            text_view.setText("Listening for broadcast...");
-            if (broadcastDisposable == null) {
-                broadcastDisposable = api.startListenForPolarHrBroadcasts(null)
-                        .subscribe(polarBroadcastData -> Log.d(TAG, "Polar BROADCAST " +
-                                        polarBroadcastData.polarDeviceInfo.deviceId + " HR: " +
-                                        polarBroadcastData.hr + " batt: " +
-                                        polarBroadcastData.batteryStatus),
-                                error -> Log.e(TAG, "Broadcast listener failed. Reason " + error),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                broadcastDisposable.dispose();
-                broadcastDisposable = null;
-            }
-        });
-
-        connect.setOnClickListener(v -> {
+            // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
             tryPolarConnect();
-        });
-
-        disconnect.setOnClickListener(view -> {
-            try {
-                api.disconnectFromDevice(DEVICE_ID);
-            } catch (PolarInvalidArgument polarInvalidArgument) {
-                text_view.setText("PolarInvalidArgument: "+polarInvalidArgument);
-                polarInvalidArgument.printStackTrace();
-            }
-        });
-
-        setDeviceIDButton.setOnClickListener(view -> {
-            String deviceIdInput = input_deviceID.getText().toString();
-            DEVICE_ID = deviceIdInput;
-            Log.d(TAG,"Saving pref for User-input device ID: "+deviceIdInput);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(SHARED_PREFS_KEY, deviceIdInput);
-            editor.apply();
-            tryPolarConnect();
-        });
-
-        autoConnect.setOnClickListener(view -> {
-            if (autoConnectDisposable != null) {
-                autoConnectDisposable.dispose();
-                autoConnectDisposable = null;
-            }
-            autoConnectDisposable = api.autoConnectToDevice(-50, "H10", null)
-                    .subscribe(
-                            () -> Log.d(TAG, "auto connect search complete"),
-                            throwable -> Log.e(TAG, "" + throwable.toString())
-                    );
-        });
-
-        ecg.setOnClickListener(v -> {
-            if (ecgDisposable == null) {
-                ecgDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.ECG)
-                        .toFlowable()
-                        .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
-                            PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
-                            return api.startEcgStreaming(DEVICE_ID, sensorSetting);
-                        }).subscribe(
-                                polarEcgData -> {
-                                    for (Integer microVolts : polarEcgData.samples) {
-                                        Log.d(TAG, "    yV: " + microVolts);
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                // NOTE stops streaming if it is "running"
-                ecgDisposable.dispose();
-                ecgDisposable = null;
-            }
-        });
-
-        acc.setOnClickListener(v -> {
-            if (accDisposable == null) {
-                accDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.ACC)
-                        .toFlowable()
-                        .flatMap((Function<PolarSensorSetting, Publisher<PolarAccelerometerData>>) settings -> {
-                            PolarSensorSetting sensorSetting = settings.maxSettings();
-                            return api.startAccStreaming(DEVICE_ID, sensorSetting);
-                        }).observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                polarAccelerometerData -> {
-                                    for (PolarAccelerometerData.PolarAccelerometerDataSample data : polarAccelerometerData.samples) {
-                                        Log.d(TAG, "    x: " + data.x + " y: " + data.y + " z: " + data.z);
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                // NOTE dispose will stop streaming if it is "running"
-                accDisposable.dispose();
-                accDisposable = null;
-            }
-        });
-
-        gyr.setOnClickListener(v -> {
-            if (gyrDisposable == null) {
-                gyrDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.GYRO)
-                        .toFlowable()
-                        .flatMap((Function<PolarSensorSetting, Publisher<PolarGyroData>>) settings -> {
-                            PolarSensorSetting sensorSetting = settings.maxSettings();
-                            return api.startGyroStreaming(DEVICE_ID, sensorSetting);
-                        })
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                polarGyroData -> {
-                                    for (PolarGyroData.PolarGyroDataSample data : polarGyroData.samples) {
-                                        Log.d(TAG, "    x: " + data.x + " y: " + data.y + " z: " + data.z);
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                // NOTE dispose will stop streaming if it is "running"
-                gyrDisposable.dispose();
-                gyrDisposable = null;
-            }
-        });
-
-        mag.setOnClickListener(v -> {
-            if (magDisposable == null) {
-                magDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.MAGNETOMETER)
-                        .toFlowable()
-                        .flatMap((Function<PolarSensorSetting, Publisher<PolarMagnetometerData>>) settings -> {
-                            PolarSensorSetting sensorSetting = settings.maxSettings();
-                            return api.startMagnetometerStreaming(DEVICE_ID, sensorSetting);
-                        })
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                polarMagData -> {
-                                    for (PolarMagnetometerData.PolarMagnetometerDataSample data : polarMagData.samples) {
-                                        Log.d(TAG, "    x: " + data.x + " y: " + data.y + " z: " + data.z);
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                // NOTE dispose will stop streaming if it is "running"
-                magDisposable.dispose();
-                magDisposable = null;
-            }
-        });
-
-        ppg.setOnClickListener(v -> {
-            if (ppgDisposable == null) {
-                ppgDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.PPG)
-                        .toFlowable()
-                        .flatMap((Function<PolarSensorSetting, Publisher<PolarOhrData>>) polarPPGSettings -> api.startOhrStreaming(DEVICE_ID, polarPPGSettings.maxSettings()))
-                        .subscribe(
-                                polarOhrPPGData -> {
-                                    if (polarOhrPPGData.type == PPG3_AMBIENT1) {
-                                        for (PolarOhrData.PolarOhrSample data : polarOhrPPGData.samples) {
-                                            Log.d(TAG, "    ppg0: " + data.channelSamples.get(0)
-                                                    + " ppg1: " + data.channelSamples.get(0)
-                                                    + " ppg2: " + data.channelSamples.get(0)
-                                                    + " ambient: " + data.channelSamples.get(0));
-                                        }
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable.getLocalizedMessage()),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                ppgDisposable.dispose();
-                ppgDisposable = null;
-            }
-        });
-
-        ppi.setOnClickListener(v -> {
-            if (ppiDisposable == null) {
-                ppiDisposable = api.startOhrPPIStreaming(DEVICE_ID)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                ppiData -> {
-                                    for (PolarOhrPPIData.PolarOhrPPISample sample : ppiData.samples) {
-                                        Log.d(TAG, "    ppi: " + sample.ppi
-                                                + " blocker: " + sample.blockerBit + " errorEstimate: " + sample.errorEstimate);
-                                    }
-                                },
-                                throwable -> Log.e(TAG, "" + throwable.getLocalizedMessage()),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                ppiDisposable.dispose();
-                ppiDisposable = null;
-            }
-        });
-
-        scan.setOnClickListener(view -> {
-            text_view.setText("SCAN");
-            Log.d(TAG, "Polar SCAN");
-            if (scanDisposable == null) {
-                scanDisposable = api.searchForDevice()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                polarDeviceInfo -> Log.d(TAG, "Found id: " + polarDeviceInfo.deviceId + " address: " + polarDeviceInfo.address + " rssi: " + polarDeviceInfo.rssi + " name: " + polarDeviceInfo.name + " isConnectable: " + polarDeviceInfo.isConnectable),
-                                throwable -> Log.d(TAG, "" + throwable.getLocalizedMessage()),
-                                () -> Log.d(TAG, "complete")
-                        );
-            } else {
-                scanDisposable.dispose();
-                scanDisposable = null;
-            }
-        });
-
-        list.setOnClickListener(v -> api.listExercises(DEVICE_ID)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        polarExerciseEntry -> {
-                            Log.d(TAG, "next: " + polarExerciseEntry.date + " path: " + polarExerciseEntry.path + " id: " + polarExerciseEntry.identifier);
-                            exerciseEntry = polarExerciseEntry;
-                        },
-                        throwable -> Log.e(TAG, "Failed to fetch exercises: " + throwable),
-                        () -> Log.d(TAG, "fetch exercises complete")
-                ));
-
-        read.setOnClickListener(v -> {
-            if (exerciseEntry != null) {
-                api.fetchExercise(DEVICE_ID, exerciseEntry)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                polarExerciseData -> Log.d(TAG, "exercise data count: " + polarExerciseData.hrSamples.size() + " samples: " + polarExerciseData.hrSamples),
-                                throwable -> Log.e(TAG, "Failed to read exercise: " + throwable.getLocalizedMessage())
-                        );
-            }
-        });
-
-        remove.setOnClickListener(v -> {
-            if (exerciseEntry != null) {
-                api.removeExercise(DEVICE_ID, exerciseEntry)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                () -> Log.d(TAG, "ex removed ok"),
-                                throwable -> Log.d(TAG, "ex remove failed: " + throwable.getLocalizedMessage())
-                        );
-            }
-        });
-
-        startH10Recording.setOnClickListener(view ->
-                api.startRecording(DEVICE_ID, "TEST_APP_ID", PolarBleApi.RecordingInterval.INTERVAL_1S, PolarBleApi.SampleType.HR)
-                        .subscribe(
-                                () -> Log.d(TAG, "recording started"),
-                                throwable -> Log.e(TAG, "recording start failed: " + throwable.getLocalizedMessage())
-                        ));
-
-        stopH10Recording.setOnClickListener(view ->
-                api.stopRecording(DEVICE_ID)
-                        .subscribe(
-                                () -> Log.d(TAG, "recording stopped"),
-                                throwable -> Log.e(TAG, "recording stop failed: " + throwable.getLocalizedMessage())
-                        ));
-
-        readH10RecordingStatus.setOnClickListener(view ->
-                api.requestRecordingStatus(DEVICE_ID)
-                        .subscribe(
-                                pair -> Log.d(TAG, "recording on: " + pair.first + " ID: " + pair.second),
-                                throwable -> Log.e(TAG, "recording status failed: " + throwable.getLocalizedMessage())
-                        ));
-
-        setTime.setOnClickListener(v -> {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(new Date());
-            api.setLocalTime(DEVICE_ID, calendar)
-                    .subscribe(
-                            () -> Log.d(TAG, "time set to device"),
-                            error -> Log.d(TAG, "set time failed: " + error));
-        });
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
-            this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
-        
-        // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
-        tryPolarConnect();
-    }
 
     private void tryPolarConnect() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
+        Log.d(TAG,"tryPolarConnect");
+        //SharedPreferences.Editor editor = sharedPreferences.edit();
+        //DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
+        DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
         if (DEVICE_ID.length()>0) {
             try {
-                text_view.setText("Searching for " + DEVICE_ID);
+                text_view.setText("Trying to connect to: " + DEVICE_ID);
                 api.connectToDevice(DEVICE_ID);
             } catch (PolarInvalidArgument polarInvalidArgument) {
                 text_view.setText("PolarInvalidArgument: " + polarInvalidArgument);
                 polarInvalidArgument.printStackTrace();
             }
+        } else {
+            text_view.setText("No device ID set");
         }
     }
 
@@ -1269,17 +1057,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // FIXME: get rid of params, except for currentTime_ms
-    private void spokenUpdate(@NotNull PolarHrData data, long currentTime_ms) {
-            long timeSinceLastSpokenUpdate_s = (long)(currentTime_ms - prevSpokenUpdate_ms) / 1000;
-            long timeSinceLastSpokenArtifactsUpdate_s = (long)(currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
+    private void spokenUpdate(@NotNull PolarHrData data, long currentTime_ms){
+            long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdate_ms) / 1000;
+            long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
             double a1 = alpha1RoundedWindowed;
-            int rmssd = (int)round(rmssdWindowed);
+            int rmssd = (int) round(rmssdWindowed);
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (timeSinceLastSpokenArtifactsUpdate_s > 10) {
-                if (artifactsPercentWindowed >5 && data.hr>80
-                        || artifactsPercentWindowed >20
-                        || timeSinceLastSpokenArtifactsUpdate_s>60
+                if (artifactsPercentWindowed > 5 && data.hr > 80
+                        || artifactsPercentWindowed > 20
+                        || timeSinceLastSpokenArtifactsUpdate_s > 60
                 ) {
                     if (data.hr > 130 || a1 < 0.85) {
                         artifactsUpdate = " lost " + artifactsPercentWindowed;
@@ -1301,22 +1089,22 @@ public class MainActivity extends AppCompatActivity {
                     featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd + ".";
                 }
             }
-            if (featuresUpdate.length()>0 || artifactsUpdate.length()>0) {
+            if (featuresUpdate.length() > 0 || artifactsUpdate.length() > 0) {
                 if (artifactsPercentWindowed > 5) {
                     spokenOutput(artifactsUpdate + " " + featuresUpdate);
                 } else {
-                    spokenOutput( featuresUpdate + " " + artifactsUpdate);
+                    spokenOutput(featuresUpdate + " " + artifactsUpdate);
                 }
-                if (featuresUpdate.length()>0) prevSpokenUpdate_ms = currentTime_ms;
-                if (artifactsUpdate.length()>0) prevSpokenArtifactsUpdate_ms = currentTime_ms;
+                if (featuresUpdate.length() > 0) prevSpokenUpdate_ms = currentTime_ms;
+                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdate_ms = currentTime_ms;
             }
-    }
-
-    private void spokenOutput(String update) {
-        if (soundEnabled) {
-            ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
         }
-    }
+
+        private void spokenOutput(String update) {
+            if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
+                ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

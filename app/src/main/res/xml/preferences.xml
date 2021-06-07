@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:key="audioOutputEnabled"
+        app:title="Enable Audio Updates"
+        app:summary="Audio updates of HR, alpha1, etc."/>
+
+    <EditTextPreference
+        app:key="polarDeviceID"
+        app:title="Polar H10 Device ID"
+        app:summary="(Restart required) Hexadecimal string, 8 characters"/>
+
+    <EditTextPreference
+        app:key="artifactThreshold"
+        app:title="Artifact Rejection Threshold"
+        app:summary="(Restart required) RRs differing by more than +/- threshold from the previous are rejected."/>
+
+    <EditTextPreference
+        app:key="alpha1CalcPeriod"
+        app:title="Alpha1 Calculation Period"
+        app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
+
+    </PreferenceScreen>

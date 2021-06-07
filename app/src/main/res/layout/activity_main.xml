@@ -1,14 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+
+
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="polar.com.alpha1.MainActivity">
+    tools:context="polar.com.alpha1.MainActivity"
+    android:id="@+id/application_container"
+    >
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <!-- res/layout/example_activity.xml
+        <androidx.fragment.app.FragmentContainerView
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/fragment_container_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="settingsFragment" />
+            -->
 
         <TextView
             android:id="@+id/timeView"
@@ -152,14 +166,6 @@
             android:textColor="@color/colorText"
             android:text="set device id" />
 
-        <EditText
-            android:id="@+id/DEVICE_ID"
-            android:textAlignment="center"
-            android:gravity="center_horizontal"
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:inputType="text"/>
-
         <TextView
             android:id="@+id/textView"
             android:layout_width="match_parent"
@@ -289,6 +295,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Set time" />
+
+        <!-- res/layout/example_activity.xml -->
+        <androidx.fragment.app.FragmentContainerView
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/settings_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </LinearLayout>
 </ScrollView>
