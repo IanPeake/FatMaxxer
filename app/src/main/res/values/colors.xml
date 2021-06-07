@@ -10,4 +10,7 @@
     <color name="colorMedIntensity">#9FDCA1E1</color>
     <color name="colorFatMaxIntensity">#5BF55B</color>
     <color name="colorEasyIntensity">#A600BCD4</color>
+    <color name="colorRed">#FC0707</color>
+    <color name="colorGreen">#0BB110</color>
+    <color name="colorBlue">#0532F8</color>
 </resources>

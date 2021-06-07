@@ -4,22 +4,22 @@
 
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
-        app:title="Enable Audio Updates"
+        app:title="Enable Audio Updates?"
         app:summary="Audio updates of HR, alpha1, etc."/>
 
     <EditTextPreference
         app:key="polarDeviceID"
-        app:title="Polar H10 Device ID"
+        app:title="Polar H10 Device ID (hex)"
         app:summary="(Restart required) Hexadecimal string, 8 characters"/>
 
     <EditTextPreference
         app:key="artifactThreshold"
-        app:title="Artifact Rejection Threshold"
+        app:title="Artifact Rejection Threshold (%)"
         app:summary="(Restart required) RRs differing by more than +/- threshold from the previous are rejected."/>
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="Alpha1 Calculation Period"
+        app:title="Alpha1 Calculation Period (sec)"
         app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
 
     </PreferenceScreen>

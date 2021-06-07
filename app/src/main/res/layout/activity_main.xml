@@ -48,7 +48,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center_horizontal"
                 android:text="HR"
-                android:textColor="@color/colorText"
+                android:textColor="@color/colorRed"
                 android:layout_weight="1"
                 android:textAlignment="center"
                 android:textSize="12sp" />
@@ -61,7 +61,8 @@
                 android:gravity="center_horizontal"
                 android:textAlignment="center"
                 android:text="⍺1"
-                android:textColor="@color/colorText"
+                android:textColor="@color/colorGreen"
+                android:textColorHighlight="@color/colorGreen"
                 android:layout_weight="1"
                 android:textSize="12sp" />
 
@@ -132,7 +133,7 @@
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
             android:textAlignment="center"
-            android:textColor="@color/colorText"
+            android:textColor="@color/colorBlue"
             android:textSize="12sp" />
 
         <TextView
