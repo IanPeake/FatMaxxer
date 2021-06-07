@@ -2,11 +2,13 @@
 
 ![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled.jpg)
 
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200">
+
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
 There are promising signs that running or cycling at ⍺1==0.75 corresponds to the first ventilatory threshold or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 
-Screenshot above (shows out of date buttons).
+Android UI screenshot above shows out of date buttons.
 
 Two minute rolling window for rmssd and ⍺1. The value of ⍺1 is calculated every 20 seconds.
 
@@ -21,14 +23,7 @@ The value ⍺1 at HRs above a given threshold.
 Artifact reporting above threshold / at higher intensity.
 More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
-
-Some Garmin watches can show notifications, including during runs
-
-![Garmin](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg?s=100)
-
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="150" height="150">
-
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200">
+Some Garmin devices can show notifications, including during runs
 
 Graph plots
 - red trace: HR.
