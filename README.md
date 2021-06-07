@@ -23,7 +23,10 @@ More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
 
 Some Garmin watches can show notifications, including during runs
+
 ![Garmin](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg?s=100)
+
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="100" height="100">
 
 Graph plots
 - red trace: HR.
