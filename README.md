@@ -26,7 +26,9 @@ Some Garmin watches can show notifications, including during runs
 
 ![Garmin](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg?s=100)
 
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="100" height="100">
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="150" height="150">
+
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200">
 
 Graph plots
 - red trace: HR.
