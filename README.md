@@ -13,8 +13,8 @@ There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to 
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 This requires a reliable heart rate strap that can measure inter-heartbeat intervals very accurately (Polar H10).
 
-FatMaxxer reports ⍺1 for the past two minutes in "near real time" via GUI (cycling)
-and updates via speech to text (speaker/headphones) or notifications (wearables).
+FatMaxxer reports ⍺1 for the past two minutes in "near real time" via the GUI,
+speech (speaker/headphones, configurable) and notifications (configurables).
 The ⍺1 value and other features are calculated over a two minute rolling window of RR values,
 with ⍺1 calculated every 20 seconds (configurable).
 The RR values are subject to artifact filtering, that is where the RR interval changes by more than +/- 5% (configurable).
