@@ -1,7 +1,7 @@
 # FatMaxxer
 
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240"> |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240">
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240"> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240">
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
 There are promising signs that running or cycling at ⍺1==0.75 corresponds to the first ventilatory threshold "VT1" or FatMax
