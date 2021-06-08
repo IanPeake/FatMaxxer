@@ -1,7 +1,7 @@
 # FatMaxxer
 
 ![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled.jpg)
-
+|
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200">
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
