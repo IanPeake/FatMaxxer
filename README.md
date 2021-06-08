@@ -54,5 +54,6 @@ Log file output to "external" storage; may not work on Android versions later th
 - Marco Altini's Python colab
   (https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
   FatMaxxer ⍺1 has been checked to approximately correspond to this code.
+- Manas Sharma's polynomial fitting implementation (https://www.bragitoff.com/2017/04/polynomial-fitting-java-codeprogram-works-android-well/)
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
 - GraphView (https://github.com/jjoe64/GraphView)
