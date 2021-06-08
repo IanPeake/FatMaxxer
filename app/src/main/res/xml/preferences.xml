@@ -9,8 +9,8 @@
 
     <SwitchPreferenceCompat
         app:key="notificationsEnabled"
-        app:title="Enable Notifications"
-        app:summary="Updates via notification"/>
+        app:title="Enable Notification Updates"
+        app:summary="Updates via ongoing notification"/>
 
     <EditTextPreference
         app:key="polarDeviceID"

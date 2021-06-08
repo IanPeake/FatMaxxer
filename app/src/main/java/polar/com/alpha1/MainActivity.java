@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager;
 
 // https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -40,6 +41,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -709,6 +711,16 @@ public class MainActivity extends AppCompatActivity {
         artifactSeries.setColor(Color.BLUE);
         //hrvSeries.setColor(Color.BLUE);
 
+//        graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
+//        graphView.getGridLabelRenderer().setNumHorizontalLabels(3); // only 4 because of the space
+//        // set manual x bounds to have nice steps
+//        graphView.getViewport().setMinX(new Date().getTime());
+//        graphView.getViewport().setMaxX(new Date().getTime() + 120000);
+//        graphView.getViewport().setXAxisBoundsManual(true);
+//        // as we use dates as labels, the human rounding to nice readable numbers
+//        // is not necessary
+//        graphView.getGridLabelRenderer().setHumanRounding(false);
+
         //setContentView(R.layout.activity_settings);
         Log.d(TAG, "Settings...");
         text_view.setText("Settings");
@@ -988,10 +1000,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             text_a1.setBackgroundResource(R.color.colorEasyIntensity);
         }
-        hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
-        a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
+//        hrSeries.appendData(new DataPoint(new Date(timestamp).getTime(), data.hr), true, 65535);
+//        a1Series.appendData(new DataPoint(new Date(timestamp).getTime(), alpha1Windowed * 100.0), true, 65535);
+//        //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+//        artifactSeries.appendData(new DataPoint(new Date(timestamp).getTime(), artifactsPercentWindowed), true, 65535);
+        hrSeries.appendData(new DataPoint(elapsed, data.hr), true, 65535);
+        a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), true, 65535);
         //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-        artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
+        artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), true, 65535);
 
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
         Log.d(TAG, logstring);
@@ -1088,14 +1104,17 @@ public class MainActivity extends AppCompatActivity {
     private void contextualNonDisplayUpdate(@NotNull PolarHrData data, long currentTime_ms){
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdate_ms) / 1000;
             long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
+
             double a1 = alpha1RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
+            final int minUpdateWaitSeconds = 10;
+            final int maxUpdateWaitSeconds = 60;
             String artifactsUpdate = "";
             String featuresUpdate = "";
-            if (timeSinceLastSpokenArtifactsUpdate_s > 10) {
+            if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {
                 if (artifactsPercentWindowed > 5 && data.hr > 80
                         || artifactsPercentWindowed > 20
-                        || timeSinceLastSpokenArtifactsUpdate_s > 60
+                        || timeSinceLastSpokenArtifactsUpdate_s >= maxUpdateWaitSeconds
                 ) {
                     if (data.hr > 130 || a1 < 0.85) {
                         artifactsUpdate = " lost " + artifactsPercentWindowed;
@@ -1131,8 +1150,8 @@ public class MainActivity extends AppCompatActivity {
         // Update the user via audio / notification, if enabled
         private void nonScreenUpdate(String update) {
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
-                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
-                notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
+                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
+                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% rmssd "+rmssdWindowed);
                 notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
             }
             if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
