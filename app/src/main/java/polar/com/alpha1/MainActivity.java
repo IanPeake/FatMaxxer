@@ -65,7 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String API_LOGGER_TAG = "API LOGGER";
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
-    private int nextNotificationID = 0;
+    private final int NOTIFICATION_ID = 0;
+    private final String NOTIFICATION_TAG = "alpha1update";
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -487,11 +488,11 @@ public class MainActivity extends AppCompatActivity {
     // FIXME: premature optimization is the root of all evil
     // Not that much storage required, does not avoid the fundamental problem that
     // our app gets paused anyway
-    public double[] rr = new double[maxrrs];
+    public double[] rrInterval = new double[maxrrs];
     // timestamp of recently recorded RR (in ms since epoch)
-    public long[] rr_timestamp = new long[maxrrs];
+    public long[] rrIntervalTimestamp = new long[maxrrs];
     // timestamps of artifact
-    private long[] dropped_ts = new long[maxrrs];
+    private long[] artifactTimestamp = new long[maxrrs];
     // oldest and newest recorded RRs in the recent window
     public int oldestSample = 0;
     public int newestSample = 0;
@@ -513,21 +514,32 @@ public class MainActivity extends AppCompatActivity {
     double artifactCorrectionThreshold;
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
-    private TextToSpeech ttobj;
     // the last time (since epoch) a1 was evaluated
-    private long prevA1Timestamp = 0;
-    private FileWriter rrLogStream;
-    private FileWriter featureLogStream;
-    private double prevrr = 0;
-    private boolean starting = false;
-    private long prevSpokenUpdate_ms = 0;
-    private long prevSpokenArtifactsUpdate_ms = 0;
-    private int totalRejected = 0;
-    private boolean thisIsFirstSample = false;
+    public long prevA1Timestamp = 0;
+    public double prevrr = 0;
+    public boolean starting = false;
+    public long prevSpokenUpdate_ms = 0;
+    public long prevSpokenArtifactsUpdate_ms = 0;
+    public int totalRejected = 0;
+    public boolean thisIsFirstSample = false;
+
     NotificationManagerCompat notificationManager;
     NotificationCompat.Builder notificationBuilder;
 
+    private TextToSpeech ttobj;
+    MediaPlayer mp;
+
+    private FileWriter rrLogStream;
+    private FileWriter featureLogStream;
+
+    PowerManager powerManager;
+    PowerManager.WakeLock wakeLock;
+
     GraphView graphView;
+    LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
+    //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
 
     /**
      * Return date in specified format.
@@ -555,25 +567,16 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected...");
         switch (item.getItemId()) {
             case R.id.quitOption:
+                notificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
+                try {
+                    api.disconnectFromDevice(DEVICE_ID);
+                } catch (PolarInvalidArgument polarInvalidArgument) {
+                    Log.d(TAG, "Quit: disconnectFromDevice: polarInvalidArgument "+
+                        polarInvalidArgument.getStackTrace());
+                }
                 System.exit(0);
-//            case R.id.soundEnableMenuOption:
-//                Log.d(TAG,"soundEnableMenuOption");
-//                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
-//                sharedPreferences.edit().commit();
-//            case R.id.soundDisableMenuOption:
-//                Log.d(TAG,"soundDisableMenuOption");
-//                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
-//                sharedPreferences.edit().commit();
             case R.id.connectOption:
                 tryPolarConnect();
-//            case R.id.settingsOption:
-//                //setContentView(R.layout.activity_settings);
-//                Log.d(TAG, "Settings...");
-//                text_view.setText("Settings");
-//                getSupportFragmentManager()
-//                    .beginTransaction()
-//                        .replace(R.id.settings_container, MySettingsFragment.class, null)
-//                        .commit();
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -681,14 +684,10 @@ public class MainActivity extends AppCompatActivity {
         featureLogStream = createLogFile("features");
         writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent", featureLogStream, "features");
 
-        final MediaPlayer mp = MediaPlayer.create(this, R.raw.artifact);
+        mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
 
         graphView = (GraphView) findViewById(R.id.graph);
-        LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
-        LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
-        //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
-        LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
         // activate horizontal zooming and scrolling
         graphView.getViewport().setScalable(true);
         graphView.getViewport().setScrollable(true);
@@ -729,8 +728,7 @@ public class MainActivity extends AppCompatActivity {
         notificationManager = NotificationManagerCompat.from(this);
 
         // notificationId is a unique int for each notification that you must define
-        notificationManager.notify(nextNotificationID, notificationBuilder.build());
-        nextNotificationID++;
+        notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
@@ -747,13 +745,11 @@ public class MainActivity extends AppCompatActivity {
                 public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                     text_view.setText("CONNECTED");
                     Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
-                    //DEVICE_ID = polarDeviceInfo.deviceId;
                 }
 
                 @Override
                 public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
                     Log.d(TAG, "Polar device CONNECTING: " + polarDeviceInfo.deviceId);
-                    //DEVICE_ID = polarDeviceInfo.deviceId;
                 }
 
                 @Override
@@ -796,115 +792,142 @@ public class MainActivity extends AppCompatActivity {
 
                 //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(thisContext);
 
-                private int getNrSamples() {
-                    int nrSamples = (newestSample < oldestSample) ? (newestSample + maxrrs - oldestSample) : (newestSample - oldestSample);
-                    return nrSamples;
-                }
-
-                // extract current history from circular buffer (ugh)
-                // FIXME: requires invariants
-                public double[] copySamples() {
-                    double[] result = new double[getNrSamples()];
-                    int next = 0;
-                    // FIXME: unverified
-                    for (int i = oldestSample; i != newestSample; i = (i + 1) % rr.length) {
-                        result[next] = rr[i];
-                        next++;
-                    }
-                    return result;
-                }
-
-                private int getNrArtifacts() {
-                    int result = 0;
-                    for (int i = oldestArtifactSample; i != newestArtifactSample; i = (i + 1) % dropped_ts.length) {
-                        result++;
-                    }
-                    return result;
-                }
-
                 @Override
                 public void hrNotificationReceived(@NonNull String identifier, @NonNull PolarHrData data) {
-                    wakeLock.acquire();
-                    Log.d(TAG, "hrNotificationReceived");
+                    updateTrackedFeatures(data);
+                }
 
-                    long currentTimeMS = System.currentTimeMillis();
-                    long timestamp = currentTimeMS;
-                    for (int rr : data.rrsMs) {
-                        String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-                        writeLogFile(msg, rrLogStream, "rr");
-                        logRRelapsedMS += rr;
-                        timestamp += rr;
-                    }
-                    if (!started) {
-                        Log.d(TAG, "hrNotificationReceived: started!");
-                        started = true;
-                        starting = true;
-                        thisIsFirstSample = true;
-                        firstSampleMS = currentTimeMS;
-                    }
-                    //
-                    // FILTERING / RECORDING RR intervals
-                    //
-                    String rejected = "";
-                    boolean haveArtifacts = false;
-                    List<Integer> rrsMs = data.rrsMs;
-                    for (int si = 0; si < data.rrsMs.size(); si++) {
-                        double newrr = data.rrsMs.get(si);
-                        double lowbound = prevrr * (1 - artifactCorrectionThreshold);
-                        double upbound = prevrr * (1 + artifactCorrectionThreshold);
-                        Log.d(TAG, "prevrr " + prevrr + " lowbound " + lowbound + " upbound " + upbound);
-                        if (thisIsFirstSample || lowbound < newrr && newrr < upbound) {
-                            Log.d(TAG, "accept " + newrr);
-                            // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
-                            rr[newestSample] = newrr;
-                            rr_timestamp[newestSample] = currentTimeMS;
-                            newestSample = (newestSample + 1) % maxrrs;
-                            thisIsFirstSample = false;
-                        } else {
-                            Log.d(TAG, "drop...");
-                            dropped_ts[newestArtifactSample] = currentTimeMS;
-                            newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
-                            Log.d(TAG, "reject artifact " + newrr);
-                            rejected += "" + newrr;
-                            haveArtifacts = true;
-                            totalRejected++;
-                        }
-                        prevrr = newrr;
-                    }
-                    String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
-                    Log.d(TAG, "Polar device HR value: " + data.hr + " rrsMs: " + data.rrsMs + " rr: " + data.rrs + " contact: " + data.contactStatus + "," + data.contactStatusSupported + " " + rejMsg);
-                    int expired = 0;
-                    // expire old samples
-                    Log.d(TAG, "Expire old RRs");
-                    while (rr_timestamp[oldestSample] < currentTimeMS - rrWindowSize * 1000) {
-                        oldestSample = (oldestSample + 1) % maxrrs;
-                        expired++;
-                    }
-                    Log.d(TAG, "Expire old artifacts");
-                    while (oldestArtifactSample != newestArtifactSample && dropped_ts[oldestArtifactSample] < currentTimeMS - rrWindowSize * 1000) {
-                        Log.d(TAG, "Expire at " + oldestArtifactSample);
-                        oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
-                    }
-                    long elapsedMS = (currentTimeMS - firstSampleMS);
-                    Log.d(TAG, "elapsedMS " + elapsedMS);
-                    //
-                    long elapsedSeconds = elapsedMS / 1000;
-                    long absSeconds = Math.abs(elapsedSeconds);
-                    String positive = String.format(
-                            "%02d:%02d:%02d",
-                            absSeconds / 3600,
-                            (absSeconds % 3600) / 60,
-                            absSeconds % 60);
-                    text_time.setText(positive);
 
-                    //
-                    // FEATURES
-                    //
-                    long elapsed = elapsedMS / 1000;
-                    int nrSamples = getNrSamples();
-                    int nrArtifacts = getNrArtifacts();
-                    double[] samples = copySamples();
-                    Log.d(TAG, "Samples: " + v_toString(samples));
+                @Override
+                    public void polarFtpFeatureReady(@NonNull String s) {
+                        Log.d(TAG, "FTP ready");
+                    }
+                });
+
+                speech_on.setOnClickListener(v -> {
+                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
+                });
+
+                speech_off.setOnClickListener(v -> {
+                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
+                });
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
+                    this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                }
+
+                // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
+                tryPolarConnect();
+        }
+
+    private int getNrSamples() {
+        int nrSamples = (newestSample < oldestSample) ? (newestSample + maxrrs - oldestSample) : (newestSample - oldestSample);
+        return nrSamples;
+    }
+
+    // extract current history from circular buffer (ugh)
+    // FIXME: requires invariants
+    public double[] copySamples() {
+        double[] result = new double[getNrSamples()];
+        int next = 0;
+        // FIXME: unverified
+        for (int i = oldestSample; i != newestSample; i = (i + 1) % rrInterval.length) {
+            result[next] = rrInterval[i];
+            next++;
+        }
+        return result;
+    }
+
+    private int getNrArtifacts() {
+        int result = 0;
+        for (int i = oldestArtifactSample; i != newestArtifactSample; i = (i + 1) % artifactTimestamp.length) {
+            result++;
+        }
+        return result;
+    }
+
+    private void updateTrackedFeatures(@NotNull PolarHrData data) {
+        //wakeLock.acquire();
+        Log.d(TAG, "hrNotificationReceived");
+
+        long currentTimeMS = System.currentTimeMillis();
+        long timestamp = currentTimeMS;
+        for (int rr : data.rrsMs) {
+            String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
+            writeLogFile(msg, rrLogStream, "rr");
+            logRRelapsedMS += rr;
+            timestamp += rr;
+        }
+        if (!started) {
+            Log.d(TAG, "hrNotificationReceived: started!");
+            started = true;
+            starting = true;
+            thisIsFirstSample = true;
+            firstSampleMS = currentTimeMS;
+        }
+        //
+        // FILTERING / RECORDING RR intervals
+        //
+        String rejected = "";
+        boolean haveArtifacts = false;
+        List<Integer> rrsMs = data.rrsMs;
+        for (int si = 0; si < data.rrsMs.size(); si++) {
+            double newrr = data.rrsMs.get(si);
+            double lowbound = prevrr * (1 - artifactCorrectionThreshold);
+            double upbound = prevrr * (1 + artifactCorrectionThreshold);
+            Log.d(TAG, "prevrr " + prevrr + " lowbound " + lowbound + " upbound " + upbound);
+            if (thisIsFirstSample || lowbound < newrr && newrr < upbound) {
+                Log.d(TAG, "accept " + newrr);
+                // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
+                rrInterval[newestSample] = newrr;
+                rrIntervalTimestamp[newestSample] = currentTimeMS;
+                newestSample = (newestSample + 1) % maxrrs;
+                thisIsFirstSample = false;
+            } else {
+                Log.d(TAG, "drop...");
+                artifactTimestamp[newestArtifactSample] = currentTimeMS;
+                newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
+                Log.d(TAG, "reject artifact " + newrr);
+                rejected += "" + newrr;
+                haveArtifacts = true;
+                totalRejected++;
+            }
+            prevrr = newrr;
+        }
+        String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
+        Log.d(TAG, "Polar device HR value: " + data.hr + " rrsMs: " + data.rrsMs + " rr: " + data.rrs + " contact: " + data.contactStatus + "," + data.contactStatusSupported + " " + rejMsg);
+        int expired = 0;
+        // expire old samples
+        Log.d(TAG, "Expire old RRs");
+        while (rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSize * 1000) {
+            oldestSample = (oldestSample + 1) % maxrrs;
+            expired++;
+        }
+        Log.d(TAG, "Expire old artifacts");
+        while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSize * 1000) {
+            Log.d(TAG, "Expire at " + oldestArtifactSample);
+            oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
+        }
+        long elapsedMS = (currentTimeMS - firstSampleMS);
+        Log.d(TAG, "elapsedMS " + elapsedMS);
+        //
+        long elapsedSeconds = elapsedMS / 1000;
+        long absSeconds = Math.abs(elapsedSeconds);
+        String positive = String.format(
+                "%02d:%02d:%02d",
+                absSeconds / 3600,
+                (absSeconds % 3600) / 60,
+                absSeconds % 60);
+        text_time.setText(positive);
+
+        //
+        // FEATURES
+        //
+        long elapsed = elapsedMS / 1000;
+        int nrSamples = getNrSamples();
+        int nrArtifacts = getNrArtifacts();
+        double[] samples = copySamples();
+        Log.d(TAG, "Samples: " + v_toString(samples));
                 /*
                 int firstArtifactIndex = v_containsArtifacts(samples);
                 if (firstArtifactIndex >= 0) {
@@ -913,99 +936,74 @@ public class MainActivity extends AppCompatActivity {
                     throw new IllegalStateException(msg);
                 }
                 */
-                    rmssdWindowed = getRMSSD(samples);
-                    // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
-                    hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
-                    // Periodic actions: check alpha1 and issue voice update
-                    // - skip one period's worth after first HR update
-                    // - only within the first two seconds of this period window
-                    // - only when at least three seconds have elapsed since last invocation
-                    // FIXME: what precisely is required for alpha1 to be well-defined?
-                    // FIXME: The prev_a1_check now seems redundant
-                    if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 1) && (currentTimeMS > prevA1Timestamp + 3000)) {
-                        alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
-                        prevA1Timestamp = currentTimeMS;
-                        // notificationId is a unique int for each notification that you must define
-                        //nextNotificationID++;
-                    }
-                    alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
-                    //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
-                    writeLogFile("" + timestamp + "," + hrWindowed + "," + rmssdWindowed + "," + "," + alpha1RoundedWindowed + "," + nrArtifacts + "," + nrSamples + "," + artifactsPercentWindowed, featureLogStream, "features");
-
-                    //
-                    // DISPLAY // AUDIO // LOGGING
-                    //
-                    if (haveArtifacts && sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
-                        //spokenOutput("drop");
-                        mp.start();
-                    }
-                    StringBuilder logmsg = new StringBuilder();
-                    logmsg.append(elapsed + "s");
-                    logmsg.append(", rrsMs: " + data.rrsMs);
-                    logmsg.append(rejMsg);
-                    logmsg.append(", total rejected: " + totalRejected);
-                    logmsg.append(" battery " + batteryLevel);
-                    String logstring = logmsg.toString();
-
-                    artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
-                    text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%)");
-                    if (haveArtifacts) {
-                        text_artifacts.setBackgroundResource(R.color.colorHighlight);
-                    } else {
-                        text_artifacts.setBackgroundResource(R.color.colorBackground);
-                    }
-                    text_view.setText(logstring);
-                    text_hr.setText("" + data.hr);
-                    text_hrv.setText("" + round(rmssdWindowed));
-                    text_a1.setText("" + alpha1RoundedWindowed);
-                    if (alpha1RoundedWindowed < 0.5) {
-                        text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                    } else if (alpha1RoundedWindowed < 0.75) {
-                        text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                    } else if (alpha1RoundedWindowed < 1.0) {
-                        text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
-                    } else {
-                        text_a1.setBackgroundResource(R.color.colorEasyIntensity);
-                    }
-                    hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
-                    a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
-                    //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-                    artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
-
-                    Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
-                    Log.d(TAG, logstring);
-                    Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
-                    spokenUpdate(data, currentTimeMS);
-                    starting = false;
-                    wakeLock.release();
-                }
-
-                @Override
-                public void polarFtpFeatureReady(@NonNull String s) {
-                    Log.d(TAG, "FTP ready");
-                }
-            });
-
-            speech_on.setOnClickListener(v -> {
-                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
-            });
-
-            speech_off.setOnClickListener(v -> {
-                sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
-            });
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
-                this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            }
-
-            // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
-            tryPolarConnect();
+        rmssdWindowed = getRMSSD(samples);
+        // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
+        hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
+        // Periodic actions: check alpha1 and issue voice update
+        // - skip one period's worth after first HR update
+        // - only within the first two seconds of this period window
+        // - only when at least three seconds have elapsed since last invocation
+        // FIXME: what precisely is required for alpha1 to be well-defined?
+        // FIXME: The prev_a1_check now seems redundant
+        if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
+            alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
+            prevA1Timestamp = currentTimeMS;
+            //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
+            writeLogFile("" + timestamp + "," + hrWindowed + "," + rmssdWindowed + "," + "," + alpha1RoundedWindowed + "," + nrArtifacts + "," + nrSamples + "," + artifactsPercentWindowed, featureLogStream, "features");
         }
+        alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
+
+        //
+        // DISPLAY // AUDIO // LOGGING
+        //
+        if (haveArtifacts && sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
+            //spokenOutput("drop");
+            mp.start();
+        }
+        StringBuilder logmsg = new StringBuilder();
+        logmsg.append(elapsed + "s");
+        logmsg.append(", rrsMs: " + data.rrsMs);
+        logmsg.append(rejMsg);
+        logmsg.append(", total rejected: " + totalRejected);
+        logmsg.append(" battery " + batteryLevel);
+        String logstring = logmsg.toString();
+
+        artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
+        text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%)");
+        if (haveArtifacts) {
+            text_artifacts.setBackgroundResource(R.color.colorHighlight);
+        } else {
+            text_artifacts.setBackgroundResource(R.color.colorBackground);
+        }
+        text_view.setText(logstring);
+        text_hr.setText("" + data.hr);
+        text_hrv.setText("" + round(rmssdWindowed));
+        text_a1.setText("" + alpha1RoundedWindowed);
+        if (alpha1RoundedWindowed < 0.5) {
+            text_a1.setBackgroundResource(R.color.colorMaxIntensity);
+        } else if (alpha1RoundedWindowed < 0.75) {
+            text_a1.setBackgroundResource(R.color.colorMedIntensity);
+        } else if (alpha1RoundedWindowed < 1.0) {
+            text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
+        } else {
+            text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+        }
+        hrSeries.appendData(new DataPoint(elapsedSeconds, data.hr), true, 65535);
+        a1Series.appendData(new DataPoint(elapsedSeconds, alpha1Windowed * 100.0), true, 65535);
+        //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+        artifactSeries.appendData(new DataPoint(elapsedSeconds, artifactsPercentWindowed), true, 65535);
+
+        Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
+        Log.d(TAG, logstring);
+        Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
+        contextualNonDisplayUpdate(data, currentTimeMS);
+        starting = false;
+        //wakeLock.release();
+    }
 
     private void tryPolarConnect() {
         Log.d(TAG,"tryPolarConnect");
         //SharedPreferences.Editor editor = sharedPreferences.edit();
-        //DEVICE_ID = sharedPreferences.getString(SHARED_PREFS_KEY, "");
         DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
         if (DEVICE_ID.length()>0) {
             try {
@@ -1086,8 +1084,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG,"testRMSSD_1 done");
     }
 
-    // FIXME: get rid of params, except for currentTime_ms
-    private void spokenUpdate(@NotNull PolarHrData data, long currentTime_ms){
+    // determine whether to update, and what content, to provide via audio/notification
+    private void contextualNonDisplayUpdate(@NotNull PolarHrData data, long currentTime_ms){
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdate_ms) / 1000;
             long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
             double a1 = alpha1RoundedWindowed;
@@ -1130,12 +1128,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Update the user via notifications / notifications
+        // Update the user via audio / notification, if enabled
         private void nonScreenUpdate(String update) {
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
                 notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
-                notificationManager.notify("alpha1update", nextNotificationID, notificationBuilder.build());
+                notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
             }
             if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
                 ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);

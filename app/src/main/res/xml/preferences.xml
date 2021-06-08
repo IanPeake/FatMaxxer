@@ -5,12 +5,12 @@
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
         app:title="Enable Audio Updates"
-        app:summary="Send feature updates via audio (speaker/headphone)"/>
+        app:summary="Updates via audio"/>
 
     <SwitchPreferenceCompat
         app:key="notificationsEnabled"
         app:title="Enable Notifications"
-        app:summary="Send feature updates as Android notification"/>
+        app:summary="Updates via notification"/>
 
     <EditTextPreference
         app:key="polarDeviceID"
