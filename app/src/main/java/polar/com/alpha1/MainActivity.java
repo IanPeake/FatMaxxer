@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -31,6 +32,7 @@ import androidx.preference.PreferenceManager;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.PointsGraphSeries;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private final String NOTIFICATION_TAG = "alpha1update";
 
     final double alpha1HRVvt1 = 0.75;
-    final double alpha1HRVvt2 = 0.5
+    final double alpha1HRVvt2 = 0.5;
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -541,8 +543,11 @@ public class MainActivity extends AppCompatActivity {
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1HRVvt1Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1HRVvt2Series = new LineGraphSeries<DataPoint>();
     //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
+    final int maxDataPoints = 65535;
 
     /**
      * Return date in specified format.
@@ -591,6 +596,12 @@ public class MainActivity extends AppCompatActivity {
         //setContentView(R.layout.activity_fragment_container);
         setContentView(R.layout.activity_main);
 
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if (sharedPreferences.getBoolean("keepScreenOn", false)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
         createNotificationChannel();
 
         /*
@@ -601,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().executePendingTransactions();
          */
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         artifactCorrectionThreshold = Double.parseDouble(sharedPreferences.getString("artifactThreshold", "0.05"));
         alpha1EvalPeriod =  Integer.parseInt(sharedPreferences.getString("alpha1CalcPeriod", "20"));
 
@@ -702,14 +712,24 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMaxY(175);
         graphView.getGridLabelRenderer().setNumVerticalLabels(7);
         graphView.addSeries(a1Series);
+        graphView.addSeries(a1HRVvt1Series);
+        graphView.addSeries(a1HRVvt2Series);
         graphView.addSeries(hrSeries);
         // REQUIRED
         graphView.getSecondScale().addSeries(artifactSeries);
-        graphView.getSecondScale().setMaxY(100);
+        graphView.getSecondScale().setMaxY(10);
         graphView.getSecondScale().setMinY(0);
         a1Series.setColor(Color.GREEN);
+        a1Series.setThickness(5);
+        a1HRVvt1Series.setColor(getResources().getColor(R.color.colorMedIntensity));
+        a1HRVvt2Series.setColor(getResources().getColor(R.color.colorMaxIntensity));
         hrSeries.setColor(Color.RED);
         artifactSeries.setColor(Color.BLUE);
+        a1HRVvt1Series.setThickness(3);
+        a1HRVvt2Series.setThickness(3);
+        a1HRVvt1Series.appendData(new DataPoint(0,alpha1HRVvt1 * 100), false, maxDataPoints);
+        a1HRVvt2Series.appendData(new DataPoint(0,alpha1HRVvt2 * 100), false, maxDataPoints);
+
         //hrvSeries.setColor(Color.BLUE);
 
 //        graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
@@ -1003,14 +1023,17 @@ public class MainActivity extends AppCompatActivity {
         } else {
             text_a1.setBackgroundResource(R.color.colorEasyIntensity);
         }
-//        hrSeries.appendData(new DataPoint(new Date(timestamp).getTime(), data.hr), true, 65535);
-//        a1Series.appendData(new DataPoint(new Date(timestamp).getTime(), alpha1Windowed * 100.0), true, 65535);
-//        //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-//        artifactSeries.appendData(new DataPoint(new Date(timestamp).getTime(), artifactsPercentWindowed), true, 65535);
-        hrSeries.appendData(new DataPoint(elapsed, data.hr), true, 65535);
-        a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), true, 65535);
+        boolean scrollToEnd = (elapsed>150) && (elapsed % 10 == 0);
+        hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
+        a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
+        if (elapsed % 200 == 0) {
+            a1HRVvt1Series.appendData(new DataPoint(elapsed + 199, alpha1HRVvt1 * 100), scrollToEnd, maxDataPoints);
+        }
+        if (elapsed % 200 == 0) {
+            a1HRVvt2Series.appendData(new DataPoint(elapsed + 199, alpha1HRVvt2 * 100), scrollToEnd, maxDataPoints);
+        }
         //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
-        artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), true, 65535);
+        artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
 
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
         Log.d(TAG, logstring);
@@ -1110,14 +1133,14 @@ public class MainActivity extends AppCompatActivity {
 
             double a1 = alpha1RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
-            int minUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("minUpdateWaitSeconds", "15");
+            int minUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("minUpdateWaitSeconds", "15"));
             int maxUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("maxUpdateWaitSeconds", "60"));
             // something like your MAF --- close to your max training HR
             int upperOptimalHRthreshold = Integer.parseInt(sharedPreferences.getString("upperOptimalHRthreshold", "130"));
             int upperRestingHRthreshold = Integer.parseInt(sharedPreferences.getString("upperRestingHRthreshold", "90"));
-            double artifactsRateAlarmThreshold = Double.parseDouble(sharedPreferences.getString("artifactsRateAlarmThreshold", "5"))
-            double upperOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "1.0"))
-            double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"))
+            double artifactsRateAlarmThreshold = Double.parseDouble(sharedPreferences.getString("artifactsRateAlarmThreshold", "5"));
+            double upperOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "1.0"));
+            double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"));
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {

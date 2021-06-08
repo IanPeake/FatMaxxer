@@ -12,6 +12,11 @@
         app:title="Enable Notification Updates"
         app:summary="Updates via ongoing notification"/>
 
+    <SwitchPreferenceCompat
+        app:key="keepScreenOn"
+        app:title="Keep screen on"
+        app:summary="(Restart required) Keep screen on"/>
+
     <EditTextPreference
         app:key="polarDeviceID"
         app:title="Polar H10 Device ID (hex)"
