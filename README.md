@@ -22,7 +22,7 @@ Provides a real time GUI (cycling), and updates via speech to text (speaker/head
 - Beware, the spoken output is currently hard-configured to work for my preferred MAF heart rate of approx. 130
 
 ## User Interface ##
-Shows ⍺1 plus detected artifacts, number of samples and therefore artifacts as a percent in the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
+Shows ⍺1 plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
 
 Graph plots
 - primary axis (0-200)
