@@ -27,8 +27,8 @@ Some Garmin devices can show notifications, including during runs
 
 Graph plots
 - primary axis (0-200)
--- red trace: HR
--- green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
+  - red trace: HR
+  - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
 - secondary axis
 -- blue trace: artifacts (secondary axis)
 
