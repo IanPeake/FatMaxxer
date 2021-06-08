@@ -51,9 +51,11 @@ Log file output to "external" storage; may not work on Android versions later th
 - rr.log as per HRV Logger format
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
-## Known issues ##
-- Android pauses the app unpredictably. Interacting with the app regularly seems to help. Proposed solution---persistent notification.
-- Make spoken output customizable to your approx. HR zones
+## Known issues / limitations ##
+- support for ongoing notifications on some devices seems to be patchy
+- Android may pause the app unpredictably. Interacting with the app regularly seems to help. Persistent notification and option to keep screen on may help
+- back button to exit app is unreliable---the app may keep running in an inconsisent state 
+- make spoken output customizable to user's approx HR zones
 - features.csv does not output SDNN
 
 ## Acknowledgements ##
