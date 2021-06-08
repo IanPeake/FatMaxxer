@@ -26,9 +26,11 @@ Audible WAV sample (click) on dropped artifact.
 Some Garmin devices can show notifications, including during runs
 
 Graph plots
-- red trace: HR.
-- green trace: ⍺1 (values shown multiplied by 100, e.g. 0.75 reads as 75, to share primary axis with HR.)
-- blue trace: artifacts
+- primary axis (0-200)
+-- red trace: HR
+-- green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
+- secondary axis
+-- blue trace: artifacts (secondary axis)
 
 Log file output to "external SD"; may not work on Android versions later than 9ish.
 - rr.log as per HRV Logger format
