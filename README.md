@@ -2,19 +2,15 @@
 
 ![Screenshot](https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled.jpg)
 |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200">
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" width="200" alt="a1 notification to Garmin wearable">
 
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
 There are promising signs that running or cycling at ⍺1==0.75 corresponds to the first ventilatory threshold "VT1" or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 
-Android UI screenshot above (shows out of date buttons) from a recent run with warm up to HR in the 130--140 range, with ⍺1 fluctuating between approx 0.75--1.0.
+The ⍺1 value and other features are calculated over a two minute rolling window of RR values, with ⍺1 calculated every 20 seconds (configurable). The RR values are subject to artifact filtering (RR interval changes by more than +/- 5%---configurable).
 
-Two minute rolling window for rmssd and ⍺1. The value of ⍺1 is calculated every 20 seconds.
-
-Artifact detection (RR interval changes too fast) and filtering.
-
-Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and ⍺1 and detected artifacts / number of samples (percentage %) in the window.
+Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and ⍺1 and detected artifacts / number of samples (percentage %) in the window. Android UI screenshot above (shows out of date buttons) from a recent run with warm up to HR in the 130--140 range, with ⍺1 fluctuating between approx 0.75--1.0.
 
 Audio/notification updates for ⍺1, detected artifact rate, HR, etc.,
 adjusting to work rate---HR and/or ⍺1.
@@ -23,7 +19,7 @@ The value ⍺1 at HRs above a given threshold.
 Artifact reporting above threshold / at higher intensity.
 More frequent advice at higher intensity.
 Audible WAV sample (click) on dropped artifact.
-Some Garmin devices can show notifications, including during runs
+Some Garmin devices can show notifications, including during runs (see photo).
 
 Graph plots
 - primary axis (0-200)
