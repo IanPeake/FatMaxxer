@@ -33,5 +33,5 @@
         app:key="alpha1CalcPeriod"
         app:title="Alpha1 Calculation Period (sec)"
         app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
-    
+
 </PreferenceScreen>

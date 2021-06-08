@@ -545,6 +545,9 @@ public class MainActivity extends AppCompatActivity {
     LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt2Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a125Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1125Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1175Series = new LineGraphSeries<DataPoint>();
     //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
     final int maxDataPoints = 65535;
@@ -716,10 +719,13 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinX(0);
         graphView.getViewport().setMaxX(119);
         graphView.getViewport().setYAxisBoundsManual(true);
-        graphView.getViewport().setMinY(25);
-        graphView.getViewport().setMaxY(175);
-        graphView.getGridLabelRenderer().setNumVerticalLabels(7);
+        graphView.getViewport().setMinY(0);
+        graphView.getViewport().setMaxY(200);
+        graphView.getGridLabelRenderer().setNumVerticalLabels(5);
         graphView.addSeries(a1Series);
+        graphView.addSeries(a125Series);
+        graphView.addSeries(a1125Series);
+        graphView.addSeries(a1175Series);
         graphView.addSeries(a1HRVvt1Series);
         graphView.addSeries(a1HRVvt2Series);
         graphView.addSeries(hrSeries);
@@ -729,14 +735,23 @@ public class MainActivity extends AppCompatActivity {
         graphView.getSecondScale().setMinY(0);
         a1Series.setColor(Color.GREEN);
         a1Series.setThickness(5);
-        a1HRVvt1Series.setColor(getResources().getColor(R.color.colorMedIntensity));
-        a1HRVvt2Series.setColor(getResources().getColor(R.color.colorMaxIntensity));
+        a1HRVvt1Series.setColor(getResources().getColor(R.color.colorHRVvt1));
+        a1HRVvt2Series.setColor(getResources().getColor(R.color.colorHRVvt2));
+        a125Series.setColor(Color.GRAY);
+        a1175Series.setColor(Color.GRAY);
+        a1125Series.setColor(Color.GRAY);
+        a125Series.setThickness(1);
+        a1125Series.setThickness(1);
+        a1175Series.setThickness(1);
         hrSeries.setColor(Color.RED);
         artifactSeries.setColor(Color.BLUE);
-        a1HRVvt1Series.setThickness(3);
-        a1HRVvt2Series.setThickness(3);
+        a1HRVvt1Series.setThickness(5);
+        a1HRVvt2Series.setThickness(2);
         a1HRVvt1Series.appendData(new DataPoint(0,alpha1HRVvt1 * 100), false, maxDataPoints);
         a1HRVvt2Series.appendData(new DataPoint(0,alpha1HRVvt2 * 100), false, maxDataPoints);
+        a125Series.appendData(new DataPoint(0,25), false, maxDataPoints);
+        a1125Series.appendData(new DataPoint(0,125), false, maxDataPoints);
+        a1175Series.appendData(new DataPoint(0,175), false, maxDataPoints);
 
         //hrvSeries.setColor(Color.BLUE);
 
@@ -991,8 +1006,13 @@ public class MainActivity extends AppCompatActivity {
             prevA1Timestamp = currentTimeMS;
             //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
             writeLogFile("" + timestamp + "," + hrWindowed + "," + rmssdWindowed + "," + "," + alpha1RoundedWindowed + "," + nrArtifacts + "," + nrSamples + "," + artifactsPercentWindowed, featureLogStream, "features");
+            alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
+            if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
+                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
+                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% rmssd "+rmssdWindowed);
+                notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
+            }
         }
-        alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
 
         //
         // DISPLAY // AUDIO // LOGGING
@@ -1034,12 +1054,11 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsed>150) && (elapsed % 10 == 0);
         hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
         a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) {
-            a1HRVvt1Series.appendData(new DataPoint(elapsed + 199, alpha1HRVvt1 * 100), scrollToEnd, maxDataPoints);
-        }
-        if (elapsed % 200 == 0) {
-            a1HRVvt2Series.appendData(new DataPoint(elapsed + 199, alpha1HRVvt2 * 100), scrollToEnd, maxDataPoints);
-        }
+        if (elapsed % 200 == 0) a1HRVvt1Series.appendData(new DataPoint(elapsed + 199, 75), scrollToEnd, maxDataPoints);
+        if (elapsed % 200 == 0) a1HRVvt2Series.appendData(new DataPoint(elapsed + 199, 50), scrollToEnd, maxDataPoints);
+        if (elapsed % 200 == 0) a125Series.appendData(new DataPoint(elapsed + 199, 25), scrollToEnd, maxDataPoints);
+        if (elapsed % 200 == 0) a1125Series.appendData(new DataPoint(elapsed + 199, 125), scrollToEnd, maxDataPoints);
+        if (elapsed % 200 == 0) a1175Series.appendData(new DataPoint(elapsed + 199, 175), scrollToEnd, maxDataPoints);
         //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
         artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
 
@@ -1187,11 +1206,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Update the user via audio / notification, if enabled
         private void nonScreenUpdate(String update) {
-            if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
-                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
-                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% rmssd "+rmssdWindowed);
-                notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
-            }
             if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
                 ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
             }
