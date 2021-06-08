@@ -6,6 +6,8 @@
 According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
 measured using a Polar H10 heart rate strap.
 
+See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
+
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
 
@@ -36,7 +38,7 @@ Graph plots
 -- blue trace: artifacts (secondary axis)
 
 ## Audio/notification updates ##
-Provided for ⍺1, HR and other selected features in a context-sensitive way, adjusting to work rate.
+Audio or notification-based updates for ⍺1 and other selected features, adjusted to work rate.
 The value ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise.
 Artifact reporting above a hardcoded threshold, or at higher intensity.
 Updates are more frequent at higher intensities.
@@ -49,9 +51,11 @@ Log file output to "external" storage; may not work on Android versions later th
 - rr.log as per HRV Logger format
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
-## Known issues ##
-- Android pauses the app unpredictably. Interacting with the app regularly seems to help. Proposed solution---persistent notification.
-- Make spoken output customizable to your approx. HR zones
+## Known issues / limitations ##
+- support for ongoing notifications on some devices seems to be patchy
+- Android may pause the app unpredictably. Interacting with the app regularly seems to help. Persistent notification and option to keep screen on may help
+- back button to exit app is unreliable---the app may keep running in an inconsisent state 
+- make spoken output customizable to user's approx HR zones
 - features.csv does not output SDNN
 
 ## Acknowledgements ##
