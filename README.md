@@ -10,15 +10,14 @@ There are promising signs that running or cycling at ⍺1==0.75 corresponds to t
 
 The ⍺1 value and other features are calculated over a two minute rolling window of RR values, with ⍺1 calculated every 20 seconds (configurable). The RR values are subject to artifact filtering (RR interval changes by more than +/- 5%---configurable).
 
-Realtime UI shows elapsed time, instantaneous heart rate, RMSSD and ⍺1 and detected artifacts / number of samples (percentage %) in the window. Android UI screenshot above (shows out of date buttons) from a recent run with warm up to HR in the 130--140 range, with ⍺1 fluctuating between approx 0.75--1.0.
+Realtime UI shows: ⍺1 plus detected artifacts, number of samples and therefore artifacts as a percent in the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
 
-Audio/notification updates for ⍺1, detected artifact rate, HR, etc.,
-adjusting to work rate---HR and/or ⍺1.
-RMSSD at HRs below a given threshold.
-The value ⍺1 at HRs above a given threshold.
-Artifact reporting above threshold / at higher intensity.
-More frequent advice at higher intensity.
+Audio/notification updates are provided for ⍺1, HR and other selected features in a context-sensitive way, adjusting to work rate.
+The value ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise.
+Artifact reporting above a hardcoded threshold, or at higher intensity.
+Updates are more frequent at higher intensities.
 Audible WAV sample (click) on dropped artifact.
+Notifications are provided as a basic way to update a wearable:
 Some Garmin devices can show notifications, including during runs (see photo).
 
 Graph plots
@@ -28,7 +27,7 @@ Graph plots
 - secondary axis
 -- blue trace: artifacts (secondary axis)
 
-Log file output to "external SD"; may not work on Android versions later than 9ish.
+Log file output to "external" storage; may not work on Android versions later than 9ish.
 - rr.log as per HRV Logger format
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
