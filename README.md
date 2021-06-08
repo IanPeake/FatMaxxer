@@ -36,7 +36,7 @@ Graph plots
 -- blue trace: artifacts (secondary axis)
 
 ## Audio/notification updates ##
-Provided for ⍺1, HR and other selected features in a context-sensitive way, adjusting to work rate.
+Audio or notification-based updates for ⍺1 and other selected features, adjusted to work rate.
 The value ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise.
 Artifact reporting above a hardcoded threshold, or at higher intensity.
 Updates are more frequent at higher intensities.
