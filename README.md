@@ -3,7 +3,8 @@
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240"> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240">
 
-According to recent research (see below) the FatMaxxer Android app may help you to exercise at the effort level that maximises fat burning, using a Polar H10 heart rate strap.
+According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
+measured using a Polar H10 heart rate strap.
 
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
