@@ -27,4 +27,9 @@
         app:title="Alpha1 Calculation Period (sec)"
         app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
 
-    </PreferenceScreen>
+    <EditTextPreference
+        app:key="alpha1MaxOptimal"
+        app:title="Maximum alpha1 for optimal exercise"
+        app:summary="(Restart required) Maximum alpha1 for optimum fat burning zone (minimum required effort)"/>
+
+</PreferenceScreen>

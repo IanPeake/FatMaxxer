@@ -29,7 +29,6 @@ import androidx.preference.PreferenceManager;
 
 // https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -41,7 +40,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -65,10 +63,13 @@ import static java.lang.Math.sqrt;
 public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String API_LOGGER_TAG = "API LOGGER";
+    private static final String API_LOGGER_TAG = "FatMaxxer";
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
     private final int NOTIFICATION_ID = 0;
     private final String NOTIFICATION_TAG = "alpha1update";
+
+    final double alpha1HRVvt1 = 0.75;
+    final double alpha1HRVvt2 = 0.5
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -520,8 +521,8 @@ public class MainActivity extends AppCompatActivity {
     public long prevA1Timestamp = 0;
     public double prevrr = 0;
     public boolean starting = false;
-    public long prevSpokenUpdate_ms = 0;
-    public long prevSpokenArtifactsUpdate_ms = 0;
+    public long prevSpokenUpdateMS = 0;
+    public long prevSpokenArtifactsUpdateMS = 0;
     public int totalRejected = 0;
     public boolean thisIsFirstSample = false;
 
@@ -991,11 +992,13 @@ public class MainActivity extends AppCompatActivity {
         text_hr.setText("" + data.hr);
         text_hrv.setText("" + round(rmssdWindowed));
         text_a1.setText("" + alpha1RoundedWindowed);
-        if (alpha1RoundedWindowed < 0.5) {
+        // configurable top-of-optimal threshold for alpha1
+        double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
+        if (alpha1RoundedWindowed < alpha1HRVvt2) {
             text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-        } else if (alpha1RoundedWindowed < 0.75) {
+        } else if (alpha1RoundedWindowed < alpha1HRVvt1) {
             text_a1.setBackgroundResource(R.color.colorMedIntensity);
-        } else if (alpha1RoundedWindowed < 1.0) {
+        } else if (alpha1RoundedWindowed < alpha1MaxOptimal) {
             text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
         } else {
             text_a1.setBackgroundResource(R.color.colorEasyIntensity);
@@ -1102,48 +1105,52 @@ public class MainActivity extends AppCompatActivity {
 
     // determine whether to update, and what content, to provide via audio/notification
     private void contextualNonDisplayUpdate(@NotNull PolarHrData data, long currentTime_ms){
-            long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdate_ms) / 1000;
-            long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdate_ms) / 1000;
+            long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdateMS) / 1000;
+            long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
 
             double a1 = alpha1RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
-            final int minUpdateWaitSeconds = 10;
-            final int maxUpdateWaitSeconds = 60;
+            int minUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("minUpdateWaitSeconds", "15");
+            int maxUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("maxUpdateWaitSeconds", "60"));
+            // something like your MAF --- close to your max training HR
+            int upperOptimalHRthreshold = Integer.parseInt(sharedPreferences.getString("upperOptimalHRthreshold", "130"));
+            int upperRestingHRthreshold = Integer.parseInt(sharedPreferences.getString("upperRestingHRthreshold", "90"));
+            double artifactsRateAlarmThreshold = Double.parseDouble(sharedPreferences.getString("artifactsRateAlarmThreshold", "5"))
+            double upperOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "1.0"))
+            double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"))
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {
-                if (artifactsPercentWindowed > 5 && data.hr > 80
-                        || artifactsPercentWindowed > 20
+                if (artifactsPercentWindowed > artifactsRateAlarmThreshold && data.hr > (upperOptimalHRthreshold - 10)
                         || timeSinceLastSpokenArtifactsUpdate_s >= maxUpdateWaitSeconds
                 ) {
-                    if (data.hr > 130 || a1 < 0.85) {
-                        artifactsUpdate = " lost " + artifactsPercentWindowed;
-                    } else {
-                        artifactsUpdate = " lost " + artifactsPercentWindowed + " percent ";
-                    }
+                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
                 }
             }
-            if (timeSinceLastSpokenUpdate_s > 10) {
-                if (data.hr > 130 || a1 < 0.85) {
-                    // abbreviated
-                    artifactsUpdate = " lost " + artifactsPercentWindowed;
-                    featuresUpdate = data.hr + " " + alpha1RoundedWindowed + " ";
-                } else if ((data.hr > 120 || alpha1RoundedWindowed < 1.0)) {
-                    featuresUpdate = "Heart rate " + data.hr + ", Alpha one, " + alpha1RoundedWindowed + ",";
-                } else if (data.hr > 90 && timeSinceLastSpokenUpdate_s >= 60) {
-                    featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + alpha1RoundedWindowed + ",";
-                } else if (timeSinceLastSpokenUpdate_s >= 60) {
-                    featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd + ".";
+            if (timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
+                // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
+                if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
+                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
+                    featuresUpdate = alpha1RoundedWindowed + " " + data.hr;
+                // higher end of optimal - prioritise a1, close to undertraining?
+                } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1RoundedWindowed < upperOptimalAlpha1Threshold)) {
+                    featuresUpdate =  "Alpha one, " + alpha1RoundedWindowed + ". Heart rate " + data.hr;
+                // lower end of optimal - prioritise a1
+                } else if (data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
+                    featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + alpha1RoundedWindowed;
+                // warm up / cool down --- low priority, update RMSSD instead of alpha1
+                } else if (timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
+                    featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd;
                 }
             }
             if (featuresUpdate.length() > 0 || artifactsUpdate.length() > 0) {
-                if (artifactsPercentWindowed > 5) {
+                if (artifactsPercentWindowed > artifactsRateAlarmThreshold) {
                     nonScreenUpdate(artifactsUpdate + " " + featuresUpdate);
                 } else {
-                    nonScreenUpdate(featuresUpdate + " " + artifactsUpdate);
+                    nonScreenUpdate(featuresUpdate + ", " + artifactsUpdate);
                 }
-                if (featuresUpdate.length() > 0) prevSpokenUpdate_ms = currentTime_ms;
-                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdate_ms = currentTime_ms;
+                if (featuresUpdate.length() > 0) prevSpokenUpdateMS = currentTime_ms;
+                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdateMS = currentTime_ms;
             }
         }
 
