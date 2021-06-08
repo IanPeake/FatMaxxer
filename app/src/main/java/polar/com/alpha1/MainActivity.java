@@ -672,7 +672,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onInit(int status) {
                 ttobj.setLanguage(Locale.UK);
-                updateUserAsync("Voice output ready");
+                nonScreenUpdate("Voice output ready");
             }
         });
 
@@ -1121,58 +1121,59 @@ public class MainActivity extends AppCompatActivity {
             }
             if (featuresUpdate.length() > 0 || artifactsUpdate.length() > 0) {
                 if (artifactsPercentWindowed > 5) {
-                    updateUserAsync(artifactsUpdate + " " + featuresUpdate);
+                    nonScreenUpdate(artifactsUpdate + " " + featuresUpdate);
                 } else {
-                    updateUserAsync(featuresUpdate + " " + artifactsUpdate);
+                    nonScreenUpdate(featuresUpdate + " " + artifactsUpdate);
                 }
                 if (featuresUpdate.length() > 0) prevSpokenUpdate_ms = currentTime_ms;
                 if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdate_ms = currentTime_ms;
             }
         }
 
-    private void updateUserAsync(String update) {
-        if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
-            notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
-            notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
-            notificationManager.notify("alpha1update", nextNotificationID, notificationBuilder.build());
+        // Update the user via notifications / notifications
+        private void nonScreenUpdate(String update) {
+            if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
+                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop% "+artifactsPercentWindowed);
+                notificationBuilder.setContentText("a1: " + alpha1RoundedWindowed + " " + update);
+                notificationManager.notify("alpha1update", nextNotificationID, notificationBuilder.build());
+            }
+            if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
+                ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
+            }
         }
-        if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
-            ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            text_view.setText("Permission update: "+requestCode);
+            if (requestCode == 1) {
+                Log.d(TAG, "bt ready");
+            }
         }
-    }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        text_view.setText("Permission update: "+requestCode);
-        if (requestCode == 1) {
-            Log.d(TAG, "bt ready");
+        @Override
+        public void onPause() {
+            text_view.setText("Paused");
+            super.onPause();
+            api.backgroundEntered();
         }
-    }
 
-    @Override
-    public void onPause() {
-        text_view.setText("Paused");
-        super.onPause();
-        api.backgroundEntered();
-    }
-
-    @Override
-    public void onResume() {
-        text_view.setText("Resumed");
-        super.onResume();
-        api.foregroundEntered();
-    }
-
-    @Override
-    public void onDestroy() {
-        text_view.setText("Destroyed");
-        super.onDestroy();
-        try {
-            rrLogStream.close();
-        } catch (IOException e) {
-            text_view.setText("IOException "+e.toString());
-            e.printStackTrace();
+        @Override
+        public void onResume() {
+            text_view.setText("Resumed");
+            super.onResume();
+            api.foregroundEntered();
         }
-        api.shutDown();
-    }
+
+        @Override
+        public void onDestroy() {
+            text_view.setText("Destroyed");
+            super.onDestroy();
+            try {
+                rrLogStream.close();
+            } catch (IOException e) {
+                text_view.setText("IOException "+e.toString());
+                e.printStackTrace();
+            }
+            api.shutDown();
+        }
 }
