@@ -612,7 +612,15 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().executePendingTransactions();
          */
 
-        artifactCorrectionThreshold = Double.parseDouble(sharedPreferences.getString("artifactThreshold", "0.05"));
+        double artifactCorrectionThresholdSetting = Double.parseDouble(sharedPreferences.getString("artifactThreshold", "0.05"));
+        if (artifactCorrectionThresholdSetting >=0 && artifactCorrectionThresholdSetting <= 1) {
+            artifactCorrectionThreshold = artifactCorrectionThresholdSetting;
+        } else {
+            artifactCorrectionThreshold = 0.05;
+            sharedPreferences.edit().putString("artifactThreshold", ""+artifactCorrectionThreshold);
+            sharedPreferences.edit().commit();
+        }
+
         alpha1EvalPeriod =  Integer.parseInt(sharedPreferences.getString("alpha1CalcPeriod", "20"));
 
         // Notice PolarBleApi.ALL_FEATURES are enabled

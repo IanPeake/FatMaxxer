@@ -22,19 +22,16 @@
         app:title="Polar H10 Device ID (hex)"
         app:summary="(Restart required) Hexadecimal string, 8 characters"/>
 
-    <EditTextPreference
+    <DropDownPreference
         app:key="artifactThreshold"
         app:title="Artifact Rejection Threshold (%)"
-        app:summary="(Restart required) RRs differing by more than +/- threshold from the previous are rejected."/>
+        app:summary="(Restart required) RRs differing by more than +/- threshold percent from the previous are rejected."
+        app:entries="@array/artifactThresholdEntries"
+        app:entryValues="@array/artifactThresholdEntryValues"/>
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
         app:title="Alpha1 Calculation Period (sec)"
         app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
-
-    <EditTextPreference
-        app:key="alpha1MaxOptimal"
-        app:title="Maximum alpha1 for optimal exercise"
-        app:summary="(Restart required) Maximum alpha1 for optimum fat burning zone (minimum required effort)"/>
-
+    
 </PreferenceScreen>

@@ -1,0 +1,12 @@
+<resources>
+<string-array name="artifactThresholdEntries">
+    <item>5%</item>
+    <item>25%</item>
+</string-array>
+
+<string-array name="artifactThresholdEntryValues">
+<item>0.05</item>
+<item>0.25</item>
+</string-array>
+
+</resources>
