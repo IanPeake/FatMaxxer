@@ -39,15 +39,15 @@ Graph plots
   - blue trace: artifacts (secondary axis)
 
 ## Audio/notification updates ##
-Provides audio or notifications (configurable) for ⍺1 and other selected features, adjusted to work rate.
+Provides audio and/or notifications (configurable) for ⍺1 and other selected features, adjusted to work rate.
 Updates ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise.
 Reports artifacts above a hardcoded threshold, or at higher intensity.
-Updates are more frequent at higher intensities.
+Ongoing notification is sent whenever ⍺1 is recalculated.
+Audio updates are more frequent at higher intensities.
 Audible WAV sample (click) on dropped artifact.
-Updates are provided via ongoing notification every time ⍺1 is calculated.
 The notification title provides ⍺1 and artifacts dropped (%).
 This provides as a basic way to view output on a wearable.
-Some Garmin devices can show notifications, including during runs (see photo above).
+Some Garmin devices show notification titles, including during activities (see photo above).
 
 ## Logs ##
 Log file is output to "external" storage; may not work on Android versions later than 9ish.
