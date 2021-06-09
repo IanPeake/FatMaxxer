@@ -55,10 +55,12 @@ Log file is output to "external" storage; may not work on Android versions later
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
 ## Known issues / limitations ##
+- Use a more generic method to "share" the log files with other apps through Android API
+- X axis (elapsed time) should be labelled in mins:secs rather than secs
 - GraphView plotter is quirky and could be replaced
 - Android may pause the app unpredictably. Interacting with the app regularly seems to help.
   The newly-implemented ongoing notification and option to keep screen on may helped to solve the issue; feedback requested.
-- Support for ongoing notifications on some devices seems patchy
+- Support for ongoing notifications seems patchy on some devices
 - Audio update frequency should be based purely on ⍺1---it's an objective measure of effort, after all
 - features.csv does not output SDNN
 
