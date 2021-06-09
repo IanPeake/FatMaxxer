@@ -68,6 +68,8 @@ Log file is output to "external" storage; may not work on Android versions later
   The newly-implemented ongoing notification and option to keep screen on may helped to solve the issue; feedback requested.
 - Support for ongoing notifications seems patchy on some devices
 - Audio update frequency should be based purely on ⍺1---it's an objective measure of effort, after all
+- Dynamically detect workout vs rest and change artefact threshold accordingly
+- UI cleanup to show battery, demote RMSSD, remove ugly status line
 - features.csv does not output SDNN
 
 ## Acknowledgements ##
