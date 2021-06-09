@@ -602,7 +602,7 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_SEARCH = 1;
     final int MENU_CONNECT_DEFAULT = 2;
     final int MENU_CONNECT_DISCOVERED = 3;
-    
+
     // collect devices by deviceId so we don't spam the menu
     Map<String,String> discoveredDevices = new HashMap<String,String>();
     Map<Integer,String> discoveredDevicesMenu = new HashMap<Integer,String>();
@@ -663,11 +663,13 @@ public class MainActivity extends AppCompatActivity {
         if (broadcastDisposable == null) {
             broadcastDisposable = api.startListenForPolarHrBroadcasts(null)
                     .subscribe(polarBroadcastData -> {
-                                    String desc = polarBroadcastData.polarDeviceInfo.name;
-                                    String msg = "Discovered " + desc + " HR " + polarBroadcastData.hr;
-                                    discoveredDevices.put(polarBroadcastData.polarDeviceInfo.deviceId,desc);
-                                    text_view.setText(msg);
-                                    Log.d(TAG, msg);
+                                    if (!discoveredDevices.containsKey(polarBroadcastData.polarDeviceInfo.deviceId)) {
+                                        String desc = polarBroadcastData.polarDeviceInfo.name;
+                                        String msg = "Discovered " + desc + " HR " + polarBroadcastData.hr;
+                                        discoveredDevices.put(polarBroadcastData.polarDeviceInfo.deviceId,desc);
+                                        text_view.setText(msg);
+                                        Log.d(TAG, msg);
+                                    }
                                 },
                                 error -> {
                                     Log.e(TAG, "Broadcast listener failed. Reason: " + error);
@@ -886,10 +888,15 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
+                    quitSearchForPolarDevices();
                     Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
                     text_view.setText("Connected to "+polarDeviceInfo.deviceId);
+                    // if no default device, store this one
+                    DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
                     if (DEVICE_ID.length()==0) {
-
+                        Log.d(TAG,"Setting default device "+polarDeviceInfo.deviceId);
+                        text_view.setText("Setting default device "+ polarDeviceInfo.deviceId);
+                        sharedPreferences.edit().putString("polarDeviceID", polarDeviceInfo.deviceId).commit();
                     }
                 }
 
@@ -909,6 +916,7 @@ public class MainActivity extends AppCompatActivity {
                     magDisposable = null;
                     ppgDisposable = null;
                     ppiDisposable = null;
+                    searchForPolarDevices();
                 }
 
                 @Override
@@ -1167,15 +1175,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void tryPolarConnect(String tmpDeviceID) {
-        quitSearchForPolarDevices();
+//        quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect to "+tmpDeviceID);
-        // if no default device, store this one
-        DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
-        if (DEVICE_ID.length()==0) {
-            Log.d(TAG,"tryPolarConnect setting default device "+tmpDeviceID);
-            text_view.setText("Setting default device "+ tmpDeviceID);
-            sharedPreferences.edit().putString("polarDeviceID", tmpDeviceID).commit();
-        }
         try {
             text_view.setText("Trying to connect to: " + tmpDeviceID);
             api.connectToDevice(tmpDeviceID);
@@ -1186,7 +1187,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void tryPolarConnect() {
-        quitSearchForPolarDevices();
+        //quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect");
         //SharedPreferences.Editor editor = sharedPreferences.edit();
         DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
