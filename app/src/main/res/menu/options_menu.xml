@@ -9,6 +9,8 @@
 -->
     <item android:id="@+id/connectOption"
         android:title="Connect" />
+    <item android:id="@+id/searchForPolarDevices"
+        android:title="Search for devices" />
 <!--
     <item android:id="@+id/settingsOption"
         android:title="Settings" />

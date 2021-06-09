@@ -5,17 +5,17 @@
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
         app:title="Enable Audio Updates"
-        app:summary="Updates via audio"/>
+        app:summary="⍺1 updates via audio"/>
 
     <SwitchPreferenceCompat
         app:key="notificationsEnabled"
         app:title="Enable Notification Updates"
-        app:summary="Updates via ongoing notification"/>
+        app:summary="⍺1 updates via ongoing notification"/>
 
     <SwitchPreferenceCompat
         app:key="keepScreenOn"
         app:title="Keep screen on"
-        app:summary="(Restart required) Keep screen on"/>
+        app:summary="(Restart required)"/>
 
     <EditTextPreference
         app:key="polarDeviceID"

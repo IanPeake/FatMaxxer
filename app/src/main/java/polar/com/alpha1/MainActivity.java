@@ -13,7 +13,6 @@ import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -34,7 +33,6 @@ import androidx.preference.PreferenceManager;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
-import com.jjoe64.graphview.series.PointsGraphSeries;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -44,8 +42,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -598,22 +598,86 @@ public class MainActivity extends AppCompatActivity {
         return formatter.format(calendar.getTime());
     }
 
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.options_menu, menu);
-        return true;
+    final int MENU_QUIT = 0;
+    final int MENU_SEARCH = 1;
+    final int MENU_CONNECT_DEFAULT = 2;
+    final int MENU_CONNECT_DISCOVERED = 3;
+    
+    // collect devices by deviceId so we don't spam the menu
+    Map<String,String> discoveredDevices = new HashMap<String,String>();
+    Map<Integer,String> discoveredDevicesMenu = new HashMap<Integer,String>();
+
+    /**
+     * Gets called every time the user presses the menu button.
+     * Use if your menu is dynamic.
+     */
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.clear();
+        menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
+        String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
+        if (tmpDeviceId.length()>0) {
+            menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect "+tmpDeviceId);
+        }
+        int i = 0;
+        for (String tmpDeviceID : discoveredDevices.keySet()) {
+            menu.add(0, MENU_CONNECT_DISCOVERED + i, Menu.NONE, "Connect "+discoveredDevices.get(tmpDeviceID));
+            discoveredDevicesMenu.put(MENU_CONNECT_DISCOVERED + i,tmpDeviceID);
+            i++;
+        }
+        menu.add(0, MENU_SEARCH, Menu.NONE, "Search for Polar devices");
+        return super.onPrepareOptionsMenu(menu);
     }
 
+    //    public boolean onCreateOptionsMenu(Menu menu) {
+    //        MenuInflater inflater = getMenuInflater();
+    //        inflater.inflate(R.menu.options_menu, menu);
+    //        return true;
+    //    }
     public boolean onOptionsItemSelected(MenuItem item) {
         //respond to menu item selection
-        Log.d(TAG, "onOptionsItemSelected...");
+        Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
         switch (item.getItemId()) {
-            case R.id.quitOption:
+            case MENU_QUIT:
                 finish();
-            case R.id.connectOption:
+            case MENU_CONNECT_DEFAULT:
                 tryPolarConnect();
+            case MENU_SEARCH:
+                searchForPolarDevices();
             default:
+                Log.d(TAG,"Default menu item "+item.getItemId());
+                if (discoveredDevicesMenu.containsKey(item.getItemId())) {
+                    tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
+                }
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void quitSearchForPolarDevices() {
+        broadcastDisposable.dispose();
+        broadcastDisposable = null;
+    }
+
+    public void searchForPolarDevices() {
+        text_view.setText("Searching for Polar devices...");
+        if (broadcastDisposable == null) {
+            broadcastDisposable = api.startListenForPolarHrBroadcasts(null)
+                    .subscribe(polarBroadcastData -> {
+                                    String desc = polarBroadcastData.polarDeviceInfo.name;
+                                    String msg = "Discovered " + desc + " HR " + polarBroadcastData.hr;
+                                    discoveredDevices.put(polarBroadcastData.polarDeviceInfo.deviceId,desc);
+                                    text_view.setText(msg);
+                                    Log.d(TAG, msg);
+                                },
+                                error -> {
+                                    Log.e(TAG, "Broadcast listener failed. Reason: " + error);
+                                },
+                                () -> {
+                                    Log.d(TAG, "complete");
+                                });
+        } else {
+            broadcastDisposable.dispose();
+            broadcastDisposable = null;
         }
     }
 
@@ -644,8 +708,7 @@ public class MainActivity extends AppCompatActivity {
             artifactCorrectionThreshold = artifactCorrectionThresholdSetting;
         } else {
             artifactCorrectionThreshold = 0.05;
-            sharedPreferences.edit().putString("artifactThreshold", ""+artifactCorrectionThreshold);
-            sharedPreferences.edit().commit();
+            sharedPreferences.edit().putString("artifactThreshold", ""+artifactCorrectionThreshold).commit();
         }
 
         alpha1EvalPeriod =  Integer.parseInt(sharedPreferences.getString("alpha1CalcPeriod", "20"));
@@ -818,22 +881,28 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void blePowerStateChanged(boolean powered) {
                     Log.d(TAG, "BLE power: " + powered);
+                    text_view.setText("BLE power "+ powered);
                 }
 
                 @Override
                 public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
-                    text_view.setText("CONNECTED");
                     Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
+                    text_view.setText("Connected to "+polarDeviceInfo.deviceId);
+                    if (DEVICE_ID.length()==0) {
+
+                    }
                 }
 
                 @Override
                 public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
                     Log.d(TAG, "Polar device CONNECTING: " + polarDeviceInfo.deviceId);
+                    text_view.setText("Connecting to "+polarDeviceInfo.deviceId);
                 }
 
                 @Override
                 public void deviceDisconnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                     Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
+                    text_view.setText("Disconnected from "+polarDeviceInfo.deviceId);
                     ecgDisposable = null;
                     accDisposable = null;
                     gyrDisposable = null;
@@ -847,13 +916,14 @@ public class MainActivity extends AppCompatActivity {
                                                    @NonNull final Set<PolarBleApi.DeviceStreamingFeature> features) {
                     for (PolarBleApi.DeviceStreamingFeature feature : features) {
                         Log.d(TAG, "Streaming feature " + feature.toString() + " is ready");
-                        //text_view.setText("Streaming feature " + feature.toString() + " is ready");
+                        text_view.setText("Streaming feature " + feature.toString() + " is ready");
                     }
                 }
 
                 @Override
                 public void hrFeatureReady(@NonNull String identifier) {
                     Log.d(TAG, "HR READY: " + identifier);
+                    text_view.setText("HR feature " + identifier + " is ready");
                     // hr notifications are about to start
                 }
 
@@ -876,26 +946,25 @@ public class MainActivity extends AppCompatActivity {
                     updateTrackedFeatures(data);
                 }
 
-
                 @Override
                     public void polarFtpFeatureReady(@NonNull String s) {
                         Log.d(TAG, "FTP ready");
                     }
                 });
 
-                speech_on.setOnClickListener(v -> {
-                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
-                });
-
-                speech_off.setOnClickListener(v -> {
-                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
-                });
+//                speech_on.setOnClickListener(v -> {
+//                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
+//                });
+//
+//                speech_off.setOnClickListener(v -> {
+//                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
+//                });
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
                     this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                 }
 
-
+                searchForPolarDevices();
                 // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
                 tryPolarConnect();
     }
@@ -1097,7 +1166,27 @@ public class MainActivity extends AppCompatActivity {
         //wakeLock.release();
     }
 
+    private void tryPolarConnect(String tmpDeviceID) {
+        quitSearchForPolarDevices();
+        Log.d(TAG,"tryPolarConnect to "+tmpDeviceID);
+        // if no default device, store this one
+        DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
+        if (DEVICE_ID.length()==0) {
+            Log.d(TAG,"tryPolarConnect setting default device "+tmpDeviceID);
+            text_view.setText("Setting default device "+ tmpDeviceID);
+            sharedPreferences.edit().putString("polarDeviceID", tmpDeviceID).commit();
+        }
+        try {
+            text_view.setText("Trying to connect to: " + tmpDeviceID);
+            api.connectToDevice(tmpDeviceID);
+        } catch (PolarInvalidArgument polarInvalidArgument) {
+            text_view.setText("PolarInvalidArgument: " + polarInvalidArgument);
+            polarInvalidArgument.printStackTrace();
+        }
+    }
+
     private void tryPolarConnect() {
+        quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect");
         //SharedPreferences.Editor editor = sharedPreferences.edit();
         DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
