@@ -58,7 +58,7 @@ Log file is output to "external" storage; may not work on Android versions later
 - Use Quit button to exit. Using the back button to exit app is unreliable---the app may keep running in an inconsisent state because the ongoing notifiation is
   not cancelled.
 - Support for ongoing notifications on some devices seems patchy
-- Android may pause the app unpredictably. Interacting with the app regularly seems to help. Persistent notification and option to keep screen on may help
+- Android may pause the app unpredictably. Interacting with the app regularly seems to help. The newly-implemented ongoing notification and option to keep screen on may have solved the issue; feedback requested
 - Should make spoken output customizable to user's approx HR zones
 - features.csv does not output SDNN
 
