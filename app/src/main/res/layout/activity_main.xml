@@ -28,7 +28,7 @@
             android:id="@+id/timeView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="hh:mm:ss"
+            android:text="--:--:--"
             android:fontFamily="sans-serif"
             android:textColor="@color/colorText"
             android:textAlignment="center"
@@ -76,7 +76,7 @@
                 android:layout_weight="1"
                 android:textSize="12sp"
                 android:textColor="@color/colorText"
-                android:text="HRV"
+                android:text="RMSSD"
                 />
 
         </LinearLayout>
@@ -92,7 +92,7 @@
                 android:layout_height="match_parent"
                 android:fontFamily="sans-serif"
                 android:gravity="center_horizontal"
-                android:text="300"
+                android:text="---"
                 android:textColor="@color/colorText"
                 android:layout_weight="1"
                 android:textAlignment="center"
@@ -105,7 +105,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center_horizontal"
                 android:textAlignment="center"
-                android:text="1.0"
+                android:text="---"
                 android:textColor="@color/colorText"
                 android:layout_weight="1"
                 android:textSize="56sp" />
@@ -120,7 +120,7 @@
                 android:layout_weight="1"
                 android:textSize="48sp"
                 android:textColor="@color/colorText"
-                android:text="100"
+                android:text="---"
                 />
 
         </LinearLayout>
@@ -140,7 +140,7 @@
             android:id="@+id/artifactsView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="drop"
+            android:text="--/-- (--%)"
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
             android:textAlignment="center"
@@ -290,12 +290,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="H10 recording status" />
-
-        <Button
-            android:id="@+id/set_time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Set time" />
 
         <!-- res/layout/example_activity.xml -->
         <androidx.fragment.app.FragmentContainerView

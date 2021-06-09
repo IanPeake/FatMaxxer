@@ -19,7 +19,9 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -76,6 +78,30 @@ public class MainActivity extends AppCompatActivity {
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
         super(R.layout.activity_main);
+    }
+
+    @Override
+    public void finish() {
+        notificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
+        try {
+            api.disconnectFromDevice(DEVICE_ID);
+        } catch (PolarInvalidArgument polarInvalidArgument) {
+            Log.d(TAG, "Quit: disconnectFromDevice: polarInvalidArgument "+
+                    polarInvalidArgument.getStackTrace());
+        }
+        //System.exit(0);
+        super.finish();
+    }
+
+    private long pressedTime;
+    public void onBackPressed() {
+        if (pressedTime + 2000 > System.currentTimeMillis()) {
+            super.onBackPressed();
+            finish();
+        } else {
+            Toast.makeText(getBaseContext(), "Press back again to exit", Toast.LENGTH_SHORT).show();
+        }
+        pressedTime = System.currentTimeMillis();
     }
 
     private final double[] samples1 = {667.0,674.0,688.0,704.0,690.0,688.0,671.0,652.0,644.0,636.0,631.0,639.0,637.0,634.0,642.0,642.0,
@@ -540,6 +566,8 @@ public class MainActivity extends AppCompatActivity {
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
 
+    ScrollView scrollView;
+
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
@@ -578,14 +606,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected...");
         switch (item.getItemId()) {
             case R.id.quitOption:
-                notificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
-                try {
-                    api.disconnectFromDevice(DEVICE_ID);
-                } catch (PolarInvalidArgument polarInvalidArgument) {
-                    Log.d(TAG, "Quit: disconnectFromDevice: polarInvalidArgument "+
-                        polarInvalidArgument.getStackTrace());
-                }
-                System.exit(0);
+                finish();
             case R.id.connectOption:
                 tryPolarConnect();
             default:
@@ -672,8 +693,6 @@ public class MainActivity extends AppCompatActivity {
         stopH10Recording.setVisibility(View.GONE);
         final Button readH10RecordingStatus = this.findViewById(R.id.h10_recording_status);
         readH10RecordingStatus.setVisibility(View.GONE);
-        final Button setTime = this.findViewById(R.id.set_time);
-        setTime.setVisibility(View.GONE);
 
         text_time = this.findViewById(R.id.timeView);
         text_hr = this.findViewById(R.id.hrTextView);
@@ -687,6 +706,10 @@ public class MainActivity extends AppCompatActivity {
         //text.setMovementMethod(new ScrollingMovementMethod());
         // text.setText(message);
         text_view.setText("Text output goes here...");
+
+        scrollView = this.findViewById(R.id.application_container);
+        // FIXME: Why does the scrollable not start with top visible?
+        // scrollView.scrollTo(0,0);
 
         testDFA_alpha1();
         testRMSSD_1();
@@ -765,6 +788,7 @@ public class MainActivity extends AppCompatActivity {
 //        // is not necessary
 //        graphView.getGridLabelRenderer().setHumanRounding(false);
 
+
         //setContentView(R.layout.activity_settings);
         Log.d(TAG, "Settings...");
         text_view.setText("Settings");
@@ -774,8 +798,8 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
 
         notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                .setContentTitle("FatMaxxer running")
-                .setContentText("FatMaxxer running")
+                .setContentTitle("FatMaxxer")
+                .setContentText("FatMaxxer")
                 .setSmallIcon(R.mipmap.fatmaxxer_small_icon)
                 .setOngoing(true)
 //                .setLargeIcon(aBitmap)
@@ -872,9 +896,10 @@ public class MainActivity extends AppCompatActivity {
                     this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                 }
 
+
                 // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
                 tryPolarConnect();
-        }
+    }
 
     private int getNrSamples() {
         int nrSamples = (newestSample < oldestSample) ? (newestSample + maxrrs - oldestSample) : (newestSample - oldestSample);
@@ -920,6 +945,7 @@ public class MainActivity extends AppCompatActivity {
             starting = true;
             thisIsFirstSample = true;
             firstSampleMS = currentTimeMS;
+            scrollView.scrollTo(0,0);
         }
         //
         // FILTERING / RECORDING RR intervals
@@ -1009,7 +1035,7 @@ public class MainActivity extends AppCompatActivity {
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
-                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% rmssd "+rmssdWindowed);
+                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% batt "+batteryLevel+"% rmssd "+rmssdWindowed);
                 notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
             }
         }
@@ -1054,11 +1080,11 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsed>150) && (elapsed % 10 == 0);
         hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
         a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) a1HRVvt1Series.appendData(new DataPoint(elapsed + 199, 75), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) a1HRVvt2Series.appendData(new DataPoint(elapsed + 199, 50), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) a125Series.appendData(new DataPoint(elapsed + 199, 25), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) a1125Series.appendData(new DataPoint(elapsed + 199, 125), scrollToEnd, maxDataPoints);
-        if (elapsed % 200 == 0) a1175Series.appendData(new DataPoint(elapsed + 199, 175), scrollToEnd, maxDataPoints);
+        if (elapsed % 10 == 0) a1HRVvt1Series.appendData(new DataPoint(elapsed + 10, 75), scrollToEnd, maxDataPoints);
+        if (elapsed % 10 == 0) a1HRVvt2Series.appendData(new DataPoint(elapsed + 10, 50), scrollToEnd, maxDataPoints);
+        if (elapsed % 10 == 0) a125Series.appendData(new DataPoint(elapsed + 10, 25), scrollToEnd, maxDataPoints);
+        if (elapsed % 10 == 0) a1125Series.appendData(new DataPoint(elapsed + 10, 125), scrollToEnd, maxDataPoints);
+        if (elapsed % 10 == 0) a1175Series.appendData(new DataPoint(elapsed + 10, 175), scrollToEnd, maxDataPoints);
         //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
         artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
 
