@@ -34,11 +34,12 @@ License: Apache 2.0 for any code that was authored by me.
 ## User Interface ##
 Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
 
-Graph plots
+Graph plots:
 - primary axis (0-200)
   - red trace: HR
   - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
   - yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100) 
+  - grid lines at multiples of 25
 - secondary axis
   - blue trace: artifacts (secondary axis)
 
@@ -59,6 +60,7 @@ Log file is output to "external" storage; may not work on Android versions later
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
 ## Known issues / limitations ##
+- Requires user to enter device ID manually
 - Use a more generic method to "share" the log files with other apps through Android API
 - X axis (elapsed time) should be labelled in mins:secs rather than secs
 - GraphView plotter is quirky and could be replaced
