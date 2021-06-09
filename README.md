@@ -21,7 +21,7 @@ The ⍺1 value and other features are calculated over a two minute rolling windo
 with ⍺1 calculated every 20 seconds (configurable).
 The RR values are subject to artifact filtering, that is where the RR interval changes by more than +/- 5% (configurable).
 
-## License:
+## License
 Apache 2.0 for any code that was authored by me.
 
 ## Getting started ##
