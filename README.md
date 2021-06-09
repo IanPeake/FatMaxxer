@@ -21,7 +21,8 @@ The ⍺1 value and other features are calculated over a two minute rolling windo
 with ⍺1 calculated every 20 seconds (configurable).
 The RR values are subject to artifact filtering, that is where the RR interval changes by more than +/- 5% (configurable).
 
-## License: Apache 2.0 for any code that was authored by me.
+## License:
+Apache 2.0 for any code that was authored by me.
 
 ## Getting started ##
 - Read and thoroughly understand how to use DFA ⍺1 (https://the5krunner.com/2021/02/25/important-training-news-dfa-alpha-1-new-threshold-discovery-method-with-hrv/) for training
