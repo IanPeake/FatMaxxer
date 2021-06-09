@@ -21,15 +21,15 @@ The ⍺1 value and other features are calculated over a two minute rolling windo
 with ⍺1 calculated every 20 seconds (configurable).
 The RR values are subject to artifact filtering, that is where the RR interval changes by more than +/- 5% (configurable).
 
-## Overview ##
-License: Apache 2.0 for any code that was authored by me.
+## License: Apache 2.0 for any code that was authored by me.
 
 ## Getting started ##
 - Read and thoroughly understand how to use DFA ⍺1 (https://the5krunner.com/2021/02/25/important-training-news-dfa-alpha-1-new-threshold-discovery-method-with-hrv/) for training
 - Put on your Polar H10
-- On first launch, select your device in the menu from those already discovered, or set your Device ID manually under settings, and restart.
+- On first launch, select your device in the menu from those discovered.
+  Alternatively set preferred Device ID manually under settings, quit and restart.
   Device ID is an 8 digit hexadecimal string.
-  App will thereafter attempt on startup to connect to the device you first tried to connect.
+  On startup, app will try to connect to your preferred device.
 
 ## User Interface ##
 Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
@@ -67,7 +67,7 @@ Log file is output to "external" storage; may not work on Android versions later
   The newly-implemented ongoing notification and option to keep screen on may helped to solve the issue; feedback requested.
 - Support for ongoing notifications seems patchy on some devices
 - Audio update period should not need to be customized; it should be detectable from metrics like ⍺1---it's an objective measure of effort, after all
-- Dynamically detect workout vs rest and change artefact threshold accordingly
+- Dynamically detect workout vs rest and change artifact threshold accordingly
 - UI cleanup to show battery, demote RMSSD, remove ugly status line
 - features.csv does not output SDNN
 
