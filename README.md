@@ -60,7 +60,7 @@ Log file is output to "external" storage; may not work on Android versions later
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
 ## Known issues / limitations ##
-- Requires user to enter device ID manually
+- Should find and set device ID automically, preferably from a menu
 - Use a more generic method to "share" the log files with other apps through Android API
 - X axis (elapsed time) should be labelled in mins:secs rather than secs
 - GraphView plotter is quirky and could be replaced
