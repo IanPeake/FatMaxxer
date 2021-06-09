@@ -34,8 +34,9 @@ Graph plots
 - primary axis (0-200)
   - red trace: HR
   - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
+  - yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100) 
 - secondary axis
--- blue trace: artifacts (secondary axis)
+  - blue trace: artifacts (secondary axis)
 
 ## Audio/notification updates ##
 Provides audio or notifications (configurable) for ⍺1 and other selected features, adjusted to work rate.
