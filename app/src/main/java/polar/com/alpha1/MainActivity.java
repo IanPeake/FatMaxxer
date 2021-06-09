@@ -579,6 +579,9 @@ public class MainActivity extends AppCompatActivity {
     //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
     final int maxDataPoints = 65535;
+    final int graphViewPortWidth = 120;
+    final int graphMaxHR = 200;
+    final int graphMaxErrorRatePercent = 10;
 
     /**
      * Return date in specified format.
@@ -740,11 +743,11 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setScrollable(true);
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
-        graphView.getViewport().setMaxX(119);
+        graphView.getViewport().setMaxX(graphViewPortWidth - 1);
         graphView.getViewport().setYAxisBoundsManual(true);
         graphView.getViewport().setMinY(0);
-        graphView.getViewport().setMaxY(200);
-        graphView.getGridLabelRenderer().setNumVerticalLabels(5);
+        graphView.getViewport().setMaxY(graphMaxHR);
+        graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
         graphView.addSeries(a1Series);
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);
@@ -768,26 +771,22 @@ public class MainActivity extends AppCompatActivity {
         a1175Series.setThickness(1);
         hrSeries.setColor(Color.RED);
         artifactSeries.setColor(Color.BLUE);
-        a1HRVvt1Series.setThickness(5);
+        // yellow is a lot less visible that red
+        a1HRVvt1Series.setThickness(6);
+        // red is a lot more visible than yellow
         a1HRVvt2Series.setThickness(2);
-        a1HRVvt1Series.appendData(new DataPoint(0,alpha1HRVvt1 * 100), false, maxDataPoints);
+        a1HRVvt1Series.appendData(new DataPoint(0, alpha1HRVvt1 * 100), false, maxDataPoints);
         a1HRVvt2Series.appendData(new DataPoint(0,alpha1HRVvt2 * 100), false, maxDataPoints);
         a125Series.appendData(new DataPoint(0,25), false, maxDataPoints);
         a1125Series.appendData(new DataPoint(0,125), false, maxDataPoints);
         a1175Series.appendData(new DataPoint(0,175), false, maxDataPoints);
+        a1HRVvt1Series.appendData(new DataPoint(graphViewPortWidth,alpha1HRVvt1 * 100), false, maxDataPoints);
+        a1HRVvt2Series.appendData(new DataPoint(graphViewPortWidth,alpha1HRVvt2 * 100), false, maxDataPoints);
+        a125Series.appendData(new DataPoint(graphViewPortWidth,25), false, maxDataPoints);
+        a1125Series.appendData(new DataPoint(graphViewPortWidth,125), false, maxDataPoints);
+        a1175Series.appendData(new DataPoint(graphViewPortWidth,175), false, maxDataPoints);
 
         //hrvSeries.setColor(Color.BLUE);
-
-//        graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
-//        graphView.getGridLabelRenderer().setNumHorizontalLabels(3); // only 4 because of the space
-//        // set manual x bounds to have nice steps
-//        graphView.getViewport().setMinX(new Date().getTime());
-//        graphView.getViewport().setMaxX(new Date().getTime() + 120000);
-//        graphView.getViewport().setXAxisBoundsManual(true);
-//        // as we use dates as labels, the human rounding to nice readable numbers
-//        // is not necessary
-//        graphView.getGridLabelRenderer().setHumanRounding(false);
-
 
         //setContentView(R.layout.activity_settings);
         Log.d(TAG, "Settings...");
@@ -799,7 +798,7 @@ public class MainActivity extends AppCompatActivity {
 
         notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                 .setContentTitle("FatMaxxer")
-                .setContentText("FatMaxxer")
+                .setContentText("FatMaxxer started")
                 .setSmallIcon(R.mipmap.fatmaxxer_small_icon)
                 .setOngoing(true)
 //                .setLargeIcon(aBitmap)
@@ -945,6 +944,7 @@ public class MainActivity extends AppCompatActivity {
             starting = true;
             thisIsFirstSample = true;
             firstSampleMS = currentTimeMS;
+            // FIXME: why does the scroller not start with the top visible?
             scrollView.scrollTo(0,0);
         }
         //
@@ -1077,15 +1077,16 @@ public class MainActivity extends AppCompatActivity {
         } else {
             text_a1.setBackgroundResource(R.color.colorEasyIntensity);
         }
-        boolean scrollToEnd = (elapsed>150) && (elapsed % 10 == 0);
+        boolean scrollToEnd = (elapsed > graphViewPortWidth - 12) && (elapsed % 10 == 0);
         hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
         a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
-        if (elapsed % 10 == 0) a1HRVvt1Series.appendData(new DataPoint(elapsed + 10, 75), scrollToEnd, maxDataPoints);
-        if (elapsed % 10 == 0) a1HRVvt2Series.appendData(new DataPoint(elapsed + 10, 50), scrollToEnd, maxDataPoints);
-        if (elapsed % 10 == 0) a125Series.appendData(new DataPoint(elapsed + 10, 25), scrollToEnd, maxDataPoints);
-        if (elapsed % 10 == 0) a1125Series.appendData(new DataPoint(elapsed + 10, 125), scrollToEnd, maxDataPoints);
-        if (elapsed % 10 == 0) a1175Series.appendData(new DataPoint(elapsed + 10, 175), scrollToEnd, maxDataPoints);
-        //hrvSeries.appendData(new DataPoint(elapsedSeconds, rmssd), false, 65535);
+        if (scrollToEnd) {
+            a1HRVvt1Series.appendData(new DataPoint(elapsed + 10, 75), scrollToEnd, maxDataPoints);
+            a1HRVvt2Series.appendData(new DataPoint(elapsed + 10, 50), scrollToEnd, maxDataPoints);
+            a125Series.appendData(new DataPoint(elapsed + 10, 25), scrollToEnd, maxDataPoints);
+            a1125Series.appendData(new DataPoint(elapsed + 10, 125), scrollToEnd, maxDataPoints);
+            a1175Series.appendData(new DataPoint(elapsed + 10, 175), scrollToEnd, maxDataPoints);
+        }
         artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
 
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
