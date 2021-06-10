@@ -790,7 +790,7 @@ public class MainActivity extends AppCompatActivity {
         rrLogStream = createLogFile("rr");
         writeLogFile("timestamp,rr,since_start", rrLogStream, "rr");
         featureLogStream = createLogFile("features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent", featureLogStream, "features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStream, "features");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -1130,8 +1130,19 @@ public class MainActivity extends AppCompatActivity {
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
             alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
             prevA1Timestamp = currentTimeMS;
-            //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,",featureLogStream,"features");
-            writeLogFile("" + timestamp + "," + hrWindowed + "," + rmssdWindowed + "," + "," + alpha1RoundedWindowed + "," + nrArtifacts + "," + nrSamples + "," + artifactsPercentWindowed, featureLogStream, "features");
+            //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,,artifactThreshold",featureLogStream,"features");
+            writeLogFile("" + timestamp
+                    + "," + hrWindowed
+                    + "," + rmssdWindowed
+                    + ","
+                    + "," + alpha1RoundedWindowed
+                    + "," + nrArtifacts
+                    + "," + nrSamples
+                    + "," + artifactsPercentWindowed
+                    + "," + artifactCorrectionThreshold
+                    ,
+                    featureLogStream,
+                    "features");
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
