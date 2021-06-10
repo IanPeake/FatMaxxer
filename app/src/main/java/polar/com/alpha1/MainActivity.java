@@ -11,7 +11,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,8 +26,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.preference.EditTextPreference;
-import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
@@ -138,7 +135,8 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPreferences;
 
     Context thisContext = this;
-    private int batteryLevel = 100;
+    private int batteryLevel = 0;
+    private String exerciseMode = "Light";
     private EditText input_field;
     private final String CHANNEL_ID = "FatMaxxerChannelID1";
 
@@ -507,6 +505,8 @@ public class MainActivity extends AppCompatActivity {
 
     TextView text_view;
     TextView text_time;
+    TextView text_batt;
+    TextView text_mode;
     TextView text_hr;
     TextView text_hrv;
     TextView text_a1;
@@ -756,6 +756,8 @@ public class MainActivity extends AppCompatActivity {
         readH10RecordingStatus.setVisibility(View.GONE);
 
         text_time = this.findViewById(R.id.timeView);
+        text_batt = this.findViewById(R.id.battView);
+        text_mode = this.findViewById(R.id.modeView);
         text_hr = this.findViewById(R.id.hrTextView);
         //text_hr.setText("\u2764"+"300");
         text_hrv = this.findViewById(R.id.hrvTextView);
@@ -1003,13 +1005,17 @@ public class MainActivity extends AppCompatActivity {
         String artifactCorrectionThresholdSetting = sharedPreferences.getString("artifactThreshold", "Auto");
         if (artifactCorrectionThresholdSetting.equals("Auto")) {
             if (data.hr>95) {
+                exerciseMode = "Workout";
                 artifactCorrectionThreshold = 0.05;
             } else if (data.hr<80) {
+                exerciseMode = "Light";
                 artifactCorrectionThreshold = 0.25;
             }
         } else if (artifactCorrectionThresholdSetting.equals("0.25")) {
+            exerciseMode = "Light";
             artifactCorrectionThreshold = 0.25;
         } else {
+            exerciseMode = "Workout";
             artifactCorrectionThreshold = 0.05;
         }
 
@@ -1100,7 +1106,10 @@ public class MainActivity extends AppCompatActivity {
                 absSeconds / 3600,
                 (absSeconds % 3600) / 60,
                 absSeconds % 60);
+        //text_time.setText(mode + "    " +positive + "    \uD83D\uDD0B"+batteryLevel);
+        text_mode.setText(exerciseMode);
         text_time.setText(positive);
+        text_batt.setText("\uD83D\uDD0B"+batteryLevel);
 
         //
         // FEATURES

@@ -12,29 +12,61 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- res/layout/example_activity.xml
-        <androidx.fragment.app.FragmentContainerView
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/fragment_container_view"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:name="settingsFragment" />
-            -->
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/timeView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="--:--:--"
-            android:fontFamily="sans-serif"
-            android:textColor="@color/colorText"
-            android:textAlignment="center"
-            android:gravity="center_horizontal"
-            android:textSize="32sp"
-            />
+            <TextView
+                android:paddingLeft="0dp"
+                android:paddingRight="0dp"
+                android:id="@+id/modeView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginRight="-10dp"
+                android:text="Light"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/colorText"
+                android:textAlignment="center"
+                android:gravity="center_vertical"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                />
+
+            <TextView
+                android:paddingLeft="0dp"
+                android:paddingRight="0dp"
+                android:id="@+id/timeView"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:fontFamily="sans-serif"
+                android:gravity="center_vertical"
+                android:text="@string/undefinedTimeString"
+                android:textAlignment="center"
+                android:textColor="@color/colorText"
+                android:textSize="32sp" />
+
+            <TextView
+                android:paddingLeft="0dp"
+                android:paddingRight="0dp"
+                android:layout_marginLeft="-10dp"
+                android:id="@+id/battView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:text="----"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/colorText"
+                android:textAlignment="center"
+                android:gravity="center_vertical"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                />
+
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,14 +75,15 @@
 
             <TextView
                 android:id="@+id/hrLabel"
+                android:layout_marginBottom="-4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:fontFamily="sans-serif"
-                android:gravity="center_horizontal"
                 android:text="HR"
                 android:textColor="@color/colorRed"
-                android:layout_weight="1"
                 android:textAlignment="center"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
                 android:textSize="12sp" />
 
             <TextView
@@ -58,7 +91,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif"
-                android:gravity="center_horizontal"
+                android:gravity="center_vertical"
                 android:textAlignment="center"
                 android:text="⍺1"
                 android:textColor="@color/colorGreen"
@@ -68,10 +101,11 @@
 
             <TextView
                 android:id="@+id/hrvLabel"
+                android:layout_marginBottom="-4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:fontFamily="sans-serif"
-                android:gravity="center_horizontal"
+                android:gravity="center_vertical"
                 android:textAlignment="center"
                 android:layout_weight="1"
                 android:textSize="12sp"
@@ -90,12 +124,12 @@
                 android:id="@+id/hrTextView"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:fontFamily="sans-serif"
                 android:gravity="center_horizontal"
                 android:text="---"
-                android:textColor="@color/colorText"
-                android:layout_weight="1"
                 android:textAlignment="center"
+                android:textColor="@color/colorText"
                 android:textSize="48sp" />
 
             <TextView

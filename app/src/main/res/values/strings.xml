@@ -3,4 +3,5 @@
     <string name="channel_name">FatMaxxer1</string>
     <string name="channel_description">FatMaxxer notification channel 1</string>
     <string name="alpha1">⍺1</string>
+    <string name="undefinedTimeString">--:--:--</string>
 </resources>
