@@ -5,8 +5,7 @@ measured using a Polar H10 heart rate strap.
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240"> |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240">
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240" alt="Screenshot"/> | <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/>
 
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
@@ -19,7 +18,9 @@ Reports ⍺1 for the past two minutes in "near real time" via the GUI,
 speech (speaker/headphones, configurable) and notifications (configurable).
 The ⍺1 value and other features are calculated over a two minute rolling window of RR values,
 with ⍺1 calculated every 20 seconds (configurable).
-The RR values are subject to artifact filtering, that is where the RR interval changes by more than +/- 5% (configurable).
+The RR stream is subject to artifact filtering, where adjacent RR intervals change by more than +/- threshold (%).
+Threshold settings are 5%, 25% and "Auto".
+The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
 ## License
 Apache 2.0 for any code that was authored by me.
@@ -36,13 +37,12 @@ Apache 2.0 for any code that was authored by me.
 Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
 
 Graph plots:
-- primary axis (0-200)
-  - red trace: HR
-  - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75)
-  - yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100) 
-  - grid lines at multiples of 25
-- secondary axis
-  - blue trace: artifacts (secondary axis)
+- X axis: time (minutes) with a 2 minute viewport
+- primary Y axis (0-200):
+  - red trace: HR (BPM)
+  - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75). Yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100). Grid lines at multiples of 25
+- secondary Y axis (0-10):
+  - blue trace: artifacts (%)
 
 ## Audio/notification updates ##
 Provides audio and/or notifications (configurable) for ⍺1 and other selected features, adjusted to work rate.
@@ -61,14 +61,13 @@ Log file is output to "external" storage; may not work on Android versions later
 - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 
 ## Known issues / limitations ##
+- _Needless to say, I will not be held responsible for any app malfunction which causes you to overtrain!_
 - Use a more generic method to "share" the log files with other apps through Android API
-- X axis (elapsed time) should be labelled in mins:secs rather than secs
 - GraphView plotter is quirky and could be replaced
 - Android may pause the app unpredictably. Interacting with the app regularly seems to help.
-  The newly-implemented ongoing notification and option to keep screen on may helped to solve the issue; feedback requested.
+  The newly-implemented ongoing notification and option to keep screen on may help to resolve the issue
 - Support for ongoing notifications seems patchy on some devices
 - Audio update period should not need to be customized; it should be detectable from metrics like ⍺1---it's an objective measure of effort, after all
-- Dynamically detect workout vs rest and change artifact threshold accordingly
 - UI cleanup to show battery, demote RMSSD, remove ugly status line
 - features.csv does not output SDNN
 
