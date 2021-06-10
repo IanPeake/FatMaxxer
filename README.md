@@ -5,8 +5,8 @@ measured using a Polar H10 heart rate strap.
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240"> |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240">
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240" alt="Screenshot"> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification">
 
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
@@ -21,7 +21,7 @@ The ⍺1 value and other features are calculated over a two minute rolling windo
 with ⍺1 calculated every 20 seconds (configurable).
 The RR stream is subject to artifact filtering, where adjacent RR intervals change by more than +/- threshold (%).
 Threshold settings are 5%, 25% and "Auto".
-The "Auto" threshold is 5% when HR > 90 BPM and 25% when HR < 85 BPM.
+The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
 ## License
 Apache 2.0 for any code that was authored by me.
