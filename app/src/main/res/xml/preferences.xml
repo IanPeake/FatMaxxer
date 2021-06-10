@@ -4,12 +4,12 @@
 
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
-        app:title="Enable Audio Updates"
+        app:title="Enable audio updates"
         app:summary="⍺1 updates via audio"/>
 
     <SwitchPreferenceCompat
         app:key="notificationsEnabled"
-        app:title="Enable Notification Updates"
+        app:title="Enable notification updates"
         app:summary="⍺1 updates via ongoing notification"/>
 
     <SwitchPreferenceCompat
@@ -19,20 +19,20 @@
 
     <ListPreference
         app:key="artifactThreshold"
-        app:title="Artifact Rejection Threshold"
+        app:title="Artifact rejection threshold"
         app:summary="RRs differing by more than +/- threshold from the previous are rejected."
         app:entries="@array/artifactThresholdEntries"
         app:entryValues="@array/artifactThresholdEntryValues"/>
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="Alpha1 Calculation Period"
+        app:title="Alpha1 calculation period"
         app:useSimpleSummaryProvider="true"
         app:summary="Time to wait between Alpha1 calculations, >= 5 sec"/>
 
     <EditTextPreference
         app:key="polarDeviceID"
-        app:title="Preferred Device ID (restart required)"
+        app:title="Preferred device ID (restart required)"
         app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
 
 </PreferenceScreen>
