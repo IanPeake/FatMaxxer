@@ -585,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
     //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
     final int maxDataPoints = 65535;
-    final int graphViewPortWidth = 120;
+    final double graphViewPortWidth = 2.0;
     final int graphMaxHR = 200;
     final int graphMaxErrorRatePercent = 10;
 
@@ -801,7 +801,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setScrollable(true);
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
-        graphView.getViewport().setMaxX(graphViewPortWidth - 1);
+        graphView.getViewport().setMaxX(graphViewPortWidth);
         graphView.getViewport().setYAxisBoundsManual(true);
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
@@ -1180,17 +1180,20 @@ public class MainActivity extends AppCompatActivity {
                 text_a1.setBackgroundResource(R.color.colorEasyIntensity);
             }
         }
-        boolean scrollToEnd = (elapsed > graphViewPortWidth - 12) && (elapsed % 10 == 0);
-        hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
-        a1Series.appendData(new DataPoint(elapsed, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
+        double elapsedMin = elapsed / 60.0;
+        double tenSecAsMin = 1.0 / 6.0;
+        boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
+        hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
+        a1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
         if (scrollToEnd) {
-            a1HRVvt1Series.appendData(new DataPoint(elapsed + 10, 75), scrollToEnd, maxDataPoints);
-            a1HRVvt2Series.appendData(new DataPoint(elapsed + 10, 50), scrollToEnd, maxDataPoints);
-            a125Series.appendData(new DataPoint(elapsed + 10, 25), scrollToEnd, maxDataPoints);
-            a1125Series.appendData(new DataPoint(elapsed + 10, 125), scrollToEnd, maxDataPoints);
-            a1175Series.appendData(new DataPoint(elapsed + 10, 175), scrollToEnd, maxDataPoints);
+            double nextX = elapsedMin + tenSecAsMin;
+            a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
+            a1HRVvt2Series.appendData(new DataPoint(nextX, 50), scrollToEnd, maxDataPoints);
+            a125Series.appendData(new DataPoint(nextX, 25), scrollToEnd, maxDataPoints);
+            a1125Series.appendData(new DataPoint(nextX, 125), scrollToEnd, maxDataPoints);
+            a1175Series.appendData(new DataPoint(nextX, 175), scrollToEnd, maxDataPoints);
         }
-        artifactSeries.appendData(new DataPoint(elapsed, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+        artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
 
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
         Log.d(TAG, logstring);
