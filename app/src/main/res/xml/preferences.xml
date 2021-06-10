@@ -15,23 +15,24 @@
     <SwitchPreferenceCompat
         app:key="keepScreenOn"
         app:title="Keep screen on"
-        app:summary="(Restart required)"/>
+        app:summary=""/>
 
-    <EditTextPreference
-        app:key="polarDeviceID"
-        app:title="Polar H10 Device ID (hex)"
-        app:summary="(Restart required) Hexadecimal string, 8 characters"/>
-
-    <DropDownPreference
+    <ListPreference
         app:key="artifactThreshold"
-        app:title="Artifact Rejection Threshold (%)"
-        app:summary="(Restart required) RRs differing by more than +/- threshold percent from the previous are rejected."
+        app:title="Artifact Rejection Threshold"
+        app:summary="RRs differing by more than +/- threshold from the previous are rejected."
         app:entries="@array/artifactThresholdEntries"
         app:entryValues="@array/artifactThresholdEntryValues"/>
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="Alpha1 Calculation Period (sec)"
-        app:summary="(Restart required) Time to wait between Alpha1 calculations"/>
+        app:title="Alpha1 Calculation Period"
+        app:useSimpleSummaryProvider="true"
+        app:summary="Time to wait between Alpha1 calculations, >= 5 sec"/>
+
+    <EditTextPreference
+        app:key="polarDeviceID"
+        app:title="Preferred Device ID (restart required)"
+        app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
 
 </PreferenceScreen>

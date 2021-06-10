@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +27,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.preference.EditTextPreference;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
@@ -540,9 +543,9 @@ public class MainActivity extends AppCompatActivity {
     // rounded alpha1
     double alpha1RoundedWindowed;
     int artifactsPercentWindowed;
-    double hrWindowed;
+    double hrWindowed = 0;
     // maximum tolerable variance of adjacent RR intervals
-    double artifactCorrectionThreshold;
+    double artifactCorrectionThreshold = 0.05;
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
     // the last time (since epoch) a1 was evaluated
@@ -565,6 +568,9 @@ public class MainActivity extends AppCompatActivity {
 
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
+
+    //    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+//    PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
 
     ScrollView scrollView;
 
@@ -617,7 +623,7 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
         String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
         if (tmpDeviceId.length()>0) {
-            menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect "+tmpDeviceId);
+            menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect preferred device "+tmpDeviceId);
         }
         int i = 0;
         for (String tmpDeviceID : discoveredDevices.keySet()) {
@@ -691,10 +697,6 @@ public class MainActivity extends AppCompatActivity {
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        if (sharedPreferences.getBoolean("keepScreenOn", false)) {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }
-
         createNotificationChannel();
 
         /*
@@ -705,15 +707,6 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().executePendingTransactions();
          */
 
-        double artifactCorrectionThresholdSetting = Double.parseDouble(sharedPreferences.getString("artifactThreshold", "0.05"));
-        if (artifactCorrectionThresholdSetting >=0 && artifactCorrectionThresholdSetting <= 1) {
-            artifactCorrectionThreshold = artifactCorrectionThresholdSetting;
-        } else {
-            artifactCorrectionThreshold = 0.05;
-            sharedPreferences.edit().putString("artifactThreshold", ""+artifactCorrectionThreshold).commit();
-        }
-
-        alpha1EvalPeriod =  Integer.parseInt(sharedPreferences.getString("alpha1CalcPeriod", "20"));
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
         api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
@@ -867,16 +860,15 @@ public class MainActivity extends AppCompatActivity {
                 .setSmallIcon(R.mipmap.fatmaxxer_small_icon)
                 .setOngoing(true)
 //                .setLargeIcon(aBitmap)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
+                .setPriority(NotificationCompat.PRIORITY_MAX);
 
         notificationManager = NotificationManagerCompat.from(this);
 
         // notificationId is a unique int for each notification that you must define
         notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
 
-        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-            "MyApp::MyWakelockTag");
+        powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
 
         api.setApiCallback(new PolarBleApiCallback() {
 
@@ -949,6 +941,7 @@ public class MainActivity extends AppCompatActivity {
 
                 //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(thisContext);
 
+                // FIXME: this is a makeshift main event & timer loop
                 @Override
                 public void hrNotificationReceived(@NonNull String identifier, @NonNull PolarHrData data) {
                     updateTrackedFeatures(data);
@@ -959,14 +952,6 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(TAG, "FTP ready");
                     }
                 });
-
-//                speech_on.setOnClickListener(v -> {
-//                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, true);
-//                });
-//
-//                speech_off.setOnClickListener(v -> {
-//                    sharedPreferences.edit().putBoolean(AUDIO_OUTPUT_ENABLED, false);
-//                });
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
                     this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
@@ -1004,8 +989,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateTrackedFeatures(@NotNull PolarHrData data) {
-        //wakeLock.acquire();
+        wakeLock.acquire();
         Log.d(TAG, "hrNotificationReceived");
+
+        if (sharedPreferences.getBoolean("keepScreenOn", false)) {
+            text_view.setText("Keep screen on");
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            text_view.setText("Don't keep screen on");
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
+        String artifactCorrectionThresholdSetting = sharedPreferences.getString("artifactThreshold", "Auto");
+        if (artifactCorrectionThresholdSetting.equals("Auto")) {
+            if (data.hr>95) {
+                artifactCorrectionThreshold = 0.05;
+            } else if (data.hr<80) {
+                artifactCorrectionThreshold = 0.25;
+            }
+        } else if (artifactCorrectionThresholdSetting.equals("0.25")) {
+            artifactCorrectionThreshold = 0.25;
+        } else {
+            artifactCorrectionThreshold = 0.05;
+        }
+
+        String alpha1EvalPeriodSetting =  sharedPreferences.getString("alpha1CalcPeriod", "20");
+        try {
+            alpha1EvalPeriod = Integer.parseInt(alpha1EvalPeriodSetting);
+        } catch (final NumberFormatException e) {
+            Log.d(TAG,"Number format exception alpha1EvalPeriod "+alpha1EvalPeriodSetting+" "+e.toString());
+            alpha1EvalPeriod = 20;
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("alpha1CalcPeriod", "20");
+            editor.apply();
+            Log.d(TAG, "alpha1CalcPeriod wrote "+sharedPreferences.getString("alpha1CalcPeriod", "??"));
+        }
+        if (alpha1EvalPeriod<5) {
+            Log.d(TAG,"alpha1EvalPeriod<5");
+            alpha1EvalPeriod = 5;
+            sharedPreferences.edit().putString("alpha1CalcPeriod", "5").commit();
+        }
 
         long currentTimeMS = System.currentTimeMillis();
         long timestamp = currentTimeMS;
@@ -1133,7 +1156,7 @@ public class MainActivity extends AppCompatActivity {
         String logstring = logmsg.toString();
 
         artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
-        text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%)");
+        text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%) ["+artifactCorrectionThreshold+"]");
         if (haveArtifacts) {
             text_artifacts.setBackgroundResource(R.color.colorHighlight);
         } else {
@@ -1145,14 +1168,17 @@ public class MainActivity extends AppCompatActivity {
         text_a1.setText("" + alpha1RoundedWindowed);
         // configurable top-of-optimal threshold for alpha1
         double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
-        if (alpha1RoundedWindowed < alpha1HRVvt2) {
-            text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-        } else if (alpha1RoundedWindowed < alpha1HRVvt1) {
-            text_a1.setBackgroundResource(R.color.colorMedIntensity);
-        } else if (alpha1RoundedWindowed < alpha1MaxOptimal) {
-            text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
-        } else {
-            text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+        // wait for run-in period
+        if (elapsed > 30) {
+            if (alpha1RoundedWindowed < alpha1HRVvt2) {
+                text_a1.setBackgroundResource(R.color.colorMaxIntensity);
+            } else if (alpha1RoundedWindowed < alpha1HRVvt1) {
+                text_a1.setBackgroundResource(R.color.colorMedIntensity);
+            } else if (alpha1RoundedWindowed < alpha1MaxOptimal) {
+                text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
+            } else {
+                text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+            }
         }
         boolean scrollToEnd = (elapsed > graphViewPortWidth - 12) && (elapsed % 10 == 0);
         hrSeries.appendData(new DataPoint(elapsed, data.hr), scrollToEnd, maxDataPoints);
@@ -1171,7 +1197,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
         contextualNonDisplayUpdate(data, currentTimeMS);
         starting = false;
-        //wakeLock.release();
+        wakeLock.release();
     }
 
     private void tryPolarConnect(String tmpDeviceID) {
@@ -1189,7 +1215,6 @@ public class MainActivity extends AppCompatActivity {
     private void tryPolarConnect() {
         //quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect");
-        //SharedPreferences.Editor editor = sharedPreferences.edit();
         DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
         if (DEVICE_ID.length()>0) {
             try {
