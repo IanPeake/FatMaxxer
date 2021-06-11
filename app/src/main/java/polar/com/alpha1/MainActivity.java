@@ -701,6 +701,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void exportAllLogFiles() {
+        Log.d(TAG,"exportAllLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
         File privateRootDir = getFilesDir();
         privateRootDir.mkdir();
@@ -708,6 +709,7 @@ public class MainActivity extends AppCompatActivity {
         logsDir.mkdir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
+            Log.d(TAG,"Found log file: "+getUri(f));
             allUris.add(getUri(f));
         }
         Intent shareIntent = new Intent();
@@ -726,6 +728,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             if (!logFiles.containsValue(f)) {
+                Log.d(TAG,"deleting log file "+f);
                 f.delete();
             }
         }
@@ -740,26 +743,17 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         //respond to menu item selection
         Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
-        switch (item.getItemId()) {
-            case MENU_QUIT:
-                finish();
-            case MENU_EXPORT:
-                exportLogFiles();
-            case MENU_EXPORT_ALL:
-                exportAllLogFiles();
-            case MENU_DELETE_ALL:
-                deleteAllLogFiles();
-            case MENU_CONNECT_DEFAULT:
-                tryPolarConnect();
-            case MENU_SEARCH:
-                searchForPolarDevices();
-            default:
-                Log.d(TAG,"Default menu item "+item.getItemId());
-                if (discoveredDevicesMenu.containsKey(item.getItemId())) {
-                    tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
-                }
-                return super.onOptionsItemSelected(item);
+        int itemID = item.getItemId();
+        if (itemID == MENU_QUIT) finish();
+        if (itemID == MENU_EXPORT) exportLogFiles();
+        if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
+        if (itemID == MENU_DELETE_ALL) deleteAllLogFiles();
+        if (itemID == MENU_CONNECT_DEFAULT) tryPolarConnect();
+        if (itemID == MENU_SEARCH) searchForPolarDevices();
+        if (discoveredDevicesMenu.containsKey(item.getItemId())) {
+            tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
         }
+        return super.onOptionsItemSelected(item);
     }
 
     public void quitSearchForPolarDevices() {
@@ -892,8 +886,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rrLogStreamLegacy = createLogFileNew("rr");
-        featureLogStreamLegacy = createLogFileNew("features");
+        rrLogStreamLegacy = createLogFile("rr");
+        featureLogStreamLegacy = createLogFile("features");
 
         rrLogStreamNew = createLogFileNew("rr");
         writeLogFile("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
@@ -906,6 +900,8 @@ public class MainActivity extends AppCompatActivity {
         graphView = (GraphView) findViewById(R.id.graph);
         // activate horizontal zooming and scrolling
         graphView.getViewport().setScalable(true);
+        // sadly, that's butt-ugly
+        //graphView.getViewport().setScalableY(true);
         graphView.getViewport().setScrollable(true);
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
