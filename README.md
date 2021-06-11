@@ -12,9 +12,10 @@ Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (�
 
 There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to the first ventilatory threshold "VT1" or FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
-This requires a reliable heart rate strap that can measure inter-heartbeat intervals very accurately (Polar H10).
+This requires a reliable heart rate strap that can measure inter-heartbeat intervals very accurately (Polar H10)
+and a tool to measure ⍺1.
 
-Reports ⍺1 for the past two minutes in "near real time" via the GUI,
+FatMaxxer reports ⍺1 for the past two minutes in "near real time" via the GUI,
 speech (speaker/headphones, configurable) and notifications (configurable).
 The ⍺1 value and other features are calculated over a two minute rolling window of RR values,
 with ⍺1 calculated every 20 seconds (configurable).
@@ -44,29 +45,23 @@ Graph plots:
 - secondary Y axis (0-10):
   - blue trace: artifacts (%)
 
-## Audio/notification updates ##
-Provides audio and/or notifications (configurable) for ⍺1 and other selected features, adjusted to work rate.
-Updates ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise.
-Reports artifacts above a hardcoded threshold, or at higher intensity.
-Ongoing notification is sent whenever ⍺1 is recalculated.
-Audio updates are more frequent at higher intensities.
-Audible WAV sample (click) on dropped artifact.
-The notification title provides ⍺1 and artifacts dropped (%).
-This provides as a basic way to view output on a wearable.
-Some Garmin devices show notification titles, including during activities (see photo above).
+## Audio / notification (wearable) updates ##
+Reports ⍺1 and other features via audio and/or notifications (configurable), adjusting to work rate:
+
+*Audio updates* report ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise. Reports artifacts above a hardcoded threshold, or at higher intensity. Audio updates are more frequent at higher work rates. Audible warning (click) is played on dropped artifact.
+
+*Notifications:* A notification update is sent whenever ⍺1 is recalculated. Notification title provides ⍺1 and artifacts dropped (%). This provides as a basic way to view output on a wearable (see photo above). Some Garmin devices show notification titles during activities (see photo above).
 
 ## Logs ##
-Log file is output to "external" storage; may not work on Android versions later than 9ish.
-- rr.log as per HRV Logger format
-- artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
+Log files are recorded to external storage and available for export via the Androd ShareSheet.
+  - rr.log as per HRV Logger format
+  - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
+Output to "external" storage; may not work on Android versions later than 9-ish.
 
 ## Known issues / limitations ##
 - _Needless to say, I will not be held responsible for any app malfunction which causes you to overtrain!_
-- Use a more generic method to "share" the log files with other apps through Android API
 - GraphView plotter is quirky and could be replaced
-- Android may pause the app unpredictably. Interacting with the app regularly seems to help.
-  The newly-implemented ongoing notification and option to keep screen on may help to resolve the issue
-- Support for ongoing notifications seems patchy on some devices
+- Android may pause (kill) the app unpredictably. Enable the "Leave screen on" option, check on the app regularly, and avoid using other apps while in use.
 - Audio update period should not need to be customized; it should be detectable from metrics like ⍺1---it's an objective measure of effort, after all
 - UI cleanup to show battery, demote RMSSD, remove ugly status line
 - features.csv does not output SDNN
