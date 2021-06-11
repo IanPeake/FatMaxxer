@@ -573,7 +573,6 @@ public class MainActivity extends AppCompatActivity {
     public double prevrr = 0;
     public boolean starting = false;
     public long prevSpokenUpdateMS = 0;
-    public long prevSpokenArtifactsUpdateMS = 0;
     public int totalRejected = 0;
     public boolean thisIsFirstSample = false;
     long currentTimeMS;
@@ -1561,15 +1560,10 @@ public class MainActivity extends AppCompatActivity {
             double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"));
             String artifactsUpdate = "";
             String featuresUpdate = "";
-//            if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {
-//                if (artifactsPercentWindowed > artifactsRateAlarmThreshold && data.hr > (upperOptimalHRthreshold - 10)
-//                        || timeSinceLastSpokenArtifactsUpdate_s >= maxUpdateWaitSeconds
-//                ) {
-//                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
-//                }
-//            }
-            if (timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
-                artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
+            if (elapsedSeconds>30 && timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
+                if (artifactsPercentWindowed > 0) {
+                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
+                }
                 // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
                 if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
                     featuresUpdate = alpha1RoundedWindowed + " " + data.hr;
@@ -1577,22 +1571,22 @@ public class MainActivity extends AppCompatActivity {
                 } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1RoundedWindowed < upperOptimalAlpha1Threshold)) {
                     featuresUpdate =  "Alpha one, " + alpha1RoundedWindowed + " heart rate " + data.hr;
                 // lower end of optimal - prioritise a1
-                } else if (data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
+                } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
+                    data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
                     featuresUpdate = "Alpha one " +alpha1RoundedWindowed + " heart rate "+ data.hr;
                 // warm up / cool down --- low priority, update RMSSD instead of alpha1
-                } else if (timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
+                } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
+                        timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
                     featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd;
                 }
             }
-            if (featuresUpdate.length() > 0 || artifactsUpdate.length() > 0) {
+            if (featuresUpdate.length() > 0) {
+                prevSpokenUpdateMS = currentTime_ms;
                 if (artifactsPercentWindowed > artifactsRateAlarmThreshold) {
                     nonScreenUpdate(artifactsUpdate + " " + featuresUpdate);
                 } else {
                     nonScreenUpdate(featuresUpdate + ", " + artifactsUpdate);
                 }
-                prevSpokenArtifactsUpdateMS = currentTime_ms;
-//                if (featuresUpdate.length() > 0) prevSpokenUpdateMS = currentTime_ms;
-//                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdateMS = currentTime_ms;
             }
         }
 
