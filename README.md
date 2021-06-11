@@ -32,6 +32,7 @@ Apache 2.0 for any code that was authored by me.
 - On first launch, select your device in the menu from those discovered.
   Alternatively set preferred Device ID manually under settings, quit and restart.
   Device ID is an 8 digit hexadecimal string.
+  The first device successfully connected will become your preferred device.
   On startup, app will try to connect to your preferred device.
 
 ## User Interface ##
