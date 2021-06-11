@@ -961,7 +961,7 @@ public class MainActivity extends AppCompatActivity {
         notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                 .setContentTitle("FatMaxxer")
                 .setContentText("FatMaxxer started")
-                .setSmallIcon(R.mipmap.fatmaxxer_small_icon)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
 //                .setLargeIcon(aBitmap)
                 .setPriority(NotificationCompat.PRIORITY_MAX);
@@ -1459,7 +1459,7 @@ public class MainActivity extends AppCompatActivity {
     // determine whether to update, and what content, to provide via audio/notification
     private void audioUpdate(@NotNull PolarHrData data, long currentTime_ms){
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdateMS) / 1000;
-            long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
+            //long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
 
             double a1 = alpha1RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
@@ -1473,24 +1473,24 @@ public class MainActivity extends AppCompatActivity {
             double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"));
             String artifactsUpdate = "";
             String featuresUpdate = "";
-            if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {
-                if (artifactsPercentWindowed > artifactsRateAlarmThreshold && data.hr > (upperOptimalHRthreshold - 10)
-                        || timeSinceLastSpokenArtifactsUpdate_s >= maxUpdateWaitSeconds
-                ) {
-                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
-                }
-            }
+//            if (timeSinceLastSpokenArtifactsUpdate_s > minUpdateWaitSeconds) {
+//                if (artifactsPercentWindowed > artifactsRateAlarmThreshold && data.hr > (upperOptimalHRthreshold - 10)
+//                        || timeSinceLastSpokenArtifactsUpdate_s >= maxUpdateWaitSeconds
+//                ) {
+//                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
+//                }
+//            }
             if (timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
+                artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
                 // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
                 if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
-                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
                     featuresUpdate = alpha1RoundedWindowed + " " + data.hr;
                 // higher end of optimal - prioritise a1, close to undertraining?
                 } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1RoundedWindowed < upperOptimalAlpha1Threshold)) {
-                    featuresUpdate =  "Alpha one, " + alpha1RoundedWindowed + ". Heart rate " + data.hr;
+                    featuresUpdate =  "Alpha one, " + alpha1RoundedWindowed + " heart rate " + data.hr;
                 // lower end of optimal - prioritise a1
                 } else if (data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
-                    featuresUpdate = "Heart rate " + data.hr + ". Alpha one, " + alpha1RoundedWindowed;
+                    featuresUpdate = "Alpha one " +alpha1RoundedWindowed + " heart rate "+ data.hr;
                 // warm up / cool down --- low priority, update RMSSD instead of alpha1
                 } else if (timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
                     featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd;
@@ -1502,8 +1502,9 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     nonScreenUpdate(featuresUpdate + ", " + artifactsUpdate);
                 }
-                if (featuresUpdate.length() > 0) prevSpokenUpdateMS = currentTime_ms;
-                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdateMS = currentTime_ms;
+                prevSpokenArtifactsUpdateMS = currentTime_ms;
+//                if (featuresUpdate.length() > 0) prevSpokenUpdateMS = currentTime_ms;
+//                if (artifactsUpdate.length() > 0) prevSpokenArtifactsUpdateMS = currentTime_ms;
             }
         }
 
