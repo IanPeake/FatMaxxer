@@ -4,9 +4,11 @@ import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -26,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.FileProvider;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
@@ -41,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -80,8 +84,20 @@ public class MainActivity extends AppCompatActivity {
         super(R.layout.activity_main);
     }
 
+    public void deleteFile(Uri uri) {
+        File fdelete = new File(uri.getPath());
+        if (fdelete.exists()) {
+            if (fdelete.delete()) {
+                System.out.println("file Deleted :" + uri.getPath());
+            } else {
+                System.out.println("file not Deleted :" + uri.getPath());
+            }
+        }
+    }
+
     @Override
     public void finish() {
+        closeLogs();
         notificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
             api.disconnectFromDevice(DEVICE_ID);
@@ -563,8 +579,26 @@ public class MainActivity extends AppCompatActivity {
     private TextToSpeech ttobj;
     MediaPlayer mp;
 
-    private FileWriter rrLogStream;
-    private FileWriter featureLogStream;
+    private FileWriter rrLogStreamNew;
+    private FileWriter featureLogStreamNew;
+
+    private FileWriter rrLogStreamLegacy;
+    private FileWriter featureLogStreamLegacy;
+
+    private void closeLog(FileWriter fw) {
+        try {
+            fw.close();
+        } catch (IOException e) {
+            Log.d(TAG,"IOException closing "+fw.toString()+": "+e.toString());
+        }
+    }
+
+    private void closeLogs() {
+        closeLog(rrLogStreamNew);
+        closeLog(rrLogStreamLegacy);
+        closeLog(featureLogStreamNew);
+        closeLog(featureLogStreamLegacy);
+    }
 
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
@@ -607,7 +641,10 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_QUIT = 0;
     final int MENU_SEARCH = 1;
     final int MENU_CONNECT_DEFAULT = 2;
-    final int MENU_CONNECT_DISCOVERED = 3;
+    final int MENU_EXPORT = 3;
+    final int MENU_EXPORT_ALL = 4;
+    final int MENU_DELETE_ALL = 5;
+    final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
     Map<String,String> discoveredDevices = new HashMap<String,String>();
@@ -621,6 +658,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
         menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
+        menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
+        menu.add(0, MENU_EXPORT_ALL, Menu.NONE, "Export All Logs");
+        menu.add(0, MENU_DELETE_ALL, Menu.NONE, "Delete All Logs");
         String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
         if (tmpDeviceId.length()>0) {
             menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect preferred device "+tmpDeviceId);
@@ -635,6 +675,63 @@ public class MainActivity extends AppCompatActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
+    public Uri getUri(File f) {
+        try {
+            return FileProvider.getUriForFile(
+                    MainActivity.this,
+                    "polar.com.alpha1.fileprovider",
+                    f);
+        } catch (IllegalArgumentException e) {
+            Log.e("File Selector",
+                    "The selected file can't be shared: " + f.toString());
+        }
+        return null;
+    }
+
+    public void exportLogFiles() {
+        ArrayList<Uri> logUris = new ArrayList<Uri>();
+        logUris.add(getUri(logFiles.get("rr"))); // Add your image URIs here
+        logUris.add(getUri(logFiles.get("features"))); // Add your image URIs here
+
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, logUris);
+        shareIntent.setType("text/plain");
+        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
+    public void exportAllLogFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            allUris.add(getUri(f));
+        }
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
+        shareIntent.setType("text/plain");
+        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
+    public void deleteAllLogFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            if (!logFiles.containsValue(f)) {
+                f.delete();
+            }
+        }
+    }
+
+
     //    public boolean onCreateOptionsMenu(Menu menu) {
     //        MenuInflater inflater = getMenuInflater();
     //        inflater.inflate(R.menu.options_menu, menu);
@@ -646,6 +743,12 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case MENU_QUIT:
                 finish();
+            case MENU_EXPORT:
+                exportLogFiles();
+            case MENU_EXPORT_ALL:
+                exportAllLogFiles();
+            case MENU_DELETE_ALL:
+                deleteAllLogFiles();
             case MENU_CONNECT_DEFAULT:
                 tryPolarConnect();
             case MENU_SEARCH:
@@ -789,10 +892,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rrLogStream = createLogFile("rr");
-        writeLogFile("timestamp,rr,since_start", rrLogStream, "rr");
-        featureLogStream = createLogFile("features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStream, "features");
+        rrLogStreamLegacy = createLogFileNew("rr");
+        featureLogStreamLegacy = createLogFileNew("features");
+
+        rrLogStreamNew = createLogFileNew("rr");
+        writeLogFile("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
+        featureLogStreamNew = createLogFileNew("features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -1040,7 +1146,7 @@ public class MainActivity extends AppCompatActivity {
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-            writeLogFile(msg, rrLogStream, "rr");
+            writeLogFile(msg, rrLogStreamNew, rrLogStreamLegacy, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
@@ -1150,7 +1256,8 @@ public class MainActivity extends AppCompatActivity {
                     + "," + artifactsPercentWindowed
                     + "," + artifactCorrectionThreshold
                     ,
-                    featureLogStream,
+                    featureLogStreamNew,
+                    featureLogStreamLegacy,
                     "features");
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
@@ -1252,7 +1359,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void writeLogFile(String msg, FileWriter logStream, String tag) {
+    private void writeLogFile(String msg, FileWriter logStream, FileWriter logStreamLegacy, String tag) {
+        writeLogFileBasic(msg,logStream,tag);
+        writeLogFileBasic(msg,logStreamLegacy,tag);
+    }
+
+    private void writeLogFileBasic(String msg, FileWriter logStream, String tag) {
         try {
             logStream.append(msg+"\n");
             logStream.flush();
@@ -1273,6 +1385,36 @@ public class MainActivity extends AppCompatActivity {
             File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging RRs to "+file.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            text_view.setText("FileNotFoundException");
+            Log.d(TAG,"FileNotFoundException");
+            e.printStackTrace();
+        } catch (IOException e) {
+            text_view.setText("IOException creating log file");
+            Log.d(TAG,"IOException creating log file");
+            e.printStackTrace();
+        }
+        return logStream;
+    }
+
+    Map<String,File> logFiles = new HashMap<String,File>();
+
+    private FileWriter createLogFileNew(String tag) {
+        FileWriter logStream = null;
+        try {
+//            File dir = new File(getApplicationContext().getFilesDir(), "FatMaxOptimizer");
+//            File dir = new File(getApplicationContext().getExternalFilesDir(null), "FatMaxOptimizer");
+            String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
+            File privateRootDir = getFilesDir();
+            privateRootDir.mkdir();
+            File logsDir = new File(privateRootDir, "logs");
+            logsDir.mkdir();
+            //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
+            File file = new File(logsDir, "/FatMaxOptimiser."+dateString+"."+tag+".csv");
+            // Get the files/images subdirectory;
+            logStream = new FileWriter(file);
+            Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
+            logFiles.put(tag,file);
         } catch (FileNotFoundException e) {
                 text_view.setText("FileNotFoundException");
                 Log.d(TAG,"FileNotFoundException");
@@ -1403,7 +1545,7 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText("Destroyed");
             super.onDestroy();
             try {
-                rrLogStream.close();
+                rrLogStreamNew.close();
             } catch (IOException e) {
                 text_view.setText("IOException "+e.toString());
                 e.printStackTrace();
