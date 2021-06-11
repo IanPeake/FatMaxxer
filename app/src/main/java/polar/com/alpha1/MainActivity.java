@@ -559,7 +559,8 @@ public class MainActivity extends AppCompatActivity {
     // rounded alpha1
     double alpha1RoundedWindowed;
     int artifactsPercentWindowed;
-    double hrWindowed = 0;
+    double hrMeanWindowed = 0;
+    double rrMeanWindowed = 0;
     // maximum tolerable variance of adjacent RR intervals
     double artifactCorrectionThreshold = 0.05;
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
@@ -726,12 +727,15 @@ public class MainActivity extends AppCompatActivity {
         File logsDir = new File(privateRootDir, "logs");
         logsDir.mkdir();
         File[] allFiles = logsDir.listFiles();
+        StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
             if (!logFiles.containsValue(f)) {
                 Log.d(TAG,"deleting log file "+f);
                 f.delete();
+                filenames.append(f.getName()+" ");
             }
         }
+        Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
 
@@ -987,6 +991,7 @@ public class MainActivity extends AppCompatActivity {
                     quitSearchForPolarDevices();
                     Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
                     text_view.setText("Connected to "+polarDeviceInfo.deviceId);
+                    Toast.makeText(getBaseContext(), "Connected to "+polarDeviceInfo.deviceId, Toast.LENGTH_SHORT).show();
                     // if no default device, store this one
                     DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
                     if (DEVICE_ID.length()==0) {
@@ -1163,10 +1168,12 @@ public class MainActivity extends AppCompatActivity {
         List<Integer> rrsMs = data.rrsMs;
         for (int si = 0; si < data.rrsMs.size(); si++) {
             double newrr = data.rrsMs.get(si);
-            double lowbound = prevrr * (1 - artifactCorrectionThreshold);
-            double upbound = prevrr * (1 + artifactCorrectionThreshold);
-            Log.d(TAG, "prevrr " + prevrr + " lowbound " + lowbound + " upbound " + upbound);
-            if (thisIsFirstSample || lowbound < newrr && newrr < upbound) {
+//            double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
+//            double upperBound = prevrr * (1 + artifactCorrectionThreshold);
+            double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
+            double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
+            Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
+            if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
                 Log.d(TAG, "accept " + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
                 rrInterval[newestSample] = newrr;
@@ -1221,17 +1228,10 @@ public class MainActivity extends AppCompatActivity {
         int nrArtifacts = getNrArtifacts();
         double[] samples = copySamples();
         Log.d(TAG, "Samples: " + v_toString(samples));
-                /*
-                int firstArtifactIndex = v_containsArtifacts(samples);
-                if (firstArtifactIndex >= 0) {
-                    String msg = "Contains artifact at "+firstArtifactIndex+": "+v_toString(samples);
-                    text.setText("IllegalStateException: "+msg);
-                    throw new IllegalStateException(msg);
-                }
-                */
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
-        hrWindowed = round(60 * 1000 * 100 / v_mean(samples)) / 100.0;
+        rrMeanWindowed = v_mean(samples);
+        hrMeanWindowed = round(60 * 1000 * 100 / rrMeanWindowed) / 100.0;
         // Periodic actions: check alpha1 and issue voice update
         // - skip one period's worth after first HR update
         // - only within the first two seconds of this period window
@@ -1243,7 +1243,7 @@ public class MainActivity extends AppCompatActivity {
             prevA1Timestamp = currentTimeMS;
             //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,,artifactThreshold",featureLogStream,"features");
             writeLogFile("" + timestamp
-                    + "," + hrWindowed
+                    + "," + hrMeanWindowed
                     + "," + rmssdWindowed
                     + ","
                     + "," + alpha1RoundedWindowed
@@ -1423,24 +1423,24 @@ public class MainActivity extends AppCompatActivity {
         return logStream;
     }
 
-    // pre: samples.length > 1
-    private int v_containsArtifacts(double[] samples) {
-        for (int i = 0; i<samples.length - 1; i++) {
-            if (i>=1) {
-                double prev = samples[i - 1];
-                double next = samples[i];
-                if (next <= prev * (1 - artifactCorrectionThreshold)) {
-                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
-                    return i;
-                }
-                if (next >= prev * (1 + artifactCorrectionThreshold)) {
-                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
+//    // pre: samples.length > 1
+//    private int v_containsArtifacts(double[] samples) {
+//        for (int i = 0; i<samples.length - 1; i++) {
+//            if (i>=1) {
+//                double prev = samples[i - 1];
+//                double next = samples[i];
+//                if (next <= prev * (1 - artifactCorrectionThreshold)) {
+//                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
+//                    return i;
+//                }
+//                if (next >= prev * (1 + artifactCorrectionThreshold)) {
+//                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
+//                    return i;
+//                }
+//            }
+//        }
+//        return -1;
+//    }
 
     private double getRMSSD(double[] samples) {
         double[] NNdiff = v_abs(v_differential(samples));
