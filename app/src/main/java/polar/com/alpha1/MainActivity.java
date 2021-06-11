@@ -1321,7 +1321,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
         Log.d(TAG, logstring);
         Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
-        contextualNonDisplayUpdate(data, currentTimeMS);
+        audioUpdate(data, currentTimeMS);
         starting = false;
         wakeLock.release();
     }
@@ -1457,7 +1457,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // determine whether to update, and what content, to provide via audio/notification
-    private void contextualNonDisplayUpdate(@NotNull PolarHrData data, long currentTime_ms){
+    private void audioUpdate(@NotNull PolarHrData data, long currentTime_ms){
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdateMS) / 1000;
             long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
 

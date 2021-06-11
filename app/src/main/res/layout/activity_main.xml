@@ -163,7 +163,7 @@
             android:id="@+id/artifactsLabel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="artifacts"
+            android:text="artifacts / samples (%) [threshold]"
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
             android:textAlignment="center"
