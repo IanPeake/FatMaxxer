@@ -144,10 +144,7 @@ public class MainActivity extends AppCompatActivity {
     Disposable scanDisposable;
     Disposable autoConnectDisposable;
     // Serial number?? 90E2D72B
-    //String DEVICE_ID = "84B38E76BC"; //TODO replace with your device id
-    //String DEVICE_ID = "90E2D72B"; //replace with your device id
-    String DEVICE_ID = "deviceId not set";
-    PolarExerciseEntry exerciseEntry;
+    String DEVICE_ID = "";
     SharedPreferences sharedPreferences;
 
     Context thisContext = this;
@@ -596,6 +593,19 @@ public class MainActivity extends AppCompatActivity {
     private FileWriter rrLogStreamLegacy;
     private FileWriter featureLogStreamLegacy;
 
+    private FileWriter debugLogStream;
+
+    private class Log {
+        public int d(String tag, String msg) {
+            writeLogFile("debug", debugLogStream, "debug");
+            return android.util.Log.d(tag,msg);
+        }
+        public int e(String tag, String msg) {
+            return android.util.Log.e(tag,msg);
+        }
+    }
+    private Log Log = new Log();
+
     private void closeLog(FileWriter fw) {
         try {
             fw.close();
@@ -655,6 +665,8 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_EXPORT = 3;
     final int MENU_EXPORT_ALL = 4;
     final int MENU_DELETE_ALL = 5;
+    final int MENU_EXPORT_DEBUG = 6;
+    final int MENU_DELETE_DEBUG = 7;
     final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
@@ -670,6 +682,8 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
         menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
+        menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
+        menu.add(0, MENU_DELETE_DEBUG, Menu.NONE, "Delete Debug Logs");
         menu.add(0, MENU_EXPORT_ALL, Menu.NONE, "Export All Logs");
         menu.add(0, MENU_DELETE_ALL, Menu.NONE, "Delete All Logs");
         String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
@@ -904,9 +918,10 @@ public class MainActivity extends AppCompatActivity {
         featureLogStreamLegacy = createLogFile("features");
 
         rrLogStreamNew = createLogFileNew("rr");
-        writeLogFile("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
+        writeLogFiles("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
         featureLogStreamNew = createLogFileNew("features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
+        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
+        debugLogStream = createLogFileNew("debug");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -1057,7 +1072,6 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "BATTERY LEVEL: " + level);
                 }
 
-
                 //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(thisContext);
 
                 // FIXME: this is a makeshift main event & timer loop
@@ -1186,7 +1200,7 @@ public class MainActivity extends AppCompatActivity {
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-            writeLogFile(msg, rrLogStreamNew, rrLogStreamLegacy, "rr");
+            writeLogFiles(msg, rrLogStreamNew, rrLogStreamLegacy, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
@@ -1196,14 +1210,14 @@ public class MainActivity extends AppCompatActivity {
         String rejected = "";
         boolean haveArtifacts = false;
         List<Integer> rrsMs = data.rrsMs;
-        double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
-        double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
+//        double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
+//        double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
         for (int si = 0; si < data.rrsMs.size(); si++) {
             double newrr = data.rrsMs.get(si);
-//            double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
-//            double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-            lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
-            upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
+            double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
+            double upperBound = prevrr * (1 + artifactCorrectionThreshold);
+//            lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
+//            upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
             Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
             if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
                 Log.d(TAG, "accept " + newrr);
@@ -1285,8 +1299,7 @@ public class MainActivity extends AppCompatActivity {
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
             alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
             prevA1Timestamp = currentTimeMS;
-            //writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,,artifactThreshold",featureLogStream,"features");
-            writeLogFile("" + timestamp
+            writeLogFiles("" + timestamp
                     + "," + hrMeanWindowed
                     + "," + rmssdWindowed
                     + ","
@@ -1317,7 +1330,6 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder logmsg = new StringBuilder();
         logmsg.append(elapsed + "s");
         logmsg.append(", rrsMs: " + data.rrsMs);
-        logmsg.append(", rrMean: "+rrMeanWindowed+" LB "+lowerBound+" UB "+upperBound);
         logmsg.append(rejMsg);
         logmsg.append(", total rejected: " + totalRejected);
         String logstring = logmsg.toString();
@@ -1399,18 +1411,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void writeLogFile(String msg, FileWriter logStream, FileWriter logStreamLegacy, String tag) {
-        writeLogFileBasic(msg,logStream,tag);
-        writeLogFileBasic(msg,logStreamLegacy,tag);
+    private void writeLogFiles(String msg, FileWriter logStream, FileWriter logStream2, String tag) {
+        writeLogFile(msg,logStream,tag);
+        writeLogFile(msg,logStream2,tag);
     }
 
-    private void writeLogFileBasic(String msg, FileWriter logStream, String tag) {
+    private void writeLogFile(String msg, FileWriter logStream, String tag) {
         try {
             logStream.append(msg+"\n");
             logStream.flush();
-            Log.d(TAG,"Wrote to "+tag+" log: "+msg);
+            // avoid feedback loop through the local Log mechanism
+            android.util.Log.d(TAG,"Wrote to "+tag+" log: "+msg);
         } catch (IOException e) {
-            Log.d(TAG,"IOException writing to "+tag+" log");
+            android.util.Log.d(TAG,"IOException writing to "+tag+" log");
             text_view.setText("IOException writing to "+tag+" log");
             e.printStackTrace();
         }
