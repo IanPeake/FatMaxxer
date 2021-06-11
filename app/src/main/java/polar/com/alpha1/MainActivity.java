@@ -361,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"v_abs ("+v_toString(x)+") == "+result);
         return result;
     }
+    // aka dRR
     public double[] v_differential(double[] x) {
         double[] result = new double[x.length - 1];
         for (int i = 0; i < (x.length - 1); i++) {
@@ -528,12 +529,15 @@ public class MainActivity extends AppCompatActivity {
     TextView text_a1;
     TextView text_artifacts;
 
-    // 120s ring buffer
-    public final int rrWindowSize = 120;
+    // 120s ring buffer for dfa alpha1
+    public final int featureWindowSizeSec = 120;
+    // buffer to allow at least 45 beats forward/backward per Kubios
+    public final int sampleBufferMarginSec = 45;
+    public final int rrWindowSizeSec = featureWindowSizeSec + sampleBufferMarginSec;
     // time between alpha1 calculations
     public int alpha1EvalPeriod;
-    // max hr 300bpm(!?) * 120s window
-    public final int maxrrs = 300 * rrWindowSize;
+    // max hr 300bpm(!?) across 120s window
+    public final int maxrrs = 5 * rrWindowSizeSec;
     // circular buffer of recently recorded RRs
     // FIXME: premature optimization is the root of all evil
     // Not that much storage required, does not avoid the fundamental problem that
@@ -573,6 +577,12 @@ public class MainActivity extends AppCompatActivity {
     public long prevSpokenArtifactsUpdateMS = 0;
     public int totalRejected = 0;
     public boolean thisIsFirstSample = false;
+    long currentTimeMS;
+    // long currentTimeMS = System.currentTimeMillis();
+    long elapsedMS;
+    //long elapsedMS = (currentTimeMS - firstSampleMS);
+    long elapsedSeconds;
+    //long elapsedSeconds = elapsedMS / 1000;
 
     NotificationManagerCompat notificationManager;
     NotificationCompat.Builder notificationBuilder;
@@ -1053,7 +1063,22 @@ public class MainActivity extends AppCompatActivity {
                 // FIXME: this is a makeshift main event & timer loop
                 @Override
                 public void hrNotificationReceived(@NonNull String identifier, @NonNull PolarHrData data) {
-                    updateTrackedFeatures(data);
+                    currentTimeMS = System.currentTimeMillis();
+                    if (!started) {
+                        Log.d(TAG, "hrNotificationReceived: started!");
+                        started = true;
+                        starting = true;
+                        thisIsFirstSample = true;
+                        firstSampleMS = currentTimeMS;
+                        // FIXME: why does the scroller not start with the top visible?
+                        scrollView.scrollTo(0,0);
+                    }
+                    elapsedMS = (currentTimeMS - firstSampleMS);
+                    elapsedSeconds = elapsedMS / 1000;
+                    Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
+                    //if (elapsedSeconds > rrWindowSizeSeconds) {
+                        updateTrackedFeatures(data);
+                    //}
                 }
 
                 @Override
@@ -1076,13 +1101,30 @@ public class MainActivity extends AppCompatActivity {
         return nrSamples;
     }
 
-    // extract current history from circular buffer (ugh)
+    // extract feature window from circular buffer (ugh), allowing for sample buffer after end of feature window
     // FIXME: requires invariants
-    public double[] copySamples() {
+    public double[] copySamplesFeatureWindow() {
+        int next = 0;
+        // rewind just past sample buffer
+        int newestSampleIndex = (newestSample - sampleBufferMarginSec) % rrInterval.length;
+        long newestTimestamp = rrIntervalTimestamp[newestSampleIndex];
+        // rewind by the size of the window in seconds
+        int oldestSampleIndex = newestSampleIndex;
+        while (rrIntervalTimestamp[oldestSampleIndex] > (newestTimestamp - rrWindowSizeSec)) {
+            oldestSampleIndex = (oldestSampleIndex - 1) % rrInterval.length;
+        }
+        return copySamplesRange(oldestSampleIndex,newestSampleIndex);
+    }
+
+    public double[] copySamplesAll() {
+        return copySamplesRange(oldestSample, newestSample);
+    }
+
+    public double[] copySamplesRange(int oldest, int newest) {
         double[] result = new double[getNrSamples()];
         int next = 0;
         // FIXME: unverified
-        for (int i = oldestSample; i != newestSample; i = (i + 1) % rrInterval.length) {
+        for (int i = oldest; i != newest; i = (i + 1) % rrInterval.length) {
             result[next] = rrInterval[i];
             next++;
         }
@@ -1099,8 +1141,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateTrackedFeatures(@NotNull PolarHrData data) {
         wakeLock.acquire();
-        Log.d(TAG, "hrNotificationReceived");
-
+        Log.d(TAG, "updateTrackedFeatures");
         if (sharedPreferences.getBoolean("keepScreenOn", false)) {
             text_view.setText("Keep screen on");
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1142,8 +1183,6 @@ public class MainActivity extends AppCompatActivity {
             alpha1EvalPeriod = 5;
             sharedPreferences.edit().putString("alpha1CalcPeriod", "5").commit();
         }
-
-        long currentTimeMS = System.currentTimeMillis();
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
@@ -1151,27 +1190,20 @@ public class MainActivity extends AppCompatActivity {
             logRRelapsedMS += rr;
             timestamp += rr;
         }
-        if (!started) {
-            Log.d(TAG, "hrNotificationReceived: started!");
-            started = true;
-            starting = true;
-            thisIsFirstSample = true;
-            firstSampleMS = currentTimeMS;
-            // FIXME: why does the scroller not start with the top visible?
-            scrollView.scrollTo(0,0);
-        }
         //
         // FILTERING / RECORDING RR intervals
         //
         String rejected = "";
         boolean haveArtifacts = false;
         List<Integer> rrsMs = data.rrsMs;
+        double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
+        double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
         for (int si = 0; si < data.rrsMs.size(); si++) {
             double newrr = data.rrsMs.get(si);
 //            double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
 //            double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-            double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
-            double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
+            lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
+            upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
             Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
             if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
                 Log.d(TAG, "accept " + newrr);
@@ -1196,19 +1228,17 @@ public class MainActivity extends AppCompatActivity {
         int expired = 0;
         // expire old samples
         Log.d(TAG, "Expire old RRs");
-        while (rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSize * 1000) {
+        while (rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSizeSec * 1000) {
             oldestSample = (oldestSample + 1) % maxrrs;
             expired++;
         }
         Log.d(TAG, "Expire old artifacts");
-        while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSize * 1000) {
+        while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSizeSec * 1000) {
             Log.d(TAG, "Expire at " + oldestArtifactSample);
             oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
         }
-        long elapsedMS = (currentTimeMS - firstSampleMS);
         Log.d(TAG, "elapsedMS " + elapsedMS);
         //
-        long elapsedSeconds = elapsedMS / 1000;
         long absSeconds = Math.abs(elapsedSeconds);
         String positive = String.format(
                 "%02d:%02d:%02d",
@@ -1221,13 +1251,27 @@ public class MainActivity extends AppCompatActivity {
         text_batt.setText("\uD83D\uDD0B"+batteryLevel);
 
         //
-        // FEATURES
+        // Automatic beat correction
+        // https://www.kubios.com/hrv-preprocessing/
         //
         long elapsed = elapsedMS / 1000;
         int nrSamples = getNrSamples();
         int nrArtifacts = getNrArtifacts();
-        double[] samples = copySamples();
+        // get full window (c. 220sec)
+        double[] allSamples = copySamplesAll();
+        // get sample window (c. 120sec)
+        double[] featureWindowSamples;
+        double[] samples = allSamples;
+//        if (elapsedSeconds > rrWindowSizeSeconds) {
+//            featureWindowSamples = copySamplesFeatureWindow();
+//            samples = featureWindowSamples;
+//        }
         Log.d(TAG, "Samples: " + v_toString(samples));
+        double[] dRR = v_differential(samples);
+
+        //
+        // FEATURES
+        //
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
         rrMeanWindowed = v_mean(samples);
@@ -1273,9 +1317,9 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder logmsg = new StringBuilder();
         logmsg.append(elapsed + "s");
         logmsg.append(", rrsMs: " + data.rrsMs);
+        logmsg.append(", rrMean: "+rrMeanWindowed+" LB "+lowerBound+" UB "+upperBound);
         logmsg.append(rejMsg);
         logmsg.append(", total rejected: " + totalRejected);
-        logmsg.append(" battery " + batteryLevel);
         String logstring = logmsg.toString();
 
         artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
@@ -1422,25 +1466,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return logStream;
     }
-
-//    // pre: samples.length > 1
-//    private int v_containsArtifacts(double[] samples) {
-//        for (int i = 0; i<samples.length - 1; i++) {
-//            if (i>=1) {
-//                double prev = samples[i - 1];
-//                double next = samples[i];
-//                if (next <= prev * (1 - artifactCorrectionThreshold)) {
-//                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
-//                    return i;
-//                }
-//                if (next >= prev * (1 + artifactCorrectionThreshold)) {
-//                    Log.d(TAG,"Artifact at "+(i)+": ("+prev+"), "+next);
-//                    return i;
-//                }
-//            }
-//        }
-//        return -1;
-//    }
 
     private double getRMSSD(double[] samples) {
         double[] NNdiff = v_abs(v_differential(samples));
