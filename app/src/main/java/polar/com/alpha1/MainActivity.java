@@ -13,7 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
-import android.util.Log;
+//import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -530,11 +530,13 @@ public class MainActivity extends AppCompatActivity {
     public final int featureWindowSizeSec = 120;
     // buffer to allow at least 45 beats forward/backward per Kubios
     public final int sampleBufferMarginSec = 45;
-    public final int rrWindowSizeSec = featureWindowSizeSec + sampleBufferMarginSec;
+    //public final int rrWindowSizeSec = featureWindowSizeSec + sampleBufferMarginSec;
+    public final int rrWindowSizeSec = featureWindowSizeSec;
     // time between alpha1 calculations
     public int alpha1EvalPeriod;
-    // max hr 300bpm(!?) across 120s window
-    public final int maxrrs = 5 * rrWindowSizeSec;
+    // max hr approx 300bpm(!?) across 120s window
+    // FIXME: this is way larger than needed
+    public final int maxrrs = 300 * rrWindowSizeSec;
     // circular buffer of recently recorded RRs
     // FIXME: premature optimization is the root of all evil
     // Not that much storage required, does not avoid the fundamental problem that
@@ -597,10 +599,11 @@ public class MainActivity extends AppCompatActivity {
 
     private class Log {
         public int d(String tag, String msg) {
-            writeLogFile("debug", debugLogStream, "debug");
+            if (debugLogStream!=null) writeLogFile( msg, debugLogStream,  "debug");
             return android.util.Log.d(tag,msg);
         }
         public int e(String tag, String msg) {
+            if (debugLogStream!=null) writeLogFile( msg, debugLogStream, "debug");
             return android.util.Log.e(tag,msg);
         }
     }
@@ -762,6 +765,46 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
+    public void exportAllDebugFiles() {
+        Log.d(TAG,"exportAllDebugFiles...");
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            Log.d(TAG, "Debug file? " + getUri(f));
+            if (f.getName().endsWith(".debug.log")) {
+                Log.d(TAG, "Found debug file: " + getUri(f));
+                allUris.add(getUri(f));
+            }
+        }
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
+        shareIntent.setType("text/plain");
+        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
+    public void deleteAllDebugFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        StringBuilder filenames = new StringBuilder();
+        for (File f : allFiles) {
+            if (f.getName().endsWith(".debug.log") && !logFiles.containsValue(f)) {
+                Log.d(TAG,"deleting log file (on exit) "+f);
+                f.deleteOnExit();
+                filenames.append(f.getName()+" ");
+            }
+        }
+        Toast.makeText(getBaseContext(), "Deleting (on exit) "+filenames.toString(), Toast.LENGTH_LONG).show();
+    }
+
 
     //    public boolean onCreateOptionsMenu(Menu menu) {
     //        MenuInflater inflater = getMenuInflater();
@@ -776,6 +819,8 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == MENU_EXPORT) exportLogFiles();
         if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
         if (itemID == MENU_DELETE_ALL) deleteAllLogFiles();
+        if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
+        if (itemID == MENU_DELETE_DEBUG) deleteAllDebugFiles();
         if (itemID == MENU_CONNECT_DEFAULT) tryPolarConnect();
         if (itemID == MENU_SEARCH) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
@@ -917,11 +962,11 @@ public class MainActivity extends AppCompatActivity {
         rrLogStreamLegacy = createLogFile("rr");
         featureLogStreamLegacy = createLogFile("features");
 
-        rrLogStreamNew = createLogFileNew("rr");
+        rrLogStreamNew = createLogFileNew("rr","csv");
         writeLogFiles("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
-        featureLogStreamNew = createLogFileNew("features");
+        featureLogStreamNew = createLogFileNew("features","csv");
         writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
-        debugLogStream = createLogFileNew("debug");
+        debugLogStream = createLogFileNew("debug","log");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -1282,6 +1327,7 @@ public class MainActivity extends AppCompatActivity {
 //        }
         Log.d(TAG, "Samples: " + v_toString(samples));
         double[] dRR = v_differential(samples);
+        Log.d(TAG, "dRR: " + v_toString(dRR));
 
         //
         // FEATURES
@@ -1289,14 +1335,18 @@ public class MainActivity extends AppCompatActivity {
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
         rrMeanWindowed = v_mean(samples);
+        Log.d(TAG,"rrMeanWindowed "+rrMeanWindowed);
         hrMeanWindowed = round(60 * 1000 * 100 / rrMeanWindowed) / 100.0;
+        Log.d(TAG,"hrMeanWindowed "+hrMeanWindowed);
         // Periodic actions: check alpha1 and issue voice update
         // - skip one period's worth after first HR update
         // - only within the first two seconds of this period window
         // - only when at least three seconds have elapsed since last invocation
         // FIXME: what precisely is required for alpha1 to be well-defined?
         // FIXME: The prev_a1_check now seems redundant
+        Log.d(TAG,"Elapsed "+elapsed+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
+            Log.d(TAG,"alpha1...");
             alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
             prevA1Timestamp = currentTimeMS;
             writeLogFiles("" + timestamp
@@ -1452,7 +1502,7 @@ public class MainActivity extends AppCompatActivity {
 
     Map<String,File> logFiles = new HashMap<String,File>();
 
-    private FileWriter createLogFileNew(String tag) {
+    private FileWriter createLogFileNew(String tag, String extension) {
         FileWriter logStream = null;
         try {
 //            File dir = new File(getApplicationContext().getFilesDir(), "FatMaxOptimizer");
@@ -1463,7 +1513,7 @@ public class MainActivity extends AppCompatActivity {
             File logsDir = new File(privateRootDir, "logs");
             logsDir.mkdir();
             //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
-            File file = new File(logsDir, "/FatMaxOptimiser."+dateString+"."+tag+".csv");
+            File file = new File(logsDir, "/FatMaxOptimiser."+dateString+"."+tag+"."+extension);
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
