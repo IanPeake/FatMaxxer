@@ -1,0 +1,2 @@
+REV=$1
+git show $REV:app/src/main/java/polar/com/alpha1/MainActivity.java
