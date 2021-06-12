@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -861,21 +862,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayShowHomeEnabled(true);
+        actionBar.setIcon(R.mipmap.ic_launcher);
+
         //setContentView(R.layout.activity_fragment_container);
         setContentView(R.layout.activity_main);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         createNotificationChannel();
-
-        /*
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.graph_container, GraphFragment.class, null)
-                .commit();
-        getSupportFragmentManager().executePendingTransactions();
-         */
-
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
         api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
@@ -1425,7 +1422,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
         Log.d(TAG, logstring);
-        Log.d(TAG, "" + (elapsed % alpha1EvalPeriod));
+        Log.d(TAG, "Elapsed % alpha1EvalPeriod" + (elapsed % alpha1EvalPeriod));
         audioUpdate(data, currentTimeMS);
         starting = false;
         wakeLock.release();
