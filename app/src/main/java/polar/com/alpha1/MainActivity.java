@@ -1,16 +1,22 @@
 package polar.com.alpha1;
 
 import android.Manifest;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 //import android.util.Log;
@@ -61,7 +67,6 @@ import polar.com.sdk.api.PolarBleApiCallback;
 import polar.com.sdk.api.PolarBleApiDefaultImpl;
 import polar.com.sdk.api.errors.PolarInvalidArgument;
 import polar.com.sdk.api.model.PolarDeviceInfo;
-import polar.com.sdk.api.model.PolarExerciseEntry;
 import polar.com.sdk.api.model.PolarHrData;
 
 import static java.lang.Math.abs;
@@ -74,16 +79,22 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String API_LOGGER_TAG = "FatMaxxer";
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
-    private final int NOTIFICATION_ID = 0;
-    private final String NOTIFICATION_TAG = "alpha1update";
+    private static final int NOTIFICATION_ID = 1;
+    private static final String NOTIFICATION_TAG = "alpha1update";
 
     final double alpha1HRVvt1 = 0.75;
     final double alpha1HRVvt2 = 0.5;
 
+    // FIXME: Catch UncaughtException
+    // https://stackoverflow.com/questions/19897628/need-to-handle-uncaught-exception-and-send-log-file
+
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
         super(R.layout.activity_main);
+        Log = new Log();
     }
+
+
 
     public void deleteFile(Uri uri) {
         File fdelete = new File(uri.getPath());
@@ -99,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         closeLogs();
-        notificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
+        uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
             api.disconnectFromDevice(DEVICE_ID);
         } catch (PolarInvalidArgument polarInvalidArgument) {
@@ -148,27 +159,174 @@ public class MainActivity extends AppCompatActivity {
     String DEVICE_ID = "";
     SharedPreferences sharedPreferences;
 
+    Notification initialNotification;
+
     Context thisContext = this;
     private int batteryLevel = 0;
     private String exerciseMode = "Light";
     private EditText input_field;
-    private final String CHANNEL_ID = "FatMaxxerChannelID1";
+    private static final String SERVICE_CHANNEL_ID = "FatMaxxerServiceChannel";
+    private static final String UI_CHANNEL_ID = "FatMaxxerUIChannel";
+    private static final String SERVICE_CHANNEL_NAME = "FatMaxxer Service Notification";
+    private static final String UI_CHANNEL_NAME = "FatMaxxer Notifications";
 
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.channel_name);
-            String description = getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+    public static class LocalService extends Service {
+        private NotificationManager mNM;
+
+        @Override
+        public void onDestroy() {
+            Log.d(TAG, "LocalService: onDestroy");
+            super.onDestroy();
+            //mNM.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
+        }
+
+        public LocalService() {
+        }
+
+        /**
+         * Class for clients to access.  Because we know this service always
+         * runs in the same process as its clients, we don't need to deal with
+         * IPC.
+         */
+        public class LocalBinder extends Binder {
+            LocalService getService() {
+                return LocalService.this;
+            }
+        }
+
+
+        //https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
+        @Override
+        public void onCreate() {
+            Log.d(TAG,"FatMaxxer service onCreate");
+            super.onCreate();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                startMyOwnForeground();
+            else
+                startForeground(1, new Notification());
+        }
+
+        private void startMyOwnForeground(){
+            NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID, SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            chan.setLightColor(Color.BLUE);
+            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            assert manager != null;
+            manager.createNotificationChannel(chan);
+
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, SERVICE_CHANNEL_ID);
+            Notification notification =
+                    notificationBuilder.setOngoing(true)
+                    .setSmallIcon(R.mipmap.ic_launcher_foreground)
+                    .setContentTitle("FatMaxxer service started")
+                    .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                    .setCategory(Notification.CATEGORY_SERVICE)
+                    .build();
+            startForeground(2, notification);
+        }
+
+        @Override
+        public int onStartCommand(Intent intent, int flags, int startId) {
+            Log.d("FatMaxxerLocalService", "Received start id " + startId + ": " + intent);
+            return START_NOT_STICKY;
+        }
+
+        @Override
+        public IBinder onBind(Intent intent) {
+            return mBinder;
+        }
+
+        // This is the object that receives interactions from clients.  See
+        // RemoteService for a more complete example.
+        private final IBinder mBinder = new LocalBinder();
+
+        //@RequiresApi(Build.VERSION_CODES.O)
+        private String createNotificationChannel() {
+            NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID,
+                    SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+//            chan.lightColor = Color.BLUE;
+//            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
+            NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            service.createNotificationChannel(chan);
+            return SERVICE_CHANNEL_ID;
         }
     }
+
+    /**
+     * Example of binding and unbinding to the local service.
+     * bind to, receiving an object through which it can communicate with the service.
+     *
+     * Note that this is implemented as an inner class only keep the sample
+     * all together; typically this code would appear in some separate class.
+     */
+//    public static class Binding extends Activity {
+
+        //
+        // SERVICE BINDING
+        //
+
+        // Don't attempt to unbind from the service unless the client has received some
+        // information about the service's state.
+        private boolean mShouldUnbind;
+
+        LocalService service;
+
+    // To invoke the bound service, first make sure that this value
+        // is not null.
+        private LocalService mBoundService;
+
+        private ServiceConnection mConnection = new ServiceConnection() {
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                // This is called when the connection with the service has been
+                // established, giving us the service object we can use to
+                // interact with the service.  Because we have bound to a explicit
+                // service that we know is running in our own process, we can
+                // cast its IBinder to a concrete class and directly access it.
+                mBoundService = ((LocalService.LocalBinder) service).getService();
+
+                // Tell the user about this for our demo.
+                Toast.makeText(MainActivity.this, "FatMaxxer bound to service",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            public void onServiceDisconnected(ComponentName className) {
+                // This is called when the connection with the service has been
+                // unexpectedly disconnected -- that is, its process crashed.
+                // Because it is running in our same process, we should never
+                // see this happen.
+                mBoundService = null;
+                Toast.makeText(MainActivity.this, "FatMaxxer disconnected from service",
+                        Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        void doBindService() {
+            Log.d(TAG,"FatMaxxer: binding to service");
+            // Attempts to establish a connection with the service.  We use an
+            // explicit class name because we want a specific service
+            // implementation that we know will be running in our own process
+            // (and thus won't be supporting component replacement by other
+            // applications).
+            if (bindService(new Intent(MainActivity.this, LocalService.class),
+                    mConnection, Context.BIND_AUTO_CREATE)) {
+                mShouldUnbind = true;
+            } else {
+                Log.e(TAG, "Error: The requested service doesn't " +
+                        "exist, or this client isn't allowed access to it.");
+            }
+        }
+
+        void doUnbindService() {
+            if (mShouldUnbind) {
+                // Release information about the service's state.
+                unbindService(mConnection);
+                mShouldUnbind = false;
+            }
+        }
+
+        //
+        // END BINDING
+        //
 
     public static class MySettingsFragment extends PreferenceFragmentCompat {
         @Override
@@ -176,24 +334,6 @@ public class MainActivity extends AppCompatActivity {
             setPreferencesFromResource(R.xml.preferences, rootKey);
         }
     }
-
-    /*
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.channel_name);
-            String description = getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-    */
 
     // https://www.bragitoff.com/2017/04/polynomial-fitting-java-codeprogram-works-android-well/
             /*  int n;                       //degree of polynomial to fit the data
@@ -583,8 +723,8 @@ public class MainActivity extends AppCompatActivity {
     long elapsedSeconds;
     //long elapsedSeconds = elapsedMS / 1000;
 
-    NotificationManagerCompat notificationManager;
-    NotificationCompat.Builder notificationBuilder;
+    static NotificationManagerCompat uiNotificationManager;
+    static NotificationCompat.Builder uiNotificationBuilder;
 
     private TextToSpeech ttobj;
     MediaPlayer mp;
@@ -607,7 +747,7 @@ public class MainActivity extends AppCompatActivity {
             return android.util.Log.e(tag,msg);
         }
     }
-    private Log Log = new Log();
+    private static Log Log;
 
     private void closeLog(FileWriter fw) {
         try {
@@ -774,7 +914,7 @@ public class MainActivity extends AppCompatActivity {
         logsDir.mkdir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
-            Log.d(TAG, "Debug file? " + getUri(f));
+            //Log.d(TAG, "Debug file? " + getUri(f));
             if (f.getName().endsWith(".debug.log")) {
                 Log.d(TAG, "Found debug file: " + getUri(f));
                 allUris.add(getUri(f));
@@ -859,20 +999,63 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //@RequiresApi(Build.VERSION_CODES.O)
+    private String createUINotificationChannel() {
+        NotificationChannel chan = new NotificationChannel(UI_CHANNEL_ID,
+                UI_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+//            chan.lightColor = Color.BLUE;
+//            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
+        NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        service.createNotificationChannel(chan);
+        return UI_CHANNEL_ID;
+    }
+
+    public void handleUncaughtException(Thread thread, Throwable e) {
+        e.printStackTrace(); // not all Android versions will print the stack trace automatically
+        //
+        Intent intent = new Intent ();
+        intent.setAction ("com.mydomain.SEND_LOG"); // see step 5.
+        intent.setFlags (Intent.FLAG_ACTIVITY_NEW_TASK); // required when starting from Application
+        startActivity (intent);
+        //
+        System.exit(1); // kill off the crashed app
+    }
+
     @Override
     protected void onCreate (Bundle savedInstanceState) {
+        // Setup handler for uncaught exceptions.
+        Thread.setDefaultUncaughtExceptionHandler (new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException (Thread thread, Throwable e) {
+                handleUncaughtException (thread, e);
+            }
+        });
+
         super.onCreate(savedInstanceState);
+        uiNotificationManager = NotificationManagerCompat.from(this);
+        uiNotificationBuilder = new NotificationCompat.Builder(this, UI_CHANNEL_ID)
+                .setOngoing(true)
+                .setSmallIcon(R.mipmap.ic_launcher_foreground)
+                .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                .setCategory(Notification.CATEGORY_MESSAGE);
+                ;
+        Intent i = new Intent(MainActivity.this, LocalService.class);
+        i.setAction("START");
+        Log.d(TAG,"intent to start local service "+i);
+        ComponentName serviceComponentName = MainActivity.this.startService(i);
+        Log.d(TAG,"start result "+serviceComponentName);
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
-        actionBar.setIcon(R.mipmap.ic_launcher);
+        actionBar.setIcon(R.mipmap.ic_launcher_foreground);
 
         //setContentView(R.layout.activity_fragment_container);
         setContentView(R.layout.activity_main);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        createNotificationChannel();
+        doBindService();
+        createUINotificationChannel();
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
         api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
@@ -959,7 +1142,8 @@ public class MainActivity extends AppCompatActivity {
         featureLogStreamLegacy = createLogFile("features");
 
         rrLogStreamNew = createLogFileNew("rr","csv");
-        writeLogFiles("timestamp,rr,since_start", rrLogStreamNew, rrLogStreamLegacy, "rr");
+        writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
+        writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
         featureLogStreamNew = createLogFileNew("features","csv");
         writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
         debugLogStream = createLogFileNew("debug","log");
@@ -1027,19 +1211,6 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.settings_container, MySettingsFragment.class, null)
                 .commit();
-
-        notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                .setContentTitle("FatMaxxer")
-                .setContentText("FatMaxxer started")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setOngoing(true)
-//                .setLargeIcon(aBitmap)
-                .setPriority(NotificationCompat.PRIORITY_MAX);
-
-        notificationManager = NotificationManagerCompat.from(this);
-
-        // notificationId is a unique int for each notification that you must define
-        notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
 
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
@@ -1360,9 +1531,10 @@ public class MainActivity extends AppCompatActivity {
                     "features");
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
-                notificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
-                notificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% batt "+batteryLevel+"% rmssd "+rmssdWindowed);
-                notificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notificationBuilder.build());
+                Log.d(TAG,"Feature notification...");
+                uiNotificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
+                uiNotificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% batt "+batteryLevel+"% rmssd "+rmssdWindowed);
+                uiNotificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, uiNotificationBuilder.build());
             }
         }
 
@@ -1467,7 +1639,7 @@ public class MainActivity extends AppCompatActivity {
             logStream.append(msg+"\n");
             logStream.flush();
             // avoid feedback loop through the local Log mechanism
-            android.util.Log.d(TAG,"Wrote to "+tag+" log: "+msg);
+            //android.util.Log.d(TAG,"Wrote to "+tag+" log: "+msg);
         } catch (IOException e) {
             android.util.Log.d(TAG,"IOException writing to "+tag+" log");
             text_view.setText("IOException writing to "+tag+" log");
@@ -1619,6 +1791,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDestroy() {
             text_view.setText("Destroyed");
+            Toast.makeText(this, "FatMaxxer stopped", Toast.LENGTH_SHORT).show();
             super.onDestroy();
             try {
                 rrLogStreamNew.close();
@@ -1626,6 +1799,13 @@ public class MainActivity extends AppCompatActivity {
                 text_view.setText("IOException "+e.toString());
                 e.printStackTrace();
             }
+            doUnbindService();
+
+            Intent i = new Intent(MainActivity.this, LocalService.class);
+            i.setAction("STOP");
+            Log.d(TAG,"intent to stop local service "+i);
+            MainActivity.this.stopService(i);
+
             api.shutDown();
         }
 }
