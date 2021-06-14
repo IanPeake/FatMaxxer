@@ -703,6 +703,7 @@ public class MainActivity extends AppCompatActivity {
     // rounded alpha1
     double alpha1RoundedWindowed;
     int artifactsPercentWindowed;
+    int currentHR;
     double hrMeanWindowed = 0;
     double rrMeanWindowed = 0;
     // maximum tolerable variance of adjacent RR intervals
@@ -1376,6 +1377,7 @@ public class MainActivity extends AppCompatActivity {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
 
+        currentHR = data.hr;
         String artifactCorrectionThresholdSetting = sharedPreferences.getString("artifactThreshold", "Auto");
         if (artifactCorrectionThresholdSetting.equals("Auto")) {
             if (data.hr>95) {
@@ -1533,7 +1535,11 @@ public class MainActivity extends AppCompatActivity {
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 Log.d(TAG,"Feature notification...");
                 uiNotificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
-                uiNotificationBuilder.setContentText("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"% batt "+batteryLevel+"% rmssd "+rmssdWindowed);
+                if (sharedPreferences.getBoolean("disableNotificationText", false)) {
+                    uiNotificationBuilder.setContentText("");
+                } else {
+                    uiNotificationBuilder.setContentText("HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
+                }
                 uiNotificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, uiNotificationBuilder.build());
             }
         }

@@ -17,6 +17,11 @@
         app:title="Keep screen on"
         app:summary=""/>
 
+    <SwitchPreferenceCompat
+        app:key="disableNotificationText"
+        app:title="Disable notification text body"
+        app:summary="⍺1 update notifications have empty text body"/>
+
     <ListPreference
         app:key="artifactThreshold"
         app:title="Artifact rejection threshold"
@@ -34,5 +39,10 @@
         app:key="polarDeviceID"
         app:title="Preferred device ID (restart required)"
         app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
+
+    <SwitchPreferenceCompat
+        app:key="experimental"
+        app:title="Developer mode"
+        app:summary=""/>
 
 </PreferenceScreen>
