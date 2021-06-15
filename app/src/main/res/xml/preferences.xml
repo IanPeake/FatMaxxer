@@ -12,15 +12,17 @@
         app:title="Enable notification updates"
         app:summary="⍺1 updates via ongoing notification"/>
 
+    <ListPreference
+        app:key="notificationDetail"
+        app:title="Notification Detail"
+        app:summary=""
+        app:entries="@array/notificationDetailEntries"
+        app:entryValues="@array/notificationDetailValues"/>
+
     <SwitchPreferenceCompat
         app:key="keepScreenOn"
         app:title="Keep screen on"
         app:summary=""/>
-
-    <SwitchPreferenceCompat
-        app:key="disableNotificationText"
-        app:title="Disable notification text body"
-        app:summary="⍺1 update notifications have empty text body"/>
 
     <ListPreference
         app:key="artifactThreshold"

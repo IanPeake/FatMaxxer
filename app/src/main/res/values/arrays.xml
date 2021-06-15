@@ -1,4 +1,17 @@
 <resources>
+
+    <string-array name="notificationDetailEntries">
+        <item>Title with alpha1/drop% only</item>
+        <item>Title + HR in body</item>
+        <item>Title + full details in body</item>
+    </string-array>
+
+    <string-array name="notificationDetailValues">
+        <item>title</item>
+        <item>titleHR</item>
+        <item>full</item>
+    </string-array>
+
 <string-array name="artifactThresholdEntries">
     <item>0.05</item>
     <item>0.25</item>

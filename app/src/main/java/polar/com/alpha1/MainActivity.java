@@ -1219,12 +1219,6 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         uiNotificationManager = NotificationManagerCompat.from(this);
-        uiNotificationBuilder = new NotificationCompat.Builder(this, UI_CHANNEL_ID)
-                .setOngoing(true)
-                .setSmallIcon(R.mipmap.ic_launcher_foreground)
-                .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                .setCategory(Notification.CATEGORY_MESSAGE);
-                ;
         Intent i = new Intent(MainActivity.this, LocalService.class);
         i.setAction("START");
         Log.d(TAG,"intent to start local service "+i);
@@ -1244,7 +1238,9 @@ public class MainActivity extends AppCompatActivity {
         createUINotificationChannel();
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
-        api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
+        //api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
+        api = PolarBleApiDefaultImpl.defaultImplementation(this,
+                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO);
         api.setPolarFilter(false);
 
         final Button connect = this.findViewById(R.id.connect_button);
@@ -1576,6 +1572,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         currentHR = data.hr;
+
         String artifactCorrectionThresholdSetting = sharedPreferences.getString("artifactThreshold", "Auto");
         if (artifactCorrectionThresholdSetting.equals("Auto")) {
             if (data.hr>95) {
@@ -1592,6 +1589,8 @@ public class MainActivity extends AppCompatActivity {
             exerciseMode = "Workout";
             artifactCorrectionThreshold = 0.05;
         }
+
+        String notificationDetailSetting = sharedPreferences.getString("notificationDetail", "full");
 
         String alpha1EvalPeriodSetting =  sharedPreferences.getString("alpha1CalcPeriod", "20");
         try {
@@ -1737,13 +1736,16 @@ public class MainActivity extends AppCompatActivity {
                     "features");
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 Log.d(TAG,"Feature notification...");
-                uiNotificationBuilder.setContentTitle(
-                        "a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
-                if (sharedPreferences.getBoolean("disableNotificationText", false)) {
-                    uiNotificationBuilder.setContentText("");
-                } else {
-                    uiNotificationBuilder.setContentText(
-                        "HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
+                uiNotificationBuilder = new NotificationCompat.Builder(this, UI_CHANNEL_ID)
+                        .setOngoing(true)
+                        .setSmallIcon(R.mipmap.ic_launcher_foreground)
+                        .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                        .setCategory(Notification.CATEGORY_MESSAGE)
+                        .setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
+                if (notificationDetailSetting.equals("full")) {
+                    uiNotificationBuilder.setContentText("HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
+                } else if (notificationDetailSetting.equals("titleHR")) {
+                    uiNotificationBuilder.setContentText("HR " +currentHR);
                 }
                 uiNotificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, uiNotificationBuilder.build());
             }
