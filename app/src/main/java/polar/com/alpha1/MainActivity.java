@@ -1053,7 +1053,9 @@ public class MainActivity extends AppCompatActivity {
         createUINotificationChannel();
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
-        api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
+        //api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
+        api = PolarBleApiDefaultImpl.defaultImplementation(this,
+                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO);
         api.setPolarFilter(false);
 
         final Button connect = this.findViewById(R.id.connect_button);
