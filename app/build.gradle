@@ -41,6 +41,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.preference:preference:1.1.0-alpha05'
     implementation 'androidx.fragment:fragment:1.2.5'
+    implementation fileTree(dir: '/home/ipeake/sandbox/ejml/ejml-v0.40-libs', include: ['*.aar', '*.jar'], exclude: [])
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

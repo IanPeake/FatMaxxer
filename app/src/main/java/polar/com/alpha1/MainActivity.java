@@ -44,6 +44,7 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import org.ejml.simple.SimpleMatrix;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -410,7 +411,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public String v_toString(double[] x) {
         StringBuilder result = new StringBuilder();
-        result.append("{");
+        result.append("["+x.length+"]{");
         for (int i = 0; i < x.length; i++) {
             if (i!=0) {
                 result.append(", ");
@@ -453,6 +454,15 @@ public class MainActivity extends AppCompatActivity {
         }
         return result;
     }
+    //
+    public double[] v_cumsum(double c, double[] x) {
+        double result[] = new double[x.length + 1];
+        result[0] = c;
+        for (int i = 0; i < x.length; i++) {
+            result[i+1] = result[i] + x[i];
+        }
+        return result;
+    }
     public double[] v_subscalar(double[] x, double y) {
         double result[] = new double[x.length];
         for (int i = 0; i < x.length; i++) {
@@ -468,7 +478,17 @@ public class MainActivity extends AppCompatActivity {
         }
         return result;
     }
+    public double[] v_tail(double[] x) {
+        //Log.d(TAG, "v_subtract length  "+length);
+        double result[] = new double[x.length - 1];
+        for (int i = 1; i < x.length; i++) {
+            result[i-1] = x[i];
+        }
+        //Log.d(TAG,"v_subtract returning "+v_toString(result));
+        return result;
+    }
     public double[] v_subtract(double[] x, double[] y, int x_offset, int length) {
+        if (length != y.length) throw new IllegalArgumentException(("vector subtraction of unequal lengths"));
         //Log.d(TAG, "v_subtract length  "+length);
         double result[] = new double[length];
         for (int i = 0; i < length; i++) {
@@ -476,6 +496,9 @@ public class MainActivity extends AppCompatActivity {
         }
         //Log.d(TAG,"v_subtract returning "+v_toString(result));
         return result;
+    }
+    public double[] v_subtract(double[] x, double[] y) {
+        return v_subtract(x,y,0,x.length);
     }
     public double v_sum(double[] x) {
         double sum = 0;
@@ -523,10 +546,10 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"v_power_s2 result "+v_toString(result));
         return result;
     }
-    public double[] v_log2(double[] x) {
+    public double[] v_logN(double[] x, double n) {
         double result[] = new double[x.length];
         for (int i = 0; i < x.length; i++) {
-            result[i] = Math.log10(x[i]) / Math.log10(2);
+            result[i] = Math.log10(x[i]) / Math.log10(n);
         }
         return result;
     }
@@ -542,24 +565,32 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private double getDetrendedMean(double[] x, int scale, double[] scale_ax, int offset) {
+    private double getDetrendedMeanV1(double[] x, int scale, double[] scale_ax, int offset) {
         double[] ycut = v_slice(x, offset, scale);
-        //Log.d(TAG,"rms detrended "+ scale +" cut@"+ offset +" ycut "+v_toString(ycut));
+        Log.d(TAG,"getDetrendedMeanV1 "+ scale +" cut@"+ offset +" ycut "+v_toString(ycut));
         //     coeff = np.polyfit(scale_ax, xcut, 1)
         double[] coeff = v_reverse(polyFit(scale_ax, ycut,1));
         //Log.d(TAG,"rmsd coeff "+v_toString(coeff));
         //     xfit = np.polyval(coeff, scale_ax)
         double[] xfit = polyVal(coeff, scale_ax);
+        Log.d(TAG,"xfit "+xfit.length+" "+v_toString(xfit));
         //Log.d(TAG,"rmsd xfit "+v_toString(xfit));
         //     # detrending and computing RMS of each window
         //     rms[e] = np.sqrt(np.mean((xcut-xfit)**2))
-        double mean = v_mean(v_power_s2(v_subtract(x,xfit, offset, scale),2));
+        double[] finalSegment = v_subtract(x, xfit, offset, scale);
+        Log.d(TAG,"getDetrendedMeanV1 final "+v_toString(finalSegment));
+        double mean = v_mean(v_power_s2(finalSegment,2));
         return mean;
     }
 
-    // RMS + detrending(!)
+    private double getDetrendedMean(double[] x, int scale, double[] scale_ax, int offset) {
+        double meanv1 = getDetrendedMeanV1(x,scale,scale_ax,offset);
+        return meanv1;
+    }
+
+    // RMS + detrending
     // - divide x into x.length/scale non-overlapping boxes of size scale
-    public double[] rms_detrended(double[] x, int scale) {
+    public double[] rmsDetrended(double[] x, int scale) {
         //Log.d(TAG,"rms_detrended call, scale "+scale);
         int nrboxes = x.length / scale;
         // # making an array with data divided in windows
@@ -574,6 +605,7 @@ public class MainActivity extends AppCompatActivity {
         // for e, xcut in enumerate(X):
         int offset = 0;
         for (int i = 0; i < nrboxes; i++) {
+            // root mean square SUCCESSIVE DIFFERENCES
             double mean = getDetrendedMean(x, scale, scale_ax, offset);
             rms[i] = sqrt(mean);
             //Log.d(TAG,"rmsd box "+i+" "+" "+rms[i]);
@@ -592,8 +624,161 @@ public class MainActivity extends AppCompatActivity {
         return rms;
     }
 
+    private SimpleMatrix[] detrendingFactorMatrices = new SimpleMatrix[20];
+
+    public SimpleMatrix detrendingFactorMatrix(int length) {
+        Log.d(TAG, "detrendingFactorMatrix size "+length);
+        int T = length;
+        if (detrendingFactorMatrices[T] != null) {
+            return detrendingFactorMatrices[T];
+        }
+        int lambda = 10;
+        SimpleMatrix I = SimpleMatrix.identity(T);
+        SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
+        String d2str = "";
+        for (int i = 0; i < D2.numRows(); i++) {
+            D2.set(i, i,1);
+            D2.set(i,i+1, -2);
+            D2.set(i, i+2, 1);
+            for (int j = 0; j < D2.numCols(); j++) {
+                d2str += ""+D2.get(i,j)+" ";
+            }
+            d2str += "\n";
+        }
+        Log.d(TAG,"D2["+length+"]:\n"+d2str);
+        SimpleMatrix sum = I.plus(D2.transpose().scale(lambda*lambda).mult(D2));
+        Log.d(TAG, "createDetrendingFactorMatrix inverse...");
+        Log.d(TAG, "inverse done");
+        detrendingFactorMatrices[T] = I.minus(sum.invert());
+        SimpleMatrix result = detrendingFactorMatrices[T];
+        Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
+        return result;
+    }
+
+    public double[] detrendingV2(double[] dRR) {
+        //Log.d(TAG,"detrendingV2 z="+v_toString(z));
+        //Log.d(TAG,"detrendingV2 dRR "+v_toString(dRR));
+        Log.d(TAG,"detrendingV2 dRR "+v_toString(dRR));
+        // convert dRRs to vector (SimpleMatrix)
+        SimpleMatrix dRRvec = new SimpleMatrix(dRR.length,1);
+        for (int i = 0; i<dRR.length; i++) {
+            dRRvec.set(i, 0, dRR[i]);
+        }
+        SimpleMatrix detrended = detrendingFactorMatrix(dRRvec.numRows()).mult(dRRvec);
+        Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
+        int size = detrended.numRows();
+        double[] result = new double[size];
+        for (int i = 0; i<size; i++) {
+            result[i] = detrended.get(i,0);
+        }
+        Log.d("TAG","detrendingV2 ("+v_toString(dRR)+")\n  == "+v_toString(result));
+        return result;
+    }
+
+    // get the variance (average square-difference from mean) around the detrended walk of
+    // the box denoted by @arg x at offset of length scale
+    private double getDetrendedWalkVarianceV2(double[] x, double[] scale_ax, int scale, int offset) {
+        // FIXME: revert scale + 1?
+        // original walk (displacement)
+        double[] ycut = v_slice(x, offset, scale + 1);
+        Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
+        // FIXME: with overlap, it looks like we lose at least one dRR at the extremities of each slice
+        // length - 1
+        double[] dRR = v_differential(ycut);
+        // stationary component of dRR, length - 1
+        double[] stationary_dRR = detrendingV2(dRR);
+        // "detrended walk" (displacement?)
+        // == "the difference between the original walk and the local trend"
+        // - original walk == ycut
+        // - local trend == dRR - stationary_dRR (does not apply to ycut[0])
+        // - detrended walk == ycut[1:] - (dRR - stationary_dRR)
+        double[] detrended_walk = v_subtract(v_tail(ycut),v_subtract(dRR,stationary_dRR));
+        Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
+        double mean = v_mean(detrended_walk);
+        double[] diffs = v_subscalar(detrended_walk, mean);
+        // mean of square of differences
+        double meanv2 = v_mean(v_power_s2(diffs,2));
+        return meanv2;
+    }
+
+    // Find the variances of all "boxes" of size scale
+    // - divide x into x.length/scale non-overlapping boxes of size scale
+    // - and again in reverse
+    // - actually for now the boxes overlap by 1 sample at each end
+    public double[] variancesAtScale(double[] x, int scale) {
+        //Log.d(TAG,"rmsDetrendedV2  "+v_toString(x)+" scale "+scale);
+        int nrboxes = (x.length - 1) / scale;
+        //Log.d(TAG,"rms_detrended scale_ax "+v_toString(scale_ax));
+        double scale_ax[] = arange(0, scale, scale);
+        // rms = np.zeros(X.shape[0])
+        double variances[] = v_zero(nrboxes * 2);
+        int offset = 0;
+        // for e, xcut in enumerate(X):
+        for (int i = 0; i < nrboxes; i++) {
+            // root mean squared successive differences
+            double variance = getDetrendedWalkVarianceV2(x, scale_ax, scale, offset);
+            variances[i] = variance;
+            //Log.d(TAG,"- rmssd slice "+i+" "+" "+rms[i]);
+            offset += scale;
+        }
+        // boxes in reverse order starting with a "last" box aligned to the very end of the data
+        // to align with the very end, given "overlap", we need to come back an additional 1 sample
+        offset = x.length - scale - 1;
+        for (int i = nrboxes; i < nrboxes*2; i++) {
+            // root mean squared successive differences
+            double variance = getDetrendedWalkVarianceV2(x, scale_ax, scale, offset);
+            variances[i] = variance;
+            //Log.d(TAG,"- rmssd slice "+i+" "+" "+rms[i]);
+            offset -= scale;
+        }
+        Log.d(TAG,"rmsDetrendedV2 scale "+scale+" "+v_toString(variances));
+        //     return rms
+        return variances;
+    }
+
+    // x: dRR samples; l_lim: lower limit; u_lim: upper limit
+    public double dfaAlpha1V2(double x[], int l_lim, int u_lim, int nrscales) {
+        Log.d(TAG, "dfaAlpha1V2");
+        // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
+        double[] scales = v_power_s1(2, arange(l_lim,u_lim,nrscales));
+        // FIXME: reinstate scale 3??
+//        double[] exp_scales = { 3.,  4.,  4.,  4.,  4.,  5.,  5.,  5.,  5.,  6.,  6.,  6.,  7.,  7.,  7.,  8.,  8.,  9.,
+//                9.,  9., 10., 10., 11., 12., 12., 13., 13., 14., 15., 15.};
+        double[] exp_scales = { 3., 4.,  4.,  4.,  4.,  5.,  5.,  5.,  5.,  6.,  6.,  6.,  7.,  7.,  7.,  8.,  8.,  9.,
+                9.,  9., 10., 10., 11., 12., 12., 13., 13., 14., 15., 15.};
+        // HACK - we know what scales are needed for now
+        scales = exp_scales;
+        if (scales != exp_scales) {
+            text_view.setText("IllegalStateException: wrong scales");
+            throw new IllegalStateException("wrong scales");
+        }
+        Log.d(TAG, "dfaAlpha1V2 scales "+v_toString(scales));
+        // fluct = np.zeros(len(scales))
+        double[] fluct = v_zero(scales.length);
+        // # computing RMS for each window
+        // for e, sc in enumerate(scales):
+        //   fluct[e] = np.sqrt(np.mean(calc_rms(y, sc)**2))
+        for (int i = 0; i < scales.length; i++) {
+            int sc = (int)(scales[i]);
+            //Log.d(TAG, "- scale "+i+" "+sc);
+            double[] variances = variancesAtScale(x, sc);
+            fluct[i] = v_mean(variances);
+//            Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
+//            Log.d(TAG, "  - rms "+v_toString(sc_rms));
+        }
+        //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
+        Log.d(TAG, "dfaAlpha1V2 fluct: "+v_toString(fluct));
+        // # fitting a line to rms data
+//        double[] coeff = v_reverse(polyFit(v_log2(scales), v_log2(fluct), 1));
+        double[] coeff = v_reverse(polyFit(v_logN(scales,10), v_logN(fluct, 10), 1));
+        Log.d(TAG, "dfaAlpha1V2 coefficients "+v_toString(coeff));
+        double alpha = coeff[0];
+        Log.d(TAG, "dfaAlpha1V2 = "+alpha);
+        return alpha;
+    }
+
     // x: samples; l_lim: lower limit; u_lim: upper limit
-    public double dfa_alpha1(double x[], int l_lim, int u_lim, int nrscales) {
+    public double dfaAlpha1V1(double x[], int l_lim, int u_lim, int nrscales) {
         // vector: cumulative sum, elmtwise-subtract, elmtwise-power, mean, interpolate, RMS, Zero, Interpolate
         // sqrt
         // polynomial fit
@@ -621,16 +806,16 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < scales.length; i++) {
             int sc = (int)(scales[i]);
             //Log.d(TAG, "- scale "+i+" "+sc);
-            double[] sc_rms = rms_detrended(y, sc);
+            double[] sc_rms = rmsDetrended(y, sc);
             fluct[i] = sqrt(v_mean(v_power_s2(sc_rms,2)));
             //Log.d(TAG, "  - rms "+v_toString(sc_rms));
             //Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
         }
         //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
-        Log.d(TAG, "Polar dfa_alpha1, scales "+v_toString(scales));
-        Log.d(TAG, "fluct: "+v_toString(fluct));
+        Log.d(TAG, "dfa_alpha1, scales "+v_toString(scales));
+        Log.d(TAG, "dfa_alpha1 fluct: "+v_toString(fluct));
         // # fitting a line to rms data
-        double[] coeff = v_reverse(polyFit(v_log2(scales), v_log2(fluct), 1));
+        double[] coeff = v_reverse(polyFit(v_logN(scales,2), v_logN(fluct,2), 1));
         Log.d(TAG, "dfa_alpha1 coefficients "+v_toString(coeff));
         double alpha = coeff[0];
         Log.d(TAG, "dfa_alpha1 = "+alpha);
@@ -646,7 +831,7 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: tiny discrepancy in double precision between Python and Java impl(?!)
         // This Java impl:
         double exp_result = 1.5503173309573228;
-        double act_result = dfa_alpha1(values,2,4,30);
+        double act_result = dfaAlpha1V1(values,2,4,30);
         if (Double.compare(exp_result,act_result)!=0) {
             String msg ="expected "+exp_result+" got "+act_result;
             text_view.setText("Self-test DFA alpha1 failed: "+msg);
@@ -667,6 +852,7 @@ public class MainActivity extends AppCompatActivity {
     TextView text_a1;
     TextView text_artifacts;
 
+    public boolean experimental = false;
     // 120s ring buffer for dfa alpha1
     public final int featureWindowSizeSec = 120;
     // buffer to allow at least 45 beats forward/backward per Kubios
@@ -697,11 +883,12 @@ public class MainActivity extends AppCompatActivity {
     public long firstSampleMS;
     // have we started sampling?
     public boolean started = false;
+    double rmssdWindowed = 0;
     // last known alpha1 (default resting nominally 1.0)
     double alpha1Windowed = 1.0;
-    double rmssdWindowed = 0;
-    // rounded alpha1
-    double alpha1RoundedWindowed;
+    double alpha1RoundedWindowed = 1.0;
+    double alpha1WindowedV2 = 1.0;
+    double alpha1RoundedWindowedV2 = 1.0;
     int artifactsPercentWindowed;
     int currentHR;
     double hrMeanWindowed = 0;
@@ -718,11 +905,8 @@ public class MainActivity extends AppCompatActivity {
     public int totalRejected = 0;
     public boolean thisIsFirstSample = false;
     long currentTimeMS;
-    // long currentTimeMS = System.currentTimeMillis();
     long elapsedMS;
-    //long elapsedMS = (currentTimeMS - firstSampleMS);
     long elapsedSeconds;
-    //long elapsedSeconds = elapsedMS / 1000;
 
     static NotificationManagerCompat uiNotificationManager;
     static NotificationCompat.Builder uiNotificationBuilder;
@@ -776,6 +960,7 @@ public class MainActivity extends AppCompatActivity {
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1V2Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt2Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a125Series = new LineGraphSeries<DataPoint>();
@@ -1012,7 +1197,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void handleUncaughtException(Thread thread, Throwable e) {
-        e.printStackTrace(); // not all Android versions will print the stack trace automatically
+        Log.d(TAG,"Uncaught exception "+e.toString()+" "+e.getStackTrace().toString()); // not all Android versions will print the stack trace automatically
         //
         Intent intent = new Intent ();
         intent.setAction ("com.mydomain.SEND_LOG"); // see step 5.
@@ -1124,8 +1309,16 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: Why does the scrollable not start with top visible?
         // scrollView.scrollTo(0,0);
 
-        testDFA_alpha1();
-        testRMSSD_1();
+        /////
+        /////
+        /////
+        /////
+        //testDFA_alpha1();
+        //testRMSSD_1();
+        /////
+        /////
+        /////
+        /////
 
         api.setApiLogger(s -> Log.d(API_LOGGER_TAG, s));
 
@@ -1146,7 +1339,7 @@ public class MainActivity extends AppCompatActivity {
         writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
         writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
         featureLogStreamNew = createLogFileNew("features","csv");
-        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold", featureLogStreamNew, featureLogStreamLegacy, "features");
+        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, featureLogStreamLegacy, "features");
         debugLogStream = createLogFileNew("debug","log");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
@@ -1172,12 +1365,15 @@ public class MainActivity extends AppCompatActivity {
         graphView.addSeries(a1HRVvt1Series);
         graphView.addSeries(a1HRVvt2Series);
         graphView.addSeries(hrSeries);
+        graphView.addSeries(a1V2Series);
         // REQUIRED
         graphView.getSecondScale().addSeries(artifactSeries);
         graphView.getSecondScale().setMaxY(10);
         graphView.getSecondScale().setMinY(0);
         a1Series.setColor(Color.GREEN);
         a1Series.setThickness(5);
+        a1V2Series.setColor(Color.MAGENTA);
+        a1V2Series.setThickness(5);
         a1HRVvt1Series.setColor(getResources().getColor(R.color.colorHRVvt1));
         a1HRVvt2Series.setColor(getResources().getColor(R.color.colorHRVvt2));
         a125Series.setColor(Color.GRAY);
@@ -1319,6 +1515,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 searchForPolarDevices();
+
                 // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
                 tryPolarConnect();
     }
@@ -1369,6 +1566,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateTrackedFeatures(@NotNull PolarHrData data) {
         wakeLock.acquire();
         Log.d(TAG, "updateTrackedFeatures");
+        experimental = sharedPreferences.getBoolean("experimental", false);
         if (sharedPreferences.getBoolean("keepScreenOn", false)) {
             text_view.setText("Keep screen on");
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1496,7 +1694,7 @@ public class MainActivity extends AppCompatActivity {
 //        }
         Log.d(TAG, "Samples: " + v_toString(samples));
         double[] dRR = v_differential(samples);
-        Log.d(TAG, "dRR: " + v_toString(dRR));
+        //Log.d(TAG, "dRR: " + v_toString(dRR));
 
         //
         // FEATURES
@@ -1516,7 +1714,12 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG,"Elapsed "+elapsed+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
             Log.d(TAG,"alpha1...");
-            alpha1Windowed = dfa_alpha1(samples, 2, 4, 30);
+            alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30);
+            alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
+            if (experimental) {
+                alpha1WindowedV2 = dfaAlpha1V2(samples, 2, 4, 30);
+                alpha1RoundedWindowedV2 = round(alpha1WindowedV2 * 100) / 100.0;
+            }
             prevA1Timestamp = currentTimeMS;
             writeLogFiles("" + timestamp
                     + "," + hrMeanWindowed
@@ -1527,18 +1730,20 @@ public class MainActivity extends AppCompatActivity {
                     + "," + nrSamples
                     + "," + artifactsPercentWindowed
                     + "," + artifactCorrectionThreshold
+                    + "," + alpha1RoundedWindowedV2
                     ,
                     featureLogStreamNew,
                     featureLogStreamLegacy,
                     "features");
-            alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 Log.d(TAG,"Feature notification...");
-                uiNotificationBuilder.setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
+                uiNotificationBuilder.setContentTitle(
+                        "a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
                 if (sharedPreferences.getBoolean("disableNotificationText", false)) {
                     uiNotificationBuilder.setContentText("");
                 } else {
-                    uiNotificationBuilder.setContentText("HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
+                    uiNotificationBuilder.setContentText(
+                        "HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
                 }
                 uiNotificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, uiNotificationBuilder.build());
             }
@@ -1555,6 +1760,9 @@ public class MainActivity extends AppCompatActivity {
         logmsg.append(elapsed + "s");
         logmsg.append(", rrsMs: " + data.rrsMs);
         logmsg.append(rejMsg);
+        if (experimental) {
+            logmsg.append(", a1V2 " + alpha1RoundedWindowedV2);
+        }
         logmsg.append(", total rejected: " + totalRejected);
         String logstring = logmsg.toString();
 
@@ -1588,6 +1796,9 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
         hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
         a1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
+        if (experimental) {
+            a1V2Series.appendData(new DataPoint(elapsedMin, alpha1WindowedV2 * 100.0), scrollToEnd, maxDataPoints);
+        }
         if (scrollToEnd) {
             double nextX = elapsedMin + tenSecAsMin;
             a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
