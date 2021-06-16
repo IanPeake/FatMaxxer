@@ -755,16 +755,11 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "dfaAlpha1V2 scales "+v_toString(scales));
         // fluct = np.zeros(len(scales))
         double[] fluct = v_zero(scales.length);
-        // # computing RMS for each window
-        // for e, sc in enumerate(scales):
-        //   fluct[e] = np.sqrt(np.mean(calc_rms(y, sc)**2))
         for (int i = 0; i < scales.length; i++) {
             int sc = (int)(scales[i]);
             //Log.d(TAG, "- scale "+i+" "+sc);
             double[] variances = variancesAtScale(x, sc);
             fluct[i] = v_mean(v_power_s2(variances,2));
-//            Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
-//            Log.d(TAG, "  - rms "+v_toString(sc_rms));
         }
         //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
         Log.d(TAG, "dfaAlpha1V2 fluct: "+v_toString(fluct));
