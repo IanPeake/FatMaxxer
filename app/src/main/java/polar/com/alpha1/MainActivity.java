@@ -762,7 +762,7 @@ public class MainActivity extends AppCompatActivity {
             int sc = (int)(scales[i]);
             //Log.d(TAG, "- scale "+i+" "+sc);
             double[] variances = variancesAtScale(x, sc);
-            fluct[i] = v_mean(variances);
+            fluct[i] = v_mean(v_power_s2(variances,2));
 //            Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
 //            Log.d(TAG, "  - rms "+v_toString(sc_rms));
         }
