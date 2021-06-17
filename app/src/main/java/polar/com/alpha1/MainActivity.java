@@ -583,7 +583,7 @@ public class MainActivity extends AppCompatActivity {
         return mean;
     }
 
-    private double getDetrendedMean(double[] x, int scale, double[] scale_ax, int offset) {
+    private double getRMSDetrended(double[] x, int scale, double[] scale_ax, int offset) {
         double meanv1 = getDetrendedMeanV1(x,scale,scale_ax,offset);
         return meanv1;
     }
@@ -606,7 +606,7 @@ public class MainActivity extends AppCompatActivity {
         int offset = 0;
         for (int i = 0; i < nrboxes; i++) {
             // root mean square SUCCESSIVE DIFFERENCES
-            double mean = getDetrendedMean(x, scale, scale_ax, offset);
+            double mean = getRMSDetrended(x, scale, scale_ax, offset);
             rms[i] = sqrt(mean);
             //Log.d(TAG,"rmsd box "+i+" "+" "+rms[i]);
             offset += scale;
@@ -614,7 +614,7 @@ public class MainActivity extends AppCompatActivity {
         // boxes in reverse order starting with a "last" box aligned to the very end of the data
         offset = x.length - scale;
         for (int i = nrboxes; i < nrboxes*2; i++) {
-            double mean = getDetrendedMean(x, scale, scale_ax, offset);
+            double mean = getRMSDetrended(x, scale, scale_ax, offset);
             rms[i] = sqrt(mean);
             //Log.d(TAG,"rmsd box "+i+" "+" "+rms[i]);
             offset -= scale;
@@ -632,7 +632,8 @@ public class MainActivity extends AppCompatActivity {
         if (detrendingFactorMatrices[T] != null) {
             return detrendingFactorMatrices[T];
         }
-        int lambda = 10;
+        // lambda = 500
+        int lambda = 500;
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
         String d2str = "";
@@ -677,27 +678,29 @@ public class MainActivity extends AppCompatActivity {
 
     // get the variance (average square-difference from mean) around the detrended walk of
     // the box denoted by @arg x at offset of length scale
-    private double getDetrendedWalkVarianceV2(double[] x, double[] scale_ax, int scale, int offset) {
+    private double getBoxDetrendedRMS(double[] x, double[] scale_ax, int scale, int offset) {
         // FIXME: revert scale + 1?
         // original walk (displacement)
-        double[] ycut = v_slice(x, offset, scale + 1);
+        double[] ycut = v_slice(x, offset, scale);
         Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
         // FIXME: with overlap, it looks like we lose at least one dRR at the extremities of each slice
         // length - 1
-        double[] dRR = v_differential(ycut);
-        // stationary component of dRR, length - 1
-        double[] stationary_dRR = detrendingV2(dRR);
+        //double[] dRR = v_differential(ycut);
+        double mean = v_mean(ycut);
+        double[] iRR = v_cumsum(v_subscalar(ycut,mean));
+        // stationary component of dRR
+        double[] stationary_dRR = detrendingV2(iRR);
         // "detrended walk" (displacement?)
         // == "the difference between the original walk and the local trend"
         // - original walk == ycut
         // - local trend == dRR - stationary_dRR (does not apply to ycut[0])
         // - detrended walk == ycut[1:] - (dRR - stationary_dRR)
-        double[] detrended_walk = v_subtract(v_tail(ycut),v_subtract(dRR,stationary_dRR));
+        double[] detrended_walk = v_subtract(iRR,stationary_dRR);
         Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
-        double mean = v_mean(detrended_walk);
-        double[] diffs = v_subscalar(detrended_walk, mean);
+//        double mean2 = v_mean(detrended_walk);
+//        double[] diffs = v_subscalar(detrended_walk, mean2);
         // mean of square of differences
-        double meanv2 = v_mean(v_power_s2(diffs,2));
+        double meanv2 = sqrt(v_mean(v_power_s2(detrended_walk,2)));
         return meanv2;
     }
 
@@ -705,7 +708,7 @@ public class MainActivity extends AppCompatActivity {
     // - divide x into x.length/scale non-overlapping boxes of size scale
     // - and again in reverse
     // - actually for now the boxes overlap by 1 sample at each end
-    public double[] variancesAtScale(double[] x, int scale) {
+    public double[] getRMSatScale(double[] x, int scale) {
         //Log.d(TAG,"rmsDetrendedV2  "+v_toString(x)+" scale "+scale);
         int nrboxes = (x.length - 1) / scale;
         //Log.d(TAG,"rms_detrended scale_ax "+v_toString(scale_ax));
@@ -716,7 +719,7 @@ public class MainActivity extends AppCompatActivity {
         // for e, xcut in enumerate(X):
         for (int i = 0; i < nrboxes; i++) {
             // root mean squared successive differences
-            double variance = getDetrendedWalkVarianceV2(x, scale_ax, scale, offset);
+            double variance = getBoxDetrendedRMS(x, scale_ax, scale, offset);
             variances[i] = variance;
             //Log.d(TAG,"- rmssd slice "+i+" "+" "+rms[i]);
             offset += scale;
@@ -726,8 +729,8 @@ public class MainActivity extends AppCompatActivity {
         offset = x.length - scale - 1;
         for (int i = nrboxes; i < nrboxes*2; i++) {
             // root mean squared successive differences
-            double variance = getDetrendedWalkVarianceV2(x, scale_ax, scale, offset);
-            variances[i] = variance;
+            double rms = sqrt(getBoxDetrendedRMS(x, scale_ax, scale, offset));
+            variances[i] = rms;
             //Log.d(TAG,"- rmssd slice "+i+" "+" "+rms[i]);
             offset -= scale;
         }
@@ -758,14 +761,14 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < scales.length; i++) {
             int sc = (int)(scales[i]);
             //Log.d(TAG, "- scale "+i+" "+sc);
-            double[] variances = variancesAtScale(x, sc);
-            fluct[i] = v_mean(v_power_s2(variances,2));
+            double[] rms = getRMSatScale(x, sc);
+            fluct[i] = sqrt(v_mean(v_power_s2(rms,2)));
         }
         //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
         Log.d(TAG, "dfaAlpha1V2 fluct: "+v_toString(fluct));
         // # fitting a line to rms data
 //        double[] coeff = v_reverse(polyFit(v_log2(scales), v_log2(fluct), 1));
-        double[] coeff = v_reverse(polyFit(v_logN(scales,10), v_logN(fluct, 10), 1));
+        double[] coeff = v_reverse(polyFit(v_logN(scales,2), v_logN(fluct, 2), 1));
         Log.d(TAG, "dfaAlpha1V2 coefficients "+v_toString(coeff));
         double alpha = coeff[0];
         Log.d(TAG, "dfaAlpha1V2 = "+alpha);
@@ -991,6 +994,8 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_DELETE_ALL = 5;
     final int MENU_EXPORT_DEBUG = 6;
     final int MENU_DELETE_DEBUG = 7;
+    final int MENU_OLD_LOG_FILES = 8;
+    final int MENU_LIST_FILES = 8;
     final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
@@ -1006,10 +1011,12 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
         menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
+        menu.add(0, MENU_OLD_LOG_FILES, Menu.NONE, "Delete Old Logs");
         menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
         menu.add(0, MENU_DELETE_DEBUG, Menu.NONE, "Delete Debug Logs");
         menu.add(0, MENU_EXPORT_ALL, Menu.NONE, "Export All Logs");
         menu.add(0, MENU_DELETE_ALL, Menu.NONE, "Delete All Logs");
+        //menu.add(0, MENU_LIST_FILES, Menu.NONE, "List Stored Logs");
         String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
         if (tmpDeviceId.length()>0) {
             menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect preferred device "+tmpDeviceId);
@@ -1049,6 +1056,70 @@ public class MainActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
     }
 
+    // all but current logs
+    public ArrayList<Uri> logFiles() {
+        Log.d(TAG,"logFiles...");
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            Log.d(TAG,"Found log file: "+getUri(f));
+            allUris.add(getUri(f));
+        }
+        return allUris;
+    }
+
+    // all but current logs
+    public ArrayList<Uri> oldLogFiles() {
+        Log.d(TAG,"oldLogFiles...");
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            Log.d(TAG,"Found log file: "+getUri(f));
+            if (logFiles.values().contains(f)) {
+                Log.d(TAG,"- skipping current log");
+            } else {
+                allUris.add(getUri(f));
+            }
+        }
+        return allUris;
+    }
+
+    // all but current debug files
+    public ArrayList<Uri> oldDebugFiles() {
+        Log.d(TAG,"oldLogFiles...");
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            Log.d(TAG,"Found log file: "+getUri(f));
+            if (f.equals(logFiles.get("debug"))) {
+                Log.d(TAG,"- skipping current debug file");
+            } else {
+                allUris.add(getUri(f));
+            }
+        }
+        return allUris;
+    }
+
+    public void exportFiles(ArrayList<Uri> allUris) {
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
+        shareIntent.setType("text/plain");
+        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
     public void exportAllLogFiles() {
         Log.d(TAG,"exportAllLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
@@ -1066,6 +1137,24 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
         shareIntent.setType("text/plain");
         startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
+    public void deleteOldLogFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        StringBuilder filenames = new StringBuilder();
+        for (File f : allFiles) {
+            if (!logFiles.containsValue(f)) {
+                Log.d(TAG,"deleting log file "+f);
+                f.delete();
+                filenames.append(f.getName()+" ");
+            }
+        }
+        Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
     public void deleteAllLogFiles() {
@@ -1143,6 +1232,8 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
         if (itemID == MENU_DELETE_DEBUG) deleteAllDebugFiles();
         if (itemID == MENU_CONNECT_DEFAULT) tryPolarConnect();
+        if (itemID == MENU_OLD_LOG_FILES) deleteOldLogFiles();
+        //if (itemID == MENU_LIST_FILES) listFiles(logFiles());
         if (itemID == MENU_SEARCH) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
             tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
