@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
@@ -215,6 +216,13 @@ public class MainActivity extends AppCompatActivity {
             assert manager != null;
             manager.createNotificationChannel(chan);
 
+            // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
+            final Intent notificationIntent = new Intent(this, MainActivity.class);
+            notificationIntent.setAction(Intent.ACTION_MAIN);
+            notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, SERVICE_CHANNEL_ID);
             Notification notification =
                     notificationBuilder.setOngoing(true)
@@ -222,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                     .setContentTitle("FatMaxxer service started")
                     .setPriority(NotificationManager.IMPORTANCE_HIGH)
                     .setCategory(Notification.CATEGORY_SERVICE)
+                    .setContentIntent(pendingIntent)
                     .build();
             startForeground(2, notification);
         }
@@ -632,7 +641,6 @@ public class MainActivity extends AppCompatActivity {
         if (detrendingFactorMatrices[T] != null) {
             return detrendingFactorMatrices[T];
         }
-        // lambda = 500
         int lambda = 500;
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
