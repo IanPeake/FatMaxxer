@@ -209,19 +209,20 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void startMyOwnForeground(){
-            NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID, SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            chan.setLightColor(Color.BLUE);
-            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            assert manager != null;
-            manager.createNotificationChannel(chan);
+//            NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID, SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+//            chan.setLightColor(Color.BLUE);
+//            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+//            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//            assert manager != null;
+//            manager.createNotificationChannel(chan);
 
             // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
-            final Intent notificationIntent = new Intent(this, MainActivity.class);
-            notificationIntent.setAction(Intent.ACTION_MAIN);
-            notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            final Intent notificationIntent = new Intent(this, MainActivity.class)
+                .setAction(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+            //notificationBuilder.setContentIntent(pendingIntent)
 
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, SERVICE_CHANNEL_ID);
             Notification notification =
@@ -232,6 +233,8 @@ public class MainActivity extends AppCompatActivity {
                     .setCategory(Notification.CATEGORY_SERVICE)
                     .setContentIntent(pendingIntent)
                     .build();
+
+            //notification.notify(NOTIFICATION_TAG, NOTIFICATION_ID, );
             startForeground(2, notification);
         }
 
@@ -1830,11 +1833,20 @@ public class MainActivity extends AppCompatActivity {
                     "features");
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 Log.d(TAG,"Feature notification...");
+                // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
+                final Intent notificationIntent = new Intent(this, MainActivity.class);
+                notificationIntent.setAction(Intent.ACTION_MAIN);
+                notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+                //notification.setContentIntent(pendingIntent)
+
                 uiNotificationBuilder = new NotificationCompat.Builder(this, UI_CHANNEL_ID)
                         .setOngoing(true)
                         .setSmallIcon(R.mipmap.ic_launcher_foreground)
                         .setPriority(NotificationManager.IMPORTANCE_HIGH)
                         .setCategory(Notification.CATEGORY_MESSAGE)
+                        .setContentIntent(pendingIntent)
                         .setContentTitle("a1 " + alpha1RoundedWindowed +" drop "+artifactsPercentWindowed+"%");
                 if (notificationDetailSetting.equals("full")) {
                     uiNotificationBuilder.setContentText("HR " +currentHR+  " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
