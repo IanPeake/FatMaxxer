@@ -53,7 +53,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -77,7 +76,6 @@ import polar.com.sdk.api.model.PolarDeviceInfo;
 import polar.com.sdk.api.model.PolarHrData;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.log;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
@@ -659,18 +657,23 @@ public class MainActivity extends AppCompatActivity {
         return rms;
     }
 
-    private SimpleMatrix[] detrendingFactorMatrices = new SimpleMatrix[20];
+    // cache -> lambda -> size -> DD matrix
+    private Map<Integer,SimpleMatrix[]> detrendingFactorMatrices = new HashMap<Integer,SimpleMatrix[]>();
 
-    public SimpleMatrix detrendingFactorMatrix(int length) {
+    public SimpleMatrix detrendingFactorMatrix(int length, int lambda) {
         //Log.d(TAG, "detrendingFactorMatrix size "+length);
         int T = length;
-        if (detrendingFactorMatrices[T] != null) {
-//            Log.d(TAG,"detrendingFactorMatrix returning pre-cached matrix length "+T);
-            return detrendingFactorMatrices[T];
+        // new value for lambda(?)
+        if (detrendingFactorMatrices.get(lambda) == null) {
+            detrendingFactorMatrices.put(lambda, new SimpleMatrix[20]);
         }
+        // previously-computed segment length
+        if (detrendingFactorMatrices.get(lambda)[T] != null) {
+//            Log.d(TAG,"detrendingFactorMatrix returning pre-cached matrix length "+T);
+            return detrendingFactorMatrices.get(lambda)[T];
+        }
+        // new segment length
         Log.d(TAG,"detrendingFactorMatrix calculating for size "+T);
-        // lambda=500; https://internal-journal.frontiersin.org/articles/10.3389/fspor.2021.668812/full
-        int lambda = 500;
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
         String d2str = "";
@@ -685,11 +688,11 @@ public class MainActivity extends AppCompatActivity {
             d2str += "\n";
         }
         Log.d(TAG,"D2["+length+"]:\n"+d2str);
-        SimpleMatrix sum = I.plus(D2.transpose().scale(lambda*lambda).mult(D2));
+        SimpleMatrix sum = I.plus(D2.transpose().scale(lambda * lambda).mult(D2));
         //Log.d(TAG, "createDetrendingFactorMatrix inverse...");
         //Log.d(TAG, "inverse done");
-        detrendingFactorMatrices[T] = I.minus(sum.invert());
-        SimpleMatrix result = detrendingFactorMatrices[T];
+        SimpleMatrix result = I.minus(sum.invert());
+        detrendingFactorMatrices.get(lambda)[T] = result;
         //Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
         return result;
     }
@@ -701,7 +704,8 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i<dRR.length; i++) {
             dRRvec.set(i, 0, dRR[i]);
         }
-        SimpleMatrix detrended = detrendingFactorMatrix(dRRvec.numRows()).mult(dRRvec);
+        // lambda=500: https://internal-journal.frontiersin.org/articles/10.3389/fspor.2021.668812/full
+        SimpleMatrix detrended = detrendingFactorMatrix(dRRvec.numRows(), lambdaSetting).mult(dRRvec);
         //Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
         int size = detrended.numRows();
         double[] result = new double[size];
@@ -895,6 +899,7 @@ public class MainActivity extends AppCompatActivity {
     double alpha1WindowedV2 = 1.0;
     double alpha1RoundedWindowedV2 = 1.0;
     int artifactsPercentWindowed;
+    int lambdaSetting = 500;
     int currentHR;
     double hrMeanWindowed = 0;
     double rrMeanWindowed = 0;
@@ -1248,6 +1253,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
+            Log.d(TAG, "deletion option on "+f);
             if (!currentLogFiles.containsValue(f)) {
                 Log.d(TAG,"deleting log file: "+f);
                 f.delete();
@@ -1785,7 +1791,7 @@ public class MainActivity extends AppCompatActivity {
                     elapsedSeconds = elapsedMS / 1000;
                     Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
                     //if (elapsedSeconds > rrWindowSizeSeconds) {
-                        updateTrackedFeatures(data);
+                    updateTrackedFeatures(data);
                     //}
                 }
 
@@ -1851,6 +1857,8 @@ public class MainActivity extends AppCompatActivity {
     private void updateTrackedFeatures(@NotNull PolarHrData data) {
         wakeLock.acquire();
         Log.d(TAG, "updateTrackedFeatures");
+        String lambdaPref = sharedPreferences.getString("lambdaPref", "500");
+        lambdaSetting = Integer.valueOf(lambdaPref);
         experimental = sharedPreferences.getBoolean("experimental", false);
         if (sharedPreferences.getBoolean("keepScreenOn", false)) {
             text_view.setText("Keep screen on");

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
@@ -38,18 +38,28 @@
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="⍺1 calculation period"
+        app:title="⍺1 calculation period (sec)"
+        android:digits="0123456789"
+        android:maxLength="4"
         app:useSimpleSummaryProvider="true"
-        app:summary="Time to wait between Alpha1 calculations, >= 5 sec"/>
+        app:summary="Time in seconds to wait between Alpha1 calculations, >= 5 sec"/>
 
     <EditTextPreference
         app:key="polarDeviceID"
-        app:title="Preferred device ID (restart required)"
+        app:title="Preferred device ID (hex; restart required)"
         app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
 
     <SwitchPreferenceCompat
         app:key="experimental"
         app:title="Developer mode"
         app:summary=""/>
+
+    <EditTextPreference
+        app:key="lambdaPref"
+        app:title="Lambda (integer)"
+        app:summary="Value for lambda in a1v2 calculation"
+        android:digits="0123456789"
+        android:maxLength="3"
+        />
 
 </PreferenceScreen>
