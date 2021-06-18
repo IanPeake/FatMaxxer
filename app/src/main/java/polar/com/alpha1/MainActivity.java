@@ -670,29 +670,29 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.d(TAG,"D2["+length+"]:\n"+d2str);
         SimpleMatrix sum = I.plus(D2.transpose().scale(lambda*lambda).mult(D2));
-        Log.d(TAG, "createDetrendingFactorMatrix inverse...");
-        Log.d(TAG, "inverse done");
+        //Log.d(TAG, "createDetrendingFactorMatrix inverse...");
+        //Log.d(TAG, "inverse done");
         detrendingFactorMatrices[T] = I.minus(sum.invert());
         SimpleMatrix result = detrendingFactorMatrices[T];
-        Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
+        //Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
         return result;
     }
 
     public double[] smoothnDetrending(double[] dRR) {
-        Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
+        //Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
         // convert dRRs to vector (SimpleMatrix)
         SimpleMatrix dRRvec = new SimpleMatrix(dRR.length,1);
         for (int i = 0; i<dRR.length; i++) {
             dRRvec.set(i, 0, dRR[i]);
         }
         SimpleMatrix detrended = detrendingFactorMatrix(dRRvec.numRows()).mult(dRRvec);
-        Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
+        //Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
         int size = detrended.numRows();
         double[] result = new double[size];
         for (int i = 0; i<size; i++) {
             result[i] = detrended.get(i,0);
         }
-        Log.d("TAG","smoothnDetrending ("+v_toString(dRR)+")\n  == "+v_toString(result));
+        //Log.d("TAG","smoothnDetrending ("+v_toString(dRR)+")\n  == "+v_toString(result));
         return result;
     }
 
@@ -702,7 +702,7 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: revert scale + 1?
         // original walk (displacement)
         double[] ycut = v_slice(x, offset, scale);
-        Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
+        //Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
         // FIXME: with overlap, it looks like we lose at least one dRR at the extremities of each slice
         // length - 1
         //double[] dRR = v_differential(ycut);
@@ -716,7 +716,7 @@ public class MainActivity extends AppCompatActivity {
         // - local trend == dRR - stationary_dRR (does not apply to ycut[0])
         // - detrended walk == ycut[1:] - (dRR - stationary_dRR)
         double[] detrended_walk = v_subtract(iRR,stationary_dRR);
-        Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
+        //Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
 //        double mean2 = v_mean(detrended_walk);
 //        double[] diffs = v_subscalar(detrended_walk, mean2);
         // mean of square of differences
