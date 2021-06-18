@@ -2,7 +2,6 @@ package polar.com.alpha1;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -54,6 +53,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -77,10 +77,12 @@ import polar.com.sdk.api.model.PolarDeviceInfo;
 import polar.com.sdk.api.model.PolarHrData;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.exp;
+import static java.lang.Math.log;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
+
+import static polar.com.alpha1.MainActivity.FMMenuItem.*;
 
 public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
@@ -104,14 +106,18 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public void deleteFile(Uri uri) {
-        File fdelete = new File(uri.getPath());
+    public void deleteFile(File f) {
+        Log.d(TAG,"deleteFile "+f.getPath());
+        File fdelete = f;
         if (fdelete.exists()) {
+            Log.d(TAG,"file Deleted :" + fdelete.getPath());
             if (fdelete.delete()) {
-                System.out.println("file Deleted :" + uri.getPath());
+                Log.d(TAG,"file Deleted :" + fdelete.getPath());
             } else {
-                System.out.println("file not Deleted :" + uri.getPath());
+                Log.d(TAG, "file not Deleted :" + fdelete.getPath());
             }
+        } else {
+            Log.d(TAG,"file does not exist??" + fdelete.getPath());
         }
     }
 
@@ -592,11 +598,11 @@ public class MainActivity extends AppCompatActivity {
     private double getRMSDetrended(double[] x, int scale, double[] scale_ax, int offset, boolean smoothN) {
         String smoothn = smoothN ? "v2" : "v1";
         double[] xbox = v_slice(x, offset, scale);
-        Log.d(TAG,"getrmsdetrended "+smoothn+" "+ scale +" cut@"+ offset +" xbox "+v_toString(xbox));
+        //Log.d(TAG,"getrmsdetrended "+smoothn+" "+ scale +" cut@"+ offset +" xbox "+v_toString(xbox));
         //     coeff = np.polyfit(scale_ax, xcut, 1)
         double[] ybox = null;
         if (smoothN) {
-            Log.d(TAG,"rms smoothn");
+            //Log.d(TAG,"rms smoothn");
             ybox = smoothnDetrending(xbox);
         } else {
             ybox = xbox;
@@ -605,15 +611,15 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"rmsd coeff "+v_toString(coeff));
         //     xfit = np.polyval(coeff, scale_ax)
         double[] xfit = polyVal(coeff, scale_ax);
-        Log.d(TAG,"xfit "+v_toString(xfit));
+        //Log.d(TAG,"xfit "+v_toString(xfit));
         //Log.d(TAG,"rmsd xfit "+v_toString(xfit));
         //     # detrending and computing RMS of each window
         //     rms[e] = np.sqrt(np.mean((xcut-xfit)**2))
         //double[] finalSegment = v_subtract(ybox, xfit, offset, scale);
         double[] finalSegment = v_subtract(ybox, xfit, 0, scale);
-        Log.d(TAG,"getDetrendedMean final "+v_toString(finalSegment));
+        //Log.d(TAG,"getDetrendedMean final "+v_toString(finalSegment));
         double mean = v_mean(v_power_s2(finalSegment,2));
-        Log.d(TAG,"getDetrendedMean mean "+mean);
+        //Log.d(TAG,"getDetrendedMean mean "+mean);
         return mean;
     }
 
@@ -656,20 +662,20 @@ public class MainActivity extends AppCompatActivity {
     private SimpleMatrix[] detrendingFactorMatrices = new SimpleMatrix[20];
 
     public SimpleMatrix detrendingFactorMatrix(int length) {
-        Log.d(TAG, "detrendingFactorMatrix size "+length);
+        //Log.d(TAG, "detrendingFactorMatrix size "+length);
         int T = length;
         if (detrendingFactorMatrices[T] != null) {
-            Log.d(TAG,"detrendingFactorMatrix returning pre-cached matrix length "+T);
+//            Log.d(TAG,"detrendingFactorMatrix returning pre-cached matrix length "+T);
             return detrendingFactorMatrices[T];
         }
-        Log.d(TAG,"detrendingFactorMatrix calculating "+T);
+        Log.d(TAG,"detrendingFactorMatrix calculating for size "+T);
         // lambda=500; https://internal-journal.frontiersin.org/articles/10.3389/fspor.2021.668812/full
         int lambda = 500;
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
         String d2str = "";
         for (int i = 0; i < D2.numRows(); i++) {
-            Log.d(TAG,"D2 row "+i);
+            //Log.d(TAG,"D2 row "+i);
             D2.set(i, i,1);
             D2.set(i,i+1, -2);
             D2.set(i, i+2, 1);
@@ -987,22 +993,45 @@ public class MainActivity extends AppCompatActivity {
         return formatter.format(calendar.getTime());
     }
 
+    static enum FMMenuItem {
+         MENU_QUIT,
+         MENU_SEARCH,
+         MENU_CONNECT_DEFAULT,
+         MENU_EXPORT,
+         MENU_EXPORT_ALL,
+         MENU_DELETE_ALL,
+         MENU_EXPORT_DEBUG,
+         MENU_DELETE_DEBUG,
+         MENU_OLD_LOG_FILES,
+         MENU_TAG_FOR_EXPORT,
+         MENU_LIST_FILES,
+         MENU_EXPORT_TAGGED,
+         MENU_SELECT_TAG_FOR_EXPORT,
+         MENU_EXPORT_SELECTED_LOG_FILES,
+         MENU_DELETE_SELECTED_LOG_FILES,
+         MENU_CONNECT_DISCOVERED
+    };
+
+    static int menuItem(FMMenuItem item) { return item.ordinal(); }
+
     // FIXME: enum
-    final int MENU_QUIT = 0;
-    final int MENU_SEARCH = 1;
-    final int MENU_CONNECT_DEFAULT = 2;
-    final int MENU_EXPORT = 3;
-    final int MENU_EXPORT_ALL = 4;
-    final int MENU_DELETE_ALL = 5;
-    final int MENU_EXPORT_DEBUG = 6;
-    final int MENU_DELETE_DEBUG = 7;
-    final int MENU_OLD_LOG_FILES = 8;
-    final int MENU_TAG_FOR_EXPORT = 9;
-    final int MENU_LIST_FILES = 10;
-    final int MENU_EXPORT_TAGGED = 11;
-    final int MENU_SELECT_TAG_FOR_EXPORT = 12;
-    // ...
-    final int MENU_CONNECT_DISCOVERED = 100;
+//    final int MENU_QUIT = 0;
+//    final int MENU_SEARCH = 1;
+//    final int MENU_CONNECT_DEFAULT = 2;
+//    final int MENU_EXPORT = 3;
+//    final int MENU_EXPORT_ALL = 4;
+//    final int MENU_DELETE_ALL = 5;
+//    final int MENU_EXPORT_DEBUG = 6;
+//    final int MENU_DELETE_DEBUG = 7;
+//    final int MENU_OLD_LOG_FILES = 8;
+//    final int MENU_TAG_FOR_EXPORT = 9;
+//    final int MENU_LIST_FILES = 10;
+//    final int MENU_EXPORT_TAGGED = 11;
+//    final int MENU_SELECT_TAG_FOR_EXPORT = 12;
+//    final int MENU_EXPORT_SELECTED_LOG_FILES = 13;
+//    final int MENU_DELETE_SELECTED_LOG_FILES = 14;
+//    // ...
+//    final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
     Map<String,String> discoveredDevices = new HashMap<String,String>();
@@ -1015,31 +1044,37 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
-        menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
+        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
         if (sharedPreferences.getBoolean("experimental",false)) {
-            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
-            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
-//            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Choose Log File to Tag for Export");
+//            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
+//            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
+//            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Tag Selected Log File");
         }
-        menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
-        menu.add(0, MENU_OLD_LOG_FILES, Menu.NONE, "Delete Old Logs");
-        menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
-        menu.add(0, MENU_DELETE_DEBUG, Menu.NONE, "Delete Debug Logs");
-        menu.add(0, MENU_EXPORT_ALL, Menu.NONE, "Export All Logs");
-        menu.add(0, MENU_DELETE_ALL, Menu.NONE, "Delete All Logs");
+        menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Log Files");
+        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, "Delete Selected Log Files");
+//        menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
+        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, "Delete Old Logs");
+//        menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
+        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, "Delete Debug Logs");
+//        menu.add(0, MENU_EXPORT_ALL, Menu.NONE, "Export All Logs");
+        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
         //menu.add(0, MENU_LIST_FILES, Menu.NONE, "List Stored Logs");
         String tmpDeviceId = sharedPreferences.getString("polarDeviceID","");
         if (tmpDeviceId.length()>0) {
-            menu.add(0, MENU_CONNECT_DEFAULT, Menu.NONE, "Connect preferred device "+tmpDeviceId);
+            menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, "Connect preferred device "+tmpDeviceId);
         }
         int i = 0;
         for (String tmpDeviceID : discoveredDevices.keySet()) {
-            menu.add(0, MENU_CONNECT_DISCOVERED + i, Menu.NONE, "Connect "+discoveredDevices.get(tmpDeviceID));
-            discoveredDevicesMenu.put(MENU_CONNECT_DISCOVERED + i,tmpDeviceID);
+            menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, "Connect "+discoveredDevices.get(tmpDeviceID));
+            discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i,tmpDeviceID);
             i++;
         }
-        menu.add(0, MENU_SEARCH, Menu.NONE, "Search for Polar devices");
+        menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    public Uri getUri(String uri) {
+        return getUri(new File(uri));
     }
 
     public Uri getUri(File f) {
@@ -1195,8 +1230,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public File[] logFilesDeletable() {
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        StringBuilder filenames = new StringBuilder();
+        return allFiles;
+    }
+
     public void deleteAllLogFiles() {
-        ArrayList<Uri> allUris = new ArrayList<Uri>();
         File privateRootDir = getFilesDir();
         privateRootDir.mkdir();
         File logsDir = new File(privateRootDir, "logs");
@@ -1295,67 +1339,106 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences.edit().putStringSet("logsToExport",newTags).commit();
     }
 
-//    void tagSelectedLogsForExport() {
-//        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-//        Set<String> tags = sharedPreferences.getStringSet("logsToExport", emptyStringSet);
-//        List<Uri> logUris = logFiles();
-//        int nrItems = logFiles();
-//        CharSequence[] items = new CharSequence[nrItems];
-//        boolean[] checkItems = new boolean[nrItems];
-//        for (int i = 0; i < nrItems; i++) {
-//            items[i] = objArr[i].toString();
-//        }
-//        adb.setMultiChoiceItems(items, checkItems, new DialogInterface.OnMultiChoiceClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-//                checkItems[i] = b;
-//                Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//        adb.setNegativeButton("Cancel", null);
-//        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        Toast.makeText(getBaseContext(), "Options: "+checkItems.toString(), Toast.LENGTH_SHORT).show();
-//                        List<Object> objSel = new ArrayList(){};
-//                        for (int i = 0; i<items.length; i++) {
-//                            if (checkItems[i]) objSel.add(items[i])
-//                        }
-//                        sharedPreferences.edit().putStringSet("logsToExport", logsToExport).commit();
-//                        try {
-//                            Integer result = nextFn.apply(objSel);
-//                        } catch (Throwable throwable) {
-//                            throwable.printStackTrace();
-//                        }
-//                    }
-//                }
-//                );
-//        adb.setTitle("Which one?");
-//        adb.show();
-//    }
+    void exportSelectedLogFiles() {
+        Log.d(TAG, "exportSelectedLogFiles");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        List<Uri> logFiles = logFiles();
+        int nrLogFiles = 0;
+        for (Uri uri : logFiles) nrLogFiles++;
+        CharSequence[] items = new CharSequence[nrLogFiles];
+        Uri[] uris = new Uri[nrLogFiles];
+        boolean[] checkItems = new boolean[nrLogFiles];
+        int i = 0;
+        for (Uri uri : logFiles) {
+            uris[i] = uri;
+            items[i] = uri.getLastPathSegment();
+            i++;
+        }
+        adb.setMultiChoiceItems(items, checkItems, new DialogInterface.OnMultiChoiceClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                checkItems[i] = b;
+                //Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
+            }
+        });
+        adb.setNegativeButton("Cancel", null);
+        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int iOption) {
+                        //Toast.makeText(getBaseContext(), "Options: " + checkItems.toString(), Toast.LENGTH_SHORT).show();
+                        ArrayList<Uri> exports = new ArrayList();
+                        for (int i = 0; i < items.length; i++) {
+                            if (checkItems[i]) {
+                                exports.add(uris[i]);
+                            }
+                        }
+                        exportFiles(exports);
+                    }
+                }
+        );
+        adb.setTitle("Select files for export");
+        adb.show();
+    }
 
-    //    public boolean onCreateOptionsMenu(Menu menu) {
-    //        MenuInflater inflater = getMenuInflater();
-    //        inflater.inflate(R.menu.options_menu, menu);
-    //        return true;
-    //    }
+    void deleteSelectedLogFiles() {
+        Log.d(TAG, "deleteSelectedLogFiles");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        File[] logFiles = logFilesDeletable();
+        int nrLogFiles = logFiles.length;
+        CharSequence[] items = new CharSequence[nrLogFiles];
+        boolean[] checkItems = new boolean[nrLogFiles];
+        for (int i = 0; i<logFiles.length; i++) {
+            items[i] = logFiles[i].getName();
+        }
+        adb.setMultiChoiceItems(items, checkItems, new DialogInterface.OnMultiChoiceClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                checkItems[i] = b;
+                //Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
+            }
+        });
+        adb.setNegativeButton("Cancel", null);
+        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int iOption) {
+                        for (int i = 0; i < items.length; i++) {
+                            if (checkItems[i]) {
+                                Log.d(TAG,"Delete selected file "+logFiles[i].getName());
+                                deleteFile(logFiles[i]);
+                            }
+                        }
+                    }
+                }
+        );
+        adb.setTitle("Select files for deletion");
+        adb.show();
+    }
+
     public boolean onOptionsItemSelected(MenuItem item) {
+        //    void tagSelectedLogsForExport() {
+        //    public boolean onCreateOptionsMenu(Menu menu) {
+        //        MenuInflater inflater = getMenuInflater();
+        //        inflater.inflate(R.menu.options_menu, menu);
+        //        return true;
+        //    }
         //respond to menu item selection
         Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
         int itemID = item.getItemId();
-        if (itemID == MENU_QUIT) finish();
-        if (itemID == MENU_TAG_FOR_EXPORT) tagCurre ntLogsForExport();
+        if (itemID == FMMenuItem.MENU_QUIT.ordinal()) finish();
+//        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
 //        if (itemID == MENU_SELECT_TAG_FOR_EXPORT) tagSelectedLogsForExport();
-        if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
-        if (itemID == MENU_EXPORT) exportLogFiles();
-        if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
-        if (itemID == MENU_DELETE_ALL) deleteAllLogFiles();
-        if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
-        if (itemID == MENU_DELETE_DEBUG) deleteAllDebugFiles();
-        if (itemID == MENU_CONNECT_DEFAULT) tryPolarConnect();
-        if (itemID == MENU_OLD_LOG_FILES) deleteOldLogFiles();
+        if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
+        if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
+//        if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
+        if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
+//        if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
+        if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
+//        if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
+        if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
+        if (itemID == menuItem(MENU_CONNECT_DEFAULT)) tryPolarConnect();
+        if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         //if (itemID == MENU_LIST_FILES) listFiles(logFiles());
-        if (itemID == MENU_SEARCH) searchForPolarDevices();
+        if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
             tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
         }
