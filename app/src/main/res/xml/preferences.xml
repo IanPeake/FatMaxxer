@@ -27,7 +27,7 @@
     <SwitchPreferenceCompat
         app:key="keepLogs"
         app:title="Keep logs"
-        app:summary="Preserve this activity's logs"/>
+        app:summary="Preserve this activity's logs on exit"/>
 
     <ListPreference
         app:key="artifactThreshold"
