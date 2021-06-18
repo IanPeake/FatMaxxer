@@ -836,7 +836,8 @@ public class MainActivity extends AppCompatActivity {
     TextView text_batt;
     TextView text_mode;
     TextView text_hr;
-    TextView text_hrv;
+    TextView text_secondary;
+    TextView text_secondary_label;
     TextView text_a1;
     TextView text_artifacts;
 
@@ -1420,7 +1421,8 @@ public class MainActivity extends AppCompatActivity {
         text_mode = this.findViewById(R.id.modeView);
         text_hr = this.findViewById(R.id.hrTextView);
         //text_hr.setText("\u2764"+"300");
-        text_hrv = this.findViewById(R.id.hrvTextView);
+        text_secondary = this.findViewById(R.id.hrvTextView);
+        text_secondary_label = this.findViewById(R.id.hrvLabel);
         text_a1 = this.findViewById(R.id.a1TextView);
         text_artifacts = this.findViewById(R.id.artifactsView);
         text_view = this.findViewById(R.id.textView);
@@ -1918,7 +1920,13 @@ public class MainActivity extends AppCompatActivity {
         }
         text_view.setText(logstring);
         text_hr.setText("" + data.hr);
-        text_hrv.setText("" + round(rmssdWindowed));
+        if (experimental) {
+            text_secondary_label.setText("⍺1 v2");
+            text_secondary.setText("" + alpha1RoundedWindowedV2);
+        } else {
+            text_secondary_label.setText("RMSSD");
+            text_secondary.setText("" + round(rmssdWindowed));
+        }
         text_a1.setText("" + alpha1RoundedWindowed);
         // configurable top-of-optimal threshold for alpha1
         double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
