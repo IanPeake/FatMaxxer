@@ -1,6 +1,8 @@
 package polar.com.alpha1;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +10,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -989,6 +992,7 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_TAG_FOR_EXPORT = 9;
     final int MENU_LIST_FILES = 10;
     final int MENU_EXPORT_TAGGED = 11;
+    final int MENU_SELECT_TAG_FOR_EXPORT = 12;
     // ...
     final int MENU_CONNECT_DISCOVERED = 100;
 
@@ -1007,6 +1011,7 @@ public class MainActivity extends AppCompatActivity {
         if (sharedPreferences.getBoolean("experimental",false)) {
             menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
             menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
+//            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Choose Log File to Tag for Export");
         }
         menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
         menu.add(0, MENU_OLD_LOG_FILES, Menu.NONE, "Delete Old Logs");
@@ -1055,7 +1060,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void exportTaggedFiles() {
         ArrayList<Uri> logUris = new ArrayList<Uri>();
-        for (String path : sharedPreferences.getStringSet("logsToExport",null)) {
+        for (String path : sharedPreferences.getStringSet("logsToExport", new HashSet<String>())) {
                 logUris.add(getUri(new File(path)));
         }
         Intent shareIntent = new Intent();
@@ -1079,8 +1084,7 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(shareIntent, "Share log files to.."), exportLogFilesCode);
     }
 
-    // all but current logs
-    public ArrayList<Uri> logFiles() {
+    public List<Uri> logFiles() {
         Log.d(TAG,"logFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
         File privateRootDir = getFilesDir();
@@ -1262,6 +1266,60 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Activity result ", Toast.LENGTH_SHORT).show();
     }
 
+    private final Set<String> emptyStringSet = new HashSet<String>();
+
+    boolean isTaggedLogName(String s) {
+        return sharedPreferences.getStringSet("logsToExport", emptyStringSet).contains(s);
+    }
+
+    void tagLogNames(Iterable<String> ss) {
+        Set<String> oldTags = sharedPreferences.getStringSet("logsToExport", emptyStringSet);
+        Set<String> newTags = new HashSet<String>(oldTags);
+        for (String s: ss) {
+            newTags.add(s);
+        }
+        sharedPreferences.edit().putStringSet("logsToExport",newTags).commit();
+    }
+
+//    void tagSelectedLogsForExport() {
+//        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+//        Set<String> tags = sharedPreferences.getStringSet("logsToExport", emptyStringSet);
+//        List<Uri> logUris = logFiles();
+//        int nrItems = logFiles();
+//        CharSequence[] items = new CharSequence[nrItems];
+//        boolean[] checkItems = new boolean[nrItems];
+//        for (int i = 0; i < nrItems; i++) {
+//            items[i] = objArr[i].toString();
+//        }
+//        adb.setMultiChoiceItems(items, checkItems, new DialogInterface.OnMultiChoiceClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+//                checkItems[i] = b;
+//                Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//        adb.setNegativeButton("Cancel", null);
+//        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialogInterface, int i) {
+//                        Toast.makeText(getBaseContext(), "Options: "+checkItems.toString(), Toast.LENGTH_SHORT).show();
+//                        List<Object> objSel = new ArrayList(){};
+//                        for (int i = 0; i<items.length; i++) {
+//                            if (checkItems[i]) objSel.add(items[i])
+//                        }
+//                        sharedPreferences.edit().putStringSet("logsToExport", logsToExport).commit();
+//                        try {
+//                            Integer result = nextFn.apply(objSel);
+//                        } catch (Throwable throwable) {
+//                            throwable.printStackTrace();
+//                        }
+//                    }
+//                }
+//                );
+//        adb.setTitle("Which one?");
+//        adb.show();
+//    }
+
     //    public boolean onCreateOptionsMenu(Menu menu) {
     //        MenuInflater inflater = getMenuInflater();
     //        inflater.inflate(R.menu.options_menu, menu);
@@ -1272,7 +1330,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
         int itemID = item.getItemId();
         if (itemID == MENU_QUIT) finish();
-        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
+        if (itemID == MENU_TAG_FOR_EXPORT) tagCurre ntLogsForExport();
+//        if (itemID == MENU_SELECT_TAG_FOR_EXPORT) tagSelectedLogsForExport();
         if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
         if (itemID == MENU_EXPORT) exportLogFiles();
         if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
