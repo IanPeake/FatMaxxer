@@ -119,6 +119,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void startAnalysis() {
+        searchForPolarDevices();
+        // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
+        tryPolarConnect();
+    }
+
     @Override
     public void finish() {
         closeLogs();
@@ -1014,29 +1020,13 @@ public class MainActivity extends AppCompatActivity {
          MENU_SELECT_TAG_FOR_EXPORT,
          MENU_EXPORT_SELECTED_LOG_FILES,
          MENU_DELETE_SELECTED_LOG_FILES,
+         MENU_PLAYBACK_TEST,
+         MENU_START,
+         // CONNECT_DISCOVERED must be last in enum as extra connection options are based off it
          MENU_CONNECT_DISCOVERED
     };
 
     static int menuItem(FMMenuItem item) { return item.ordinal(); }
-
-    // FIXME: enum
-//    final int MENU_QUIT = 0;
-//    final int MENU_SEARCH = 1;
-//    final int MENU_CONNECT_DEFAULT = 2;
-//    final int MENU_EXPORT = 3;
-//    final int MENU_EXPORT_ALL = 4;
-//    final int MENU_DELETE_ALL = 5;
-//    final int MENU_EXPORT_DEBUG = 6;
-//    final int MENU_DELETE_DEBUG = 7;
-//    final int MENU_OLD_LOG_FILES = 8;
-//    final int MENU_TAG_FOR_EXPORT = 9;
-//    final int MENU_LIST_FILES = 10;
-//    final int MENU_EXPORT_TAGGED = 11;
-//    final int MENU_SELECT_TAG_FOR_EXPORT = 12;
-//    final int MENU_EXPORT_SELECTED_LOG_FILES = 13;
-//    final int MENU_DELETE_SELECTED_LOG_FILES = 14;
-//    // ...
-//    final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
     Map<String,String> discoveredDevices = new HashMap<String,String>();
@@ -1051,6 +1041,8 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
         if (sharedPreferences.getBoolean("experimental",false)) {
+            menu.add(0, menuItem(MENU_START), Menu.NONE, "Start");
+            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Select RR file for playback");
 //            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
 //            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
 //            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Tag Selected Log File");
@@ -1430,7 +1422,9 @@ public class MainActivity extends AppCompatActivity {
         //respond to menu item selection
         Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
         int itemID = item.getItemId();
-        if (itemID == FMMenuItem.MENU_QUIT.ordinal()) finish();
+        if (itemID == menuItem(MENU_QUIT)) finish();
+        if (itemID == menuItem(MENU_START)) startAnalysis();
+/////        if (itemID == menuItem(MENU_PLAYBACK_TEST)) testWithRRFile();
 //        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
 //        if (itemID == MENU_SELECT_TAG_FOR_EXPORT) tagSelectedLogsForExport();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
@@ -1804,11 +1798,7 @@ public class MainActivity extends AppCompatActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
                     this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                 }
-
-                searchForPolarDevices();
-
-                // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
-                tryPolarConnect();
+                // maybe auto-startup?
     }
 
     private int getNrSamples() {
