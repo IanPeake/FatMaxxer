@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
@@ -56,6 +57,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -119,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Quit: disconnectFromDevice: polarInvalidArgument "+
                     polarInvalidArgument.getStackTrace());
         }
-        //System.exit(0);
         super.finish();
     }
 
@@ -221,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
                 .setAction(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // https://stackoverflow.com/a/42002705/16251655
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
             //notificationBuilder.setContentIntent(pendingIntent)
 
@@ -577,11 +579,16 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private double getDetrendedMeanV1(double[] x, int scale, double[] scale_ax, int offset) {
-        double[] ycut = v_slice(x, offset, scale);
-        Log.d(TAG,"getDetrendedMeanV1 "+ scale +" cut@"+ offset +" ycut "+v_toString(ycut));
+    private double getRMSDetrended(double[] x, int scale, double[] scale_ax, int offset, boolean smoothN) {
+        double[] xbox = v_slice(x, offset, scale);
+        Log.d(TAG,"getDetrendedMeanV1 "+ scale +" cut@"+ offset +" xbox "+v_toString(xbox));
         //     coeff = np.polyfit(scale_ax, xcut, 1)
-        double[] coeff = v_reverse(polyFit(scale_ax, ycut,1));
+        double[] ybox = xbox;
+        if (smoothN) {
+            Log.d(TAG,"rms smoothn");
+            ybox = smoothnDetrending(xbox);
+        }
+        double[] coeff = v_reverse(polyFit(scale_ax, ybox,1));
         //Log.d(TAG,"rmsd coeff "+v_toString(coeff));
         //     xfit = np.polyval(coeff, scale_ax)
         double[] xfit = polyVal(coeff, scale_ax);
@@ -589,20 +596,16 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"rmsd xfit "+v_toString(xfit));
         //     # detrending and computing RMS of each window
         //     rms[e] = np.sqrt(np.mean((xcut-xfit)**2))
-        double[] finalSegment = v_subtract(x, xfit, offset, scale);
+        //double[] finalSegment = v_subtract(ybox, xfit, offset, scale);
+        double[] finalSegment = v_subtract(ybox, xfit, 0, scale);
         Log.d(TAG,"getDetrendedMeanV1 final "+v_toString(finalSegment));
         double mean = v_mean(v_power_s2(finalSegment,2));
         return mean;
     }
 
-    private double getRMSDetrended(double[] x, int scale, double[] scale_ax, int offset) {
-        double meanv1 = getDetrendedMeanV1(x,scale,scale_ax,offset);
-        return meanv1;
-    }
-
     // RMS + detrending
     // - divide x into x.length/scale non-overlapping boxes of size scale
-    public double[] rmsDetrended(double[] x, int scale) {
+    public double[] rmsDetrended(double[] x, int scale, boolean smoothN) {
         //Log.d(TAG,"rms_detrended call, scale "+scale);
         int nrboxes = x.length / scale;
         // # making an array with data divided in windows
@@ -618,7 +621,7 @@ public class MainActivity extends AppCompatActivity {
         int offset = 0;
         for (int i = 0; i < nrboxes; i++) {
             // root mean square SUCCESSIVE DIFFERENCES
-            double mean = getRMSDetrended(x, scale, scale_ax, offset);
+            double mean = getRMSDetrended(x, scale, scale_ax, offset, smoothN);
             rms[i] = sqrt(mean);
             //Log.d(TAG,"rmsd box "+i+" "+" "+rms[i]);
             offset += scale;
@@ -626,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
         // boxes in reverse order starting with a "last" box aligned to the very end of the data
         offset = x.length - scale;
         for (int i = nrboxes; i < nrboxes*2; i++) {
-            double mean = getRMSDetrended(x, scale, scale_ax, offset);
+            double mean = getRMSDetrended(x, scale, scale_ax, offset, smoothN);
             rms[i] = sqrt(mean);
             //Log.d(TAG,"rmsd box "+i+" "+" "+rms[i]);
             offset -= scale;
@@ -642,13 +645,17 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "detrendingFactorMatrix size "+length);
         int T = length;
         if (detrendingFactorMatrices[T] != null) {
+            Log.d(TAG,"detrendingFactorMatrix returning pre-cached matrix length "+T);
             return detrendingFactorMatrices[T];
         }
+        Log.d(TAG,"detrendingFactorMatrix calculating "+T);
+        // lambda=500; https://internal-journal.frontiersin.org/articles/10.3389/fspor.2021.668812/full
         int lambda = 500;
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
         String d2str = "";
         for (int i = 0; i < D2.numRows(); i++) {
+            Log.d(TAG,"D2 row "+i);
             D2.set(i, i,1);
             D2.set(i,i+1, -2);
             D2.set(i, i+2, 1);
@@ -667,10 +674,8 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    public double[] detrendingV2(double[] dRR) {
-        //Log.d(TAG,"detrendingV2 z="+v_toString(z));
-        //Log.d(TAG,"detrendingV2 dRR "+v_toString(dRR));
-        Log.d(TAG,"detrendingV2 dRR "+v_toString(dRR));
+    public double[] smoothnDetrending(double[] dRR) {
+        Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
         // convert dRRs to vector (SimpleMatrix)
         SimpleMatrix dRRvec = new SimpleMatrix(dRR.length,1);
         for (int i = 0; i<dRR.length; i++) {
@@ -700,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
         double mean = v_mean(ycut);
         double[] iRR = v_cumsum(v_subscalar(ycut,mean));
         // stationary component of dRR
-        double[] stationary_dRR = detrendingV2(iRR);
+        double[] stationary_dRR = smoothnDetrending(iRR);
         // "detrended walk" (displacement?)
         // == "the difference between the original walk and the local trend"
         // - original walk == ycut
@@ -750,8 +755,12 @@ public class MainActivity extends AppCompatActivity {
         return variances;
     }
 
-    // x: dRR samples; l_lim: lower limit; u_lim: upper limit
     public double dfaAlpha1V2(double x[], int l_lim, int u_lim, int nrscales) {
+        return dfaAlpha1V1(x,l_lim,u_lim,nrscales,true);
+    }
+
+        // x: dRR samples; l_lim: lower limit; u_lim: upper limit
+    public double dfaAlpha1V2_old(double x[], int l_lim, int u_lim, int nrscales) {
         Log.d(TAG, "dfaAlpha1V2");
         // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
         double[] scales = v_power_s1(2, arange(l_lim,u_lim,nrscales));
@@ -787,14 +796,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // x: samples; l_lim: lower limit; u_lim: upper limit
-    public double dfaAlpha1V1(double x[], int l_lim, int u_lim, int nrscales) {
+    public double dfaAlpha1V1(double x[], int l_lim, int u_lim, int nrscales, boolean smoothN) {
         // vector: cumulative sum, elmtwise-subtract, elmtwise-power, mean, interpolate, RMS, Zero, Interpolate
         // sqrt
         // polynomial fit
         // # Python from https://github.com/dokato/dfa/blob/master/dfa.py
         // y = np.cumsum(x - np.mean(x))
+        Log.d(TAG, "dfaAlpha1V1...");
         double mean = v_mean(x);
-        Log.d(TAG, "Polar alpha1 mean "+mean);
+        Log.d(TAG, "dfaAlpha1 mean "+mean);
         double[] y = v_cumsum(v_subscalar(x, mean));
         Log.d(TAG, "Polar alpha1 y "+v_toString(y));
         // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
@@ -815,7 +825,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < scales.length; i++) {
             int sc = (int)(scales[i]);
             //Log.d(TAG, "- scale "+i+" "+sc);
-            double[] sc_rms = rmsDetrended(y, sc);
+            double[] sc_rms = rmsDetrended(y, sc, smoothN);
             fluct[i] = sqrt(v_mean(v_power_s2(sc_rms,2)));
             //Log.d(TAG, "  - rms "+v_toString(sc_rms));
             //Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
@@ -840,7 +850,7 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: tiny discrepancy in double precision between Python and Java impl(?!)
         // This Java impl:
         double exp_result = 1.5503173309573228;
-        double act_result = dfaAlpha1V1(values,2,4,30);
+        double act_result = dfaAlpha1V1(values,2,4,30, false);
         if (Double.compare(exp_result,act_result)!=0) {
             String msg ="expected "+exp_result+" got "+act_result;
             text_view.setText("Self-test DFA alpha1 failed: "+msg);
@@ -997,6 +1007,7 @@ public class MainActivity extends AppCompatActivity {
         return formatter.format(calendar.getTime());
     }
 
+    // FIXME: enum
     final int MENU_QUIT = 0;
     final int MENU_SEARCH = 1;
     final int MENU_CONNECT_DEFAULT = 2;
@@ -1006,7 +1017,10 @@ public class MainActivity extends AppCompatActivity {
     final int MENU_EXPORT_DEBUG = 6;
     final int MENU_DELETE_DEBUG = 7;
     final int MENU_OLD_LOG_FILES = 8;
-    final int MENU_LIST_FILES = 8;
+    final int MENU_TAG_FOR_EXPORT = 9;
+    final int MENU_LIST_FILES = 10;
+    final int MENU_EXPORT_TAGGED = 11;
+    // ...
     final int MENU_CONNECT_DISCOVERED = 100;
 
     // collect devices by deviceId so we don't spam the menu
@@ -1021,6 +1035,10 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
         menu.add(0, MENU_QUIT, Menu.NONE, "Quit");
+        if (sharedPreferences.getBoolean("experimental",false)) {
+            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
+            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
+        }
         menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
         menu.add(0, MENU_OLD_LOG_FILES, Menu.NONE, "Delete Old Logs");
         menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
@@ -1055,16 +1073,41 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
+    public void tagCurrentLogsForExport() {
+        Set<String> logsToExport = sharedPreferences.getStringSet("logsToExport",null);
+        if (logsToExport==null) {
+            logsToExport = new HashSet<String>();
+        }
+        logsToExport.add(currentLogFiles.get("debug").getAbsolutePath());
+        logsToExport.add(currentLogFiles.get("features").getAbsolutePath());
+        logsToExport.add(currentLogFiles.get("rr").getAbsolutePath());
+        sharedPreferences.edit().putStringSet("logsToExport", logsToExport).commit();
+    }
+
+    public void exportTaggedFiles() {
+        ArrayList<Uri> logUris = new ArrayList<Uri>();
+        for (String path : sharedPreferences.getStringSet("logsToExport",null)) {
+                logUris.add(getUri(new File(path)));
+        }
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, logUris);
+        shareIntent.setType("text/plain");
+        final int exportLogFilesCode = 254;
+        startActivityForResult(Intent.createChooser(shareIntent, "Share log files to.."), exportLogFilesCode);
+    }
+
     public void exportLogFiles() {
         ArrayList<Uri> logUris = new ArrayList<Uri>();
-        logUris.add(getUri(logFiles.get("rr"))); // Add your image URIs here
-        logUris.add(getUri(logFiles.get("features"))); // Add your image URIs here
+        logUris.add(getUri(currentLogFiles.get("rr")));
+        logUris.add(getUri(currentLogFiles.get("features")));
 
         Intent shareIntent = new Intent();
         shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, logUris);
         shareIntent.setType("text/plain");
-        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+        final int exportLogFilesCode = 254;
+        startActivityForResult(Intent.createChooser(shareIntent, "Share log files to.."), exportLogFilesCode);
     }
 
     // all but current logs
@@ -1094,7 +1137,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG,"Found log file: "+getUri(f));
-            if (logFiles.values().contains(f)) {
+            if (currentLogFiles.values().contains(f)) {
                 Log.d(TAG,"- skipping current log");
             } else {
                 allUris.add(getUri(f));
@@ -1114,7 +1157,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG,"Found log file: "+getUri(f));
-            if (f.equals(logFiles.get("debug"))) {
+            if (f.equals(currentLogFiles.get("debug"))) {
                 Log.d(TAG,"- skipping current debug file");
             } else {
                 allUris.add(getUri(f));
@@ -1159,7 +1202,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
-            if (!logFiles.containsValue(f)) {
+            if (!currentLogFiles.containsValue(f)) {
                 Log.d(TAG,"deleting log file "+f);
                 f.delete();
                 filenames.append(f.getName()+" ");
@@ -1177,7 +1220,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
-            if (!logFiles.containsValue(f)) {
+            if (!currentLogFiles.containsValue(f)) {
                 Log.d(TAG,"deleting log file "+f);
                 f.delete();
                 filenames.append(f.getName()+" ");
@@ -1217,7 +1260,7 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
-            if (f.getName().endsWith(".debug.log") && !logFiles.containsValue(f)) {
+            if (f.getName().endsWith(".debug.log") && !currentLogFiles.containsValue(f)) {
                 Log.d(TAG,"deleting log file (on exit) "+f);
                 f.deleteOnExit();
                 filenames.append(f.getName()+" ");
@@ -1226,6 +1269,11 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Deleting (on exit) "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(getBaseContext(), "Activity result ", Toast.LENGTH_SHORT).show();
+    }
 
     //    public boolean onCreateOptionsMenu(Menu menu) {
     //        MenuInflater inflater = getMenuInflater();
@@ -1237,6 +1285,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected... "+item.getItemId());
         int itemID = item.getItemId();
         if (itemID == MENU_QUIT) finish();
+        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
+        if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
         if (itemID == MENU_EXPORT) exportLogFiles();
         if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
         if (itemID == MENU_DELETE_ALL) deleteAllLogFiles();
@@ -1810,7 +1860,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG,"Elapsed "+elapsed+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
             Log.d(TAG,"alpha1...");
-            alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30);
+            alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
             if (experimental) {
                 alpha1WindowedV2 = dfaAlpha1V2(samples, 2, 4, 30);
@@ -1993,7 +2043,7 @@ public class MainActivity extends AppCompatActivity {
         return logStream;
     }
 
-    Map<String,File> logFiles = new HashMap<String,File>();
+    Map<String,File> currentLogFiles = new HashMap<String,File>();
 
     private FileWriter createLogFileNew(String tag, String extension) {
         FileWriter logStream = null;
@@ -2010,7 +2060,7 @@ public class MainActivity extends AppCompatActivity {
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
-            logFiles.put(tag,file);
+            currentLogFiles.put(tag,file);
         } catch (FileNotFoundException e) {
                 text_view.setText("FileNotFoundException");
                 Log.d(TAG,"FileNotFoundException");
