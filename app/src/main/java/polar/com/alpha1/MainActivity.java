@@ -77,6 +77,7 @@ import polar.com.sdk.api.model.PolarDeviceInfo;
 import polar.com.sdk.api.model.PolarHrData;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.exp;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
@@ -117,6 +118,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         closeLogs();
+        boolean keepLogs = sharedPreferences.getBoolean("keepLogs", false);
+        if (!keepLogs) {
+            deleteAllLogFiles();
+        } else {
+            Toast.makeText(getBaseContext(), "Not deleting log files", Toast.LENGTH_LONG).show();
+        }
         uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
             api.disconnectFromDevice(DEVICE_ID);
@@ -673,29 +680,29 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.d(TAG,"D2["+length+"]:\n"+d2str);
         SimpleMatrix sum = I.plus(D2.transpose().scale(lambda*lambda).mult(D2));
-        Log.d(TAG, "createDetrendingFactorMatrix inverse...");
-        Log.d(TAG, "inverse done");
+        //Log.d(TAG, "createDetrendingFactorMatrix inverse...");
+        //Log.d(TAG, "inverse done");
         detrendingFactorMatrices[T] = I.minus(sum.invert());
         SimpleMatrix result = detrendingFactorMatrices[T];
-        Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
+        //Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
         return result;
     }
 
     public double[] smoothnDetrending(double[] dRR) {
-        Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
+        //Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
         // convert dRRs to vector (SimpleMatrix)
         SimpleMatrix dRRvec = new SimpleMatrix(dRR.length,1);
         for (int i = 0; i<dRR.length; i++) {
             dRRvec.set(i, 0, dRR[i]);
         }
         SimpleMatrix detrended = detrendingFactorMatrix(dRRvec.numRows()).mult(dRRvec);
-        Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
+        //Log.d(TAG,"detrendingv2: "+detrended.numRows()+" "+detrended.numCols());
         int size = detrended.numRows();
         double[] result = new double[size];
         for (int i = 0; i<size; i++) {
             result[i] = detrended.get(i,0);
         }
-        Log.d("TAG","smoothnDetrending ("+v_toString(dRR)+")\n  == "+v_toString(result));
+        //Log.d("TAG","smoothnDetrending ("+v_toString(dRR)+")\n  == "+v_toString(result));
         return result;
     }
 
@@ -705,7 +712,7 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: revert scale + 1?
         // original walk (displacement)
         double[] ycut = v_slice(x, offset, scale);
-        Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
+        //Log.d(TAG,"getDetrendedMeanV2 ycut"+v_toString(ycut));
         // FIXME: with overlap, it looks like we lose at least one dRR at the extremities of each slice
         // length - 1
         //double[] dRR = v_differential(ycut);
@@ -719,7 +726,7 @@ public class MainActivity extends AppCompatActivity {
         // - local trend == dRR - stationary_dRR (does not apply to ycut[0])
         // - detrended walk == ycut[1:] - (dRR - stationary_dRR)
         double[] detrended_walk = v_subtract(iRR,stationary_dRR);
-        Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
+        //Log.d(TAG,"dfaAlpha1V2 getDetrendedWalkVarianceV2 detrended_walk "+v_toString(detrended_walk));
 //        double mean2 = v_mean(detrended_walk);
 //        double[] diffs = v_subscalar(detrended_walk, mean2);
         // mean of square of differences
@@ -839,7 +846,8 @@ public class MainActivity extends AppCompatActivity {
     TextView text_batt;
     TextView text_mode;
     TextView text_hr;
-    TextView text_hrv;
+    TextView text_secondary;
+    TextView text_secondary_label;
     TextView text_a1;
     TextView text_artifacts;
 
@@ -1181,7 +1189,10 @@ public class MainActivity extends AppCompatActivity {
                 filenames.append(f.getName()+" ");
             }
         }
-        Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
+        String deletedFiles = filenames.toString();
+        if (deletedFiles.length()>0) {
+            Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
+        }
     }
 
     public void deleteAllLogFiles() {
@@ -1194,9 +1205,12 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
             if (!currentLogFiles.containsValue(f)) {
-                Log.d(TAG,"deleting log file "+f);
+                Log.d(TAG,"deleting log file: "+f);
                 f.delete();
                 filenames.append(f.getName()+" ");
+            } else {
+                Log.d(TAG,"deleting log file on exit: "+f);
+                f.deleteOnExit();
             }
         }
         Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
@@ -1479,7 +1493,8 @@ public class MainActivity extends AppCompatActivity {
         text_mode = this.findViewById(R.id.modeView);
         text_hr = this.findViewById(R.id.hrTextView);
         //text_hr.setText("\u2764"+"300");
-        text_hrv = this.findViewById(R.id.hrvTextView);
+        text_secondary = this.findViewById(R.id.hrvTextView);
+        text_secondary_label = this.findViewById(R.id.hrvLabel);
         text_a1 = this.findViewById(R.id.a1TextView);
         text_artifacts = this.findViewById(R.id.artifactsView);
         text_view = this.findViewById(R.id.textView);
@@ -1802,7 +1817,7 @@ public class MainActivity extends AppCompatActivity {
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-//            writeLogFiles(msg, rrLogStreamNew, "rr");
+            writeLogFile(msg, rrLogStreamNew, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
@@ -1977,7 +1992,13 @@ public class MainActivity extends AppCompatActivity {
         }
         text_view.setText(logstring);
         text_hr.setText("" + data.hr);
-        text_hrv.setText("" + round(rmssdWindowed));
+        if (experimental) {
+            text_secondary_label.setText("⍺1 v2");
+            text_secondary.setText("" + alpha1RoundedWindowedV2);
+        } else {
+            text_secondary_label.setText("RMSSD");
+            text_secondary.setText("" + round(rmssdWindowed));
+        }
         text_a1.setText("" + alpha1RoundedWindowed);
         // configurable top-of-optimal threshold for alpha1
         double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
