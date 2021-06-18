@@ -580,26 +580,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private double getRMSDetrended(double[] x, int scale, double[] scale_ax, int offset, boolean smoothN) {
+        String smoothn = smoothN ? "v2" : "v1";
         double[] xbox = v_slice(x, offset, scale);
-        Log.d(TAG,"getDetrendedMeanV1 "+ scale +" cut@"+ offset +" xbox "+v_toString(xbox));
+        Log.d(TAG,"getrmsdetrended "+smoothn+" "+ scale +" cut@"+ offset +" xbox "+v_toString(xbox));
         //     coeff = np.polyfit(scale_ax, xcut, 1)
-        double[] ybox = xbox;
+        double[] ybox = null;
         if (smoothN) {
             Log.d(TAG,"rms smoothn");
             ybox = smoothnDetrending(xbox);
+        } else {
+            ybox = xbox;
         }
         double[] coeff = v_reverse(polyFit(scale_ax, ybox,1));
         //Log.d(TAG,"rmsd coeff "+v_toString(coeff));
         //     xfit = np.polyval(coeff, scale_ax)
         double[] xfit = polyVal(coeff, scale_ax);
-        Log.d(TAG,"xfit "+xfit.length+" "+v_toString(xfit));
+        Log.d(TAG,"xfit "+v_toString(xfit));
         //Log.d(TAG,"rmsd xfit "+v_toString(xfit));
         //     # detrending and computing RMS of each window
         //     rms[e] = np.sqrt(np.mean((xcut-xfit)**2))
         //double[] finalSegment = v_subtract(ybox, xfit, offset, scale);
         double[] finalSegment = v_subtract(ybox, xfit, 0, scale);
-        Log.d(TAG,"getDetrendedMeanV1 final "+v_toString(finalSegment));
+        Log.d(TAG,"getDetrendedMean final "+v_toString(finalSegment));
         double mean = v_mean(v_power_s2(finalSegment,2));
+        Log.d(TAG,"getDetrendedMean mean "+mean);
         return mean;
     }
 
@@ -688,7 +692,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i<size; i++) {
             result[i] = detrended.get(i,0);
         }
-        Log.d("TAG","detrendingV2 ("+v_toString(dRR)+")\n  == "+v_toString(result));
+        Log.d("TAG","smoothnDetrending ("+v_toString(dRR)+")\n  == "+v_toString(result));
         return result;
     }
 
@@ -759,42 +763,6 @@ public class MainActivity extends AppCompatActivity {
         return dfaAlpha1V1(x,l_lim,u_lim,nrscales,true);
     }
 
-        // x: dRR samples; l_lim: lower limit; u_lim: upper limit
-    public double dfaAlpha1V2_old(double x[], int l_lim, int u_lim, int nrscales) {
-        Log.d(TAG, "dfaAlpha1V2");
-        // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
-        double[] scales = v_power_s1(2, arange(l_lim,u_lim,nrscales));
-        // FIXME: reinstate scale 3??
-//        double[] exp_scales = { 3.,  4.,  4.,  4.,  4.,  5.,  5.,  5.,  5.,  6.,  6.,  6.,  7.,  7.,  7.,  8.,  8.,  9.,
-//                9.,  9., 10., 10., 11., 12., 12., 13., 13., 14., 15., 15.};
-        double[] exp_scales = { 3., 4.,  4.,  4.,  4.,  5.,  5.,  5.,  5.,  6.,  6.,  6.,  7.,  7.,  7.,  8.,  8.,  9.,
-                9.,  9., 10., 10., 11., 12., 12., 13., 13., 14., 15., 15.};
-        // HACK - we know what scales are needed for now
-        scales = exp_scales;
-        if (scales != exp_scales) {
-            text_view.setText("IllegalStateException: wrong scales");
-            throw new IllegalStateException("wrong scales");
-        }
-        Log.d(TAG, "dfaAlpha1V2 scales "+v_toString(scales));
-        // fluct = np.zeros(len(scales))
-        double[] fluct = v_zero(scales.length);
-        for (int i = 0; i < scales.length; i++) {
-            int sc = (int)(scales[i]);
-            //Log.d(TAG, "- scale "+i+" "+sc);
-            double[] rms = getRMSatScale(x, sc);
-            fluct[i] = sqrt(v_mean(v_power_s2(rms,2)));
-        }
-        //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
-        Log.d(TAG, "dfaAlpha1V2 fluct: "+v_toString(fluct));
-        // # fitting a line to rms data
-//        double[] coeff = v_reverse(polyFit(v_log2(scales), v_log2(fluct), 1));
-        double[] coeff = v_reverse(polyFit(v_logN(scales,2), v_logN(fluct, 2), 1));
-        Log.d(TAG, "dfaAlpha1V2 coefficients "+v_toString(coeff));
-        double alpha = coeff[0];
-        Log.d(TAG, "dfaAlpha1V2 = "+alpha);
-        return alpha;
-    }
-
     // x: samples; l_lim: lower limit; u_lim: upper limit
     public double dfaAlpha1V1(double x[], int l_lim, int u_lim, int nrscales, boolean smoothN) {
         // vector: cumulative sum, elmtwise-subtract, elmtwise-power, mean, interpolate, RMS, Zero, Interpolate
@@ -802,11 +770,12 @@ public class MainActivity extends AppCompatActivity {
         // polynomial fit
         // # Python from https://github.com/dokato/dfa/blob/master/dfa.py
         // y = np.cumsum(x - np.mean(x))
-        Log.d(TAG, "dfaAlpha1V1...");
+        String smoothn = smoothN ? "v2" : "v1";
+        Log.d(TAG, "dfaAlpha1...v2? "+smoothN);
         double mean = v_mean(x);
         Log.d(TAG, "dfaAlpha1 mean "+mean);
         double[] y = v_cumsum(v_subscalar(x, mean));
-        Log.d(TAG, "Polar alpha1 y "+v_toString(y));
+        Log.d(TAG, "dfaAlpha1 alpha1 y "+v_toString(y));
         // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
         double[] scales = v_power_s1(2, arange(l_lim,u_lim,nrscales));
         double[] exp_scales = { 3.,  4.,  4.,  4.,  4.,  5.,  5.,  5.,  5.,  6.,  6.,  6.,  7.,  7.,  7.,  8.,  8.,  9.,
@@ -832,7 +801,7 @@ public class MainActivity extends AppCompatActivity {
         }
         //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
         Log.d(TAG, "dfa_alpha1, scales "+v_toString(scales));
-        Log.d(TAG, "dfa_alpha1 fluct: "+v_toString(fluct));
+        Log.d(TAG, "dfa_alpha1 "+smoothn+" fluct: "+v_toString(fluct));
         // # fitting a line to rms data
         double[] coeff = v_reverse(polyFit(v_logN(scales,2), v_logN(fluct,2), 1));
         Log.d(TAG, "dfa_alpha1 coefficients "+v_toString(coeff));
@@ -936,8 +905,8 @@ public class MainActivity extends AppCompatActivity {
     private FileWriter rrLogStreamNew;
     private FileWriter featureLogStreamNew;
 
-    private FileWriter rrLogStreamLegacy;
-    private FileWriter featureLogStreamLegacy;
+//    private FileWriter rrLogStreamLegacy;
+//    private FileWriter featureLogStreamLegacy;
 
     private FileWriter debugLogStream;
 
@@ -963,9 +932,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void closeLogs() {
         closeLog(rrLogStreamNew);
-        closeLog(rrLogStreamLegacy);
+        //closeLog(rrLogStreamLegacy);
         closeLog(featureLogStreamNew);
-        closeLog(featureLogStreamLegacy);
+        //closeLog(featureLogStreamLegacy);
     }
 
     PowerManager powerManager;
@@ -1229,6 +1198,24 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
+    public void exportDebug() {
+        Log.d(TAG,"exportAllDebugFiles...");
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        File[] allFiles = logsDir.listFiles();
+        for (File f : allFiles) {
+            allUris.add(getUri(currentLogFiles.get("debug")));
+        }
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
+        shareIntent.setType("text/plain");
+        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
     public void exportAllDebugFiles() {
         Log.d(TAG,"exportAllDebugFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
@@ -1345,13 +1332,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void handleUncaughtException(Thread thread, Throwable e) {
         Log.d(TAG,"Uncaught exception "+e.toString()+" "+e.getStackTrace().toString()); // not all Android versions will print the stack trace automatically
-        //
-        Intent intent = new Intent ();
-        intent.setAction ("com.mydomain.SEND_LOG"); // see step 5.
-        intent.setFlags (Intent.FLAG_ACTIVITY_NEW_TASK); // required when starting from Application
-        startActivity (intent);
-        //
-        System.exit(1); // kill off the crashed app
+        exportDebug();
+        finish();
     }
 
     @Override
@@ -1475,14 +1457,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rrLogStreamLegacy = createLogFile("rr");
-        featureLogStreamLegacy = createLogFile("features");
+//        rrLogStreamLegacy = createLogFile("rr");
+//        featureLogStreamLegacy = createLogFile("features");
 
         rrLogStreamNew = createLogFileNew("rr","csv");
-        writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
-        writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
+//        writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
+//        writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
+        writeLogFile("timestamp, rr, since_start ", rrLogStreamNew, "rr");
+        writeLogFile("", rrLogStreamNew, "rr");
         featureLogStreamNew = createLogFileNew("features","csv");
-        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, featureLogStreamLegacy, "features");
+//        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, featureLogStreamLegacy, "features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
         debugLogStream = createLogFileNew("debug","log");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
@@ -1758,7 +1743,7 @@ public class MainActivity extends AppCompatActivity {
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-            writeLogFiles(msg, rrLogStreamNew, rrLogStreamLegacy, "rr");
+//            writeLogFiles(msg, rrLogStreamNew, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
@@ -1867,7 +1852,7 @@ public class MainActivity extends AppCompatActivity {
                 alpha1RoundedWindowedV2 = round(alpha1WindowedV2 * 100) / 100.0;
             }
             prevA1Timestamp = currentTimeMS;
-            writeLogFiles("" + timestamp
+            writeLogFile("" + timestamp
                     + "," + hrMeanWindowed
                     + "," + rmssdWindowed
                     + ","
@@ -1879,7 +1864,7 @@ public class MainActivity extends AppCompatActivity {
                     + "," + alpha1RoundedWindowedV2
                     ,
                     featureLogStreamNew,
-                    featureLogStreamLegacy,
+//                    featureLogStreamLegacy,
                     "features");
             if (sharedPreferences.getBoolean("notificationsEnabled", true)) {
                 Log.d(TAG,"Feature notification...");
@@ -2004,9 +1989,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void writeLogFiles(String msg, FileWriter logStream, FileWriter logStream2, String tag) {
+    // second arg is legacy stream
+    private void writeLogFiles(String msg, FileWriter logStream, FileWriter legacyStream, String tag) {
         writeLogFile(msg,logStream,tag);
-        writeLogFile(msg,logStream2,tag);
+        //writeLogFile(msg,legacyStream2,tag);
     }
 
     private void writeLogFile(String msg, FileWriter logStream, String tag) {
