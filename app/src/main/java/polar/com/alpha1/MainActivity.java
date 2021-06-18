@@ -74,6 +74,7 @@ import polar.com.sdk.api.model.PolarDeviceInfo;
 import polar.com.sdk.api.model.PolarHrData;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.exp;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
@@ -114,6 +115,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         closeLogs();
+        boolean keepLogs = sharedPreferences.getBoolean("keepLogs", false);
+        if (!keepLogs) {
+            deleteAllLogFiles();
+        } else {
+            Toast.makeText(getBaseContext(), "Not deleting log files", Toast.LENGTH_LONG).show();
+        }
         uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
             api.disconnectFromDevice(DEVICE_ID);
@@ -1178,7 +1185,10 @@ public class MainActivity extends AppCompatActivity {
                 filenames.append(f.getName()+" ");
             }
         }
-        Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
+        String deletedFiles = filenames.toString();
+        if (deletedFiles.length()>0) {
+            Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();
+        }
     }
 
     public void deleteAllLogFiles() {
@@ -1191,9 +1201,12 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
             if (!currentLogFiles.containsValue(f)) {
-                Log.d(TAG,"deleting log file "+f);
+                Log.d(TAG,"deleting log file: "+f);
                 f.delete();
                 filenames.append(f.getName()+" ");
+            } else {
+                Log.d(TAG,"deleting log file on exit: "+f);
+                f.deleteOnExit();
             }
         }
         Toast.makeText(getBaseContext(), "Deleted "+filenames.toString(), Toast.LENGTH_LONG).show();

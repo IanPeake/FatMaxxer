@@ -24,6 +24,11 @@
         app:title="Keep screen on"
         app:summary=""/>
 
+    <SwitchPreferenceCompat
+        app:key="keepLogs"
+        app:title="Keep logs"
+        app:summary="Preserve this activity's logs"/>
+
     <ListPreference
         app:key="artifactThreshold"
         app:title="Artifact rejection threshold"
