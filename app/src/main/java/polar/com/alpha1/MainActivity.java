@@ -1743,7 +1743,7 @@ public class MainActivity extends AppCompatActivity {
         long timestamp = currentTimeMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-//            writeLogFiles(msg, rrLogStreamNew, "rr");
+            writeLogFile(msg, rrLogStreamNew, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
