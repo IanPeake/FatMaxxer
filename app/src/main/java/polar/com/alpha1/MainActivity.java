@@ -892,9 +892,9 @@ public class MainActivity extends AppCompatActivity {
     double rmssdWindowed = 0;
     // last known alpha1 (default resting nominally 1.0)
     double alpha1Windowed = 1.0;
-    double alpha1RoundedWindowed = 1.0;
+    double alpha1V1RoundedWindowed = 1.0;
     double alpha1WindowedV2 = 1.0;
-    double alpha1RoundedWindowedV2 = 1.0;
+    double alpha1V2RoundedWindowed = 1.0;
     int artifactsPercentWindowed;
     int lambdaSetting = 500;
     int currentHR;
@@ -969,7 +969,7 @@ public class MainActivity extends AppCompatActivity {
 
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
-    LineGraphSeries<DataPoint> a1Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> a1V1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1V2Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt2Series = new LineGraphSeries<DataPoint>();
@@ -1322,7 +1322,7 @@ public class MainActivity extends AppCompatActivity {
 
     // selectRRfile
     void testWithRRFile() {
-        Log.d(TAG, "exportSelectedLogFiles");
+        Log.d(TAG, "testWithRRFile");
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         List<File> logFiles = rrLogFiles();
         int nrLogFiles = 0;
@@ -1688,8 +1688,7 @@ public class MainActivity extends AppCompatActivity {
         writeLogFile("timestamp, rr, since_start ", rrLogStreamNew, "rr");
         writeLogFile("", rrLogStreamNew, "rr");
         featureLogStreamNew = createLogFileNew("features", "csv");
-//        writeLogFiles("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, featureLogStreamLegacy, "features");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
         debugLogStream = createLogFileNew("debug", "log");
 
         mp = MediaPlayer.create(this, R.raw.artifact);
@@ -1708,7 +1707,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
         graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
-        graphView.addSeries(a1Series);
+        graphView.addSeries(a1V1Series);
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);
         graphView.addSeries(a1175Series);
@@ -1720,9 +1719,9 @@ public class MainActivity extends AppCompatActivity {
         graphView.getSecondScale().addSeries(artifactSeries);
         graphView.getSecondScale().setMaxY(10);
         graphView.getSecondScale().setMinY(0);
-        a1Series.setColor(Color.GREEN);
-        a1Series.setThickness(5);
-        a1V2Series.setColor(Color.MAGENTA);
+        a1V1Series.setColor(Color.MAGENTA);
+        a1V1Series.setThickness(5);
+        a1V2Series.setColor(Color.GREEN);
         a1V2Series.setThickness(5);
         a1HRVvt1Series.setColor(getResources().getColor(R.color.colorHRVvt1));
         a1HRVvt2Series.setColor(getResources().getColor(R.color.colorHRVvt2));
@@ -2075,22 +2074,20 @@ public class MainActivity extends AppCompatActivity {
             graphEnabled = true;
             Log.d(TAG,"alpha1...");
             alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
-            alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
-            if (experimental) {
-                alpha1WindowedV2 = dfaAlpha1V2(samples, 2, 4, 30);
-                alpha1RoundedWindowedV2 = round(alpha1WindowedV2 * 100) / 100.0;
-            }
+            alpha1V1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
+            alpha1WindowedV2 = dfaAlpha1V2(samples, 2, 4, 30);
+            alpha1V2RoundedWindowed = round(alpha1WindowedV2 * 100) / 100.0;
             prevA1Timestamp = currentTimeMS;
             writeLogFile("" + timestamp
                     + "," + hrMeanWindowed
                     + "," + rmssdWindowed
                     + ","
-                    + "," + alpha1RoundedWindowed
+                    + "," + alpha1V1RoundedWindowed
                     + "," + nrArtifacts
                     + "," + nrSamples
                     + "," + artifactsPercentWindowed
                     + "," + artifactCorrectionThreshold
-                    + "," + alpha1RoundedWindowedV2
+                    + "," + alpha1V2RoundedWindowed
                     ,
                     featureLogStreamNew,
 //                    featureLogStreamLegacy,
@@ -2112,7 +2109,7 @@ public class MainActivity extends AppCompatActivity {
                             .setPriority(NotificationManager.IMPORTANCE_HIGH)
                             .setCategory(Notification.CATEGORY_MESSAGE)
                             .setContentIntent(pendingIntent)
-                            .setContentTitle("a1 " + alpha1RoundedWindowed + " drop " + artifactsPercentWindowed + "%");
+                            .setContentTitle("a1 " + alpha1V1RoundedWindowed + " drop " + artifactsPercentWindowed + "%");
                     if (notificationDetailSetting.equals("full")) {
                         uiNotificationBuilder.setContentText("HR " + currentHR + " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
                     } else if (notificationDetailSetting.equals("titleHR")) {
@@ -2135,9 +2132,8 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append(elapsed + "s");
             logmsg.append(", rrsMs: " + data.rrsMs);
             logmsg.append(rejMsg);
-            if (experimental) {
-                logmsg.append(", a1V2 " + alpha1RoundedWindowedV2);
-            }
+            logmsg.append(", a1V2 " + alpha1V2RoundedWindowed);
+            logmsg.append(", a1V1 " + alpha1V1RoundedWindowed);
             logmsg.append(", total rejected: " + totalRejected);
             String logstring = logmsg.toString();
 
@@ -2150,29 +2146,24 @@ public class MainActivity extends AppCompatActivity {
             }
             text_view.setText(logstring);
             text_hr.setText("" + data.hr);
-            if (experimental) {
-                text_secondary_label.setText("⍺1v2 [" + a1v2cacheMisses + "]");
-                text_secondary.setText("" + alpha1RoundedWindowedV2);
-            } else {
-                text_secondary_label.setText("RMSSD");
-                text_secondary.setText("" + round(rmssdWindowed));
-            }
-            text_a1.setText("" + alpha1RoundedWindowed);
+            text_secondary_label.setText("RMSSD");
+            text_secondary.setText("" + round(rmssdWindowed));
+            text_a1.setText("" + alpha1V2RoundedWindowed);
             // configurable top-of-optimal threshold for alpha1
             double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
             // wait for run-in period
             if (elapsed > 30) {
-                if (alpha1RoundedWindowed < alpha1HRVvt2) {
+                if (alpha1V1RoundedWindowed < alpha1HRVvt2) {
                     text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                } else if (alpha1RoundedWindowed < alpha1HRVvt1) {
+                } else if (alpha1V1RoundedWindowed < alpha1HRVvt1) {
                     text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                } else if (alpha1RoundedWindowed < alpha1MaxOptimal) {
+                } else if (alpha1V1RoundedWindowed < alpha1MaxOptimal) {
                     text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
                 } else {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
             }
-            Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
+            Log.d(TAG, data.hr + " " + alpha1V1RoundedWindowed + " " + rmssdWindowed);
             Log.d(TAG, logstring);
             Log.d(TAG, "Elapsed % alpha1EvalPeriod" + (elapsed % alpha1EvalPeriod));
         }
@@ -2181,10 +2172,10 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
         if (graphEnabled) {
                 hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-                a1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (experimental) {
-                    a1V2Series.appendData(new DataPoint(elapsedMin, alpha1WindowedV2 * 100.0), scrollToEnd, maxDataPoints);
+                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
                 }
+                a1V2Series.appendData(new DataPoint(elapsedMin, alpha1WindowedV2 * 100.0), scrollToEnd, maxDataPoints);
                 if (scrollToEnd) {
                     double nextX = elapsedMin + tenSecAsMin;
                     a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
@@ -2229,12 +2220,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             text_view.setText("No device ID set");
         }
-    }
-
-    // second arg is legacy stream
-    private void writeLogFiles(String msg, FileWriter logStream, FileWriter legacyStream, String tag) {
-        writeLogFile(msg,logStream,tag);
-        //writeLogFile(msg,legacyStream2,tag);
     }
 
     private void writeLogFile(String msg, FileWriter logStream, String tag) {
@@ -2324,7 +2309,7 @@ public class MainActivity extends AppCompatActivity {
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdateMS) / 1000;
             //long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
 
-            double a1 = alpha1RoundedWindowed;
+            double a1 = alpha1V1RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
             int minUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("minUpdateWaitSeconds", "15"));
             int maxUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("maxUpdateWaitSeconds", "60"));
@@ -2342,14 +2327,14 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
                 if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
-                    featuresUpdate = alpha1RoundedWindowed + " " + data.hr;
+                    featuresUpdate = alpha1V1RoundedWindowed + " " + data.hr;
                 // higher end of optimal - prioritise a1, close to undertraining?
-                } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1RoundedWindowed < upperOptimalAlpha1Threshold)) {
-                    featuresUpdate =  "Alpha one, " + alpha1RoundedWindowed + " heart rate " + data.hr;
+                } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1V1RoundedWindowed < upperOptimalAlpha1Threshold)) {
+                    featuresUpdate =  "Alpha one, " + alpha1V1RoundedWindowed + " heart rate " + data.hr;
                 // lower end of optimal - prioritise a1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                     data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
-                    featuresUpdate = "Alpha one " +alpha1RoundedWindowed + " heart rate "+ data.hr;
+                    featuresUpdate = "Alpha one " + alpha1V1RoundedWindowed + " heart rate "+ data.hr;
                 // warm up / cool down --- low priority, update RMSSD instead of alpha1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                         timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
