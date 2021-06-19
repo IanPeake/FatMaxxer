@@ -8,11 +8,13 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -22,6 +24,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.provider.OpenableColumns;
 import android.speech.tts.TextToSpeech;
 //import android.util.Log;
 import android.view.Menu;
@@ -59,6 +62,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -1054,15 +1063,11 @@ public class MainActivity extends AppCompatActivity {
         MENU_DELETE_SELECTED_LOG_FILES,
         MENU_PLAYBACK_TEST,
         MENU_START,
-        // CONNECT_DISCOVERED must be last in enum as extra connection options are based off it
-        MENU_CONNECT_DISCOVERED
+        MENU_IMPORT,
+        MENU_CONNECT_DISCOVERED // MUST BE LAST in enum as extra connection options are based off it
     }
 
-    ;
-
-    static int menuItem(FMMenuItem item) {
-        return item.ordinal();
-    }
+    static int menuItem(FMMenuItem item) { return item.ordinal(); }
 
     // collect devices by deviceId so we don't spam the menu
     Map<String, String> discoveredDevices = new HashMap<String, String>();
@@ -1077,14 +1082,15 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
         if (sharedPreferences.getBoolean("experimental", false)) {
-            menu.add(0, menuItem(MENU_START), Menu.NONE, "Start");
-//            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Select RR file for playback");
+//            menu.add(0, menuItem(MENU_START), Menu.NONE, "Start");
+            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Replay RR File");
 //            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
 //            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
 //            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Tag Selected Log File");
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Log Files");
         menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, "Delete Selected Log Files");
+        menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR File");
 //        menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
         menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, "Delete Old Logs");
 //        menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
@@ -1147,6 +1153,22 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(shareIntent, "Share log files to.."), exportLogFilesCode);
     }
 
+    final int REQUEST_IMPORT_CSV = 1;
+
+    public void importLogFile() {
+//        Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
+//        receiveIntent.setType("text/csv|text/comma-separated-values|application/csv");
+        //String[] mimetypes = {"text/csv", "text/comma-separated-values", "application/csv", "text/plain"};
+        receiveIntent.setType("*/*");
+        receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
+//        receiveIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
+//        receiveIntent.addCategory(Intent.EXTRA_ALLOW_MULTIPLE);
+//        Intent receiveIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//        receiveIntent.setType("image/* video/* text/*");
+        startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
+    }
+
     public void exportLogFiles() {
         ArrayList<Uri> logUris = new ArrayList<Uri>();
         logUris.add(getUri(currentLogFiles.get("rr")));
@@ -1180,10 +1202,7 @@ public class MainActivity extends AppCompatActivity {
     public List<Uri> logFiles() {
         Log.d(TAG, "logFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG, "Found log file: " + getUri(f));
@@ -1196,10 +1215,7 @@ public class MainActivity extends AppCompatActivity {
     public ArrayList<Uri> oldLogFiles() {
         Log.d(TAG, "oldLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG, "Found log file: " + getUri(f));
@@ -1216,10 +1232,7 @@ public class MainActivity extends AppCompatActivity {
     public ArrayList<Uri> oldDebugFiles() {
         Log.d(TAG, "oldLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG, "Found log file: " + getUri(f));
@@ -1243,10 +1256,7 @@ public class MainActivity extends AppCompatActivity {
     public void exportAllLogFiles() {
         Log.d(TAG, "exportAllLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             Log.d(TAG, "Found log file: " + getUri(f));
@@ -1269,10 +1279,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void deleteOldLogFiles() {
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
@@ -1289,20 +1296,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public File[] logFilesDeletable() {
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         return allFiles;
     }
 
     public void deleteAllLogFiles() {
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
@@ -1337,10 +1338,7 @@ public class MainActivity extends AppCompatActivity {
     public void exportAllDebugFiles() {
         Log.d(TAG, "exportAllDebugFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         for (File f : allFiles) {
             //Log.d(TAG, "Debug file? " + getUri(f));
@@ -1358,10 +1356,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void deleteAllDebugFiles() {
         ArrayList<Uri> allUris = new ArrayList<Uri>();
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+        File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
         for (File f : allFiles) {
@@ -1374,10 +1369,76 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Deleting (on exit) " + filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
+    void importRRfile(InputStream s) {
+        try {
+            BufferedReader r = new BufferedReader(new InputStreamReader(s));
+            StringBuilder total = new StringBuilder();
+            String header = r.readLine();
+            Log.d(TAG,"File header "+header);
+//            for (String line; (line = r.readLine()) != null; ) {
+//                Log.d(TAG,line);
+//                total.append(line).append('\n');
+//            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getFileName(Uri uri) {
+        String result = null;
+        if (uri.getScheme().equals("content")) {
+            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+            try {
+                if (cursor != null && cursor.moveToFirst()) {
+                    result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result.lastIndexOf('/');
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Toast.makeText(getBaseContext(), "Activity result ", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getBaseContext(), "Activity result "+requestCode+" "+resultCode, Toast.LENGTH_LONG).show();
+        if (requestCode==REQUEST_IMPORT_CSV) {
+            Uri uri = data.getData();
+            importFile(getLogsDir(),uri);
+        }
+    }
+
+    // https://stackoverflow.com/questions/10854211/android-store-inputstream-in-file/39956218
+    private void importFile(File dir, Uri uri) {
+        String filename = getFileName(uri);
+        Log.d(TAG,"Importing "+filename+" into logs");
+        Toast.makeText(getBaseContext(), "Importing: " + filename, Toast.LENGTH_LONG).show();
+        try {
+            InputStream input = getContentResolver().openInputStream(uri);
+            try {
+                File file = new File(dir, filename);
+                try (OutputStream output = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[4 * 1024]; // or other buffer size
+                    int read;
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, read);
+                    }
+                    output.flush();
+                }
+            } finally {
+                    input.close();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private final Set<String> emptyStringSet = new HashSet<String>();
@@ -1585,6 +1646,7 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
 //        if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
+        if (itemID == menuItem(MENU_IMPORT)) importLogFile();
 //        if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
 //        if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
@@ -1672,6 +1734,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         super.onCreate(savedInstanceState);
+
+        // Get intent, action and MIME type
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        String type = intent.getType();
+        Log.d(TAG,"MainActivity checking invocation context: intent, action, type: "+intent+" "+action+" "+type);
+
         uiNotificationManager = NotificationManagerCompat.from(this);
         Intent i = new Intent(MainActivity.this, LocalService.class);
         i.setAction("START");
@@ -2355,10 +2424,8 @@ public class MainActivity extends AppCompatActivity {
     private FileWriter createLogFile(String tag) {
         FileWriter logStream = null;
         try {
-//            File dir = new File(getApplicationContext().getFilesDir(), "FatMaxOptimizer");
-//            File dir = new File(getApplicationContext().getExternalFilesDir(null), "FatMaxOptimizer");
             String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
-            File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
+            File file = new File(getApplicationContext().getExternalFilesDir(null), "/ftmxr."+dateString+"."+tag+".csv");
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging RRs to "+file.getAbsolutePath());
         } catch (FileNotFoundException e) {
@@ -2375,16 +2442,15 @@ public class MainActivity extends AppCompatActivity {
 
     Map<String,File> currentLogFiles = new HashMap<String,File>();
 
+
+
     private FileWriter createLogFileNew(String tag, String extension) {
         FileWriter logStream = null;
         try {
 //            File dir = new File(getApplicationContext().getFilesDir(), "FatMaxOptimizer");
 //            File dir = new File(getApplicationContext().getExternalFilesDir(null), "FatMaxOptimizer");
             String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
-            File privateRootDir = getFilesDir();
-            privateRootDir.mkdir();
-            File logsDir = new File(privateRootDir, "logs");
-            logsDir.mkdir();
+            File logsDir = getLogsDir();
             //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
             File file = new File(logsDir, "/FatMaxOptimiser."+dateString+"."+tag+"."+extension);
             // Get the files/images subdirectory;
@@ -2401,6 +2467,15 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return logStream;
+    }
+
+    @NotNull
+    private File getLogsDir() {
+        File privateRootDir = getFilesDir();
+        privateRootDir.mkdir();
+        File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        return logsDir;
     }
 
     private double getRMSSD(double[] samples) {
