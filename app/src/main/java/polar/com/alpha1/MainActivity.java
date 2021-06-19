@@ -2070,7 +2070,9 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: what precisely is required for alpha1 to be well-defined?
         // FIXME: The prev_a1_check now seems redundant
         if (starting || realTime || elapsedSeconds % 60 == 0) Log.d(TAG,"Elapsed "+elapsed+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
+        boolean graphEnabled = realTime;
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
+            graphEnabled = true;
             Log.d(TAG,"alpha1...");
             alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
             alpha1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
@@ -2149,7 +2151,7 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText(logstring);
             text_hr.setText("" + data.hr);
             if (experimental) {
-                text_secondary_label.setText("⍺1v2 ["+ a1v2cacheMisses +"]");
+                text_secondary_label.setText("⍺1v2 [" + a1v2cacheMisses + "]");
                 text_secondary.setText("" + alpha1RoundedWindowedV2);
             } else {
                 text_secondary_label.setText("RMSSD");
@@ -2170,11 +2172,14 @@ public class MainActivity extends AppCompatActivity {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
             }
-            elapsedMin = elapsed / 60.0;
-            double tenSecAsMin = 1.0 / 6.0;
-            boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
-            boolean graphEnabled = true;
-            if (graphEnabled) {
+            Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
+            Log.d(TAG, logstring);
+            Log.d(TAG, "Elapsed % alpha1EvalPeriod" + (elapsed % alpha1EvalPeriod));
+        }
+        elapsedMin = elapsed / 60.0;
+        double tenSecAsMin = 1.0 / 6.0;
+        boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
+        if (graphEnabled) {
                 hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
                 a1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (experimental) {
@@ -2189,13 +2194,10 @@ public class MainActivity extends AppCompatActivity {
                     a1175Series.appendData(new DataPoint(nextX, 175), scrollToEnd, maxDataPoints);
                 }
                 artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
-            }
-
-            Log.d(TAG, data.hr + " " + alpha1RoundedWindowed + " " + rmssdWindowed);
-            Log.d(TAG, logstring);
-            Log.d(TAG, "Elapsed % alpha1EvalPeriod" + (elapsed % alpha1EvalPeriod));
-            audioUpdate(data, currentTimeMS);
         }
+
+        audioUpdate(data, currentTimeMS);
+
         starting = false;
         wakeLock.release();
     }

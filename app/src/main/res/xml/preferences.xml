@@ -38,7 +38,7 @@
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="⍺1 calculation period (sec)"
+        app:title="⍺1 inter-calculation period (sec)"
         android:digits="0123456789"
         android:maxLength="4"
         app:useSimpleSummaryProvider="true"
