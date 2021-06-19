@@ -2276,12 +2276,10 @@ public class MainActivity extends AppCompatActivity {
     private FileWriter createLogFileNew(String tag, String extension) {
         FileWriter logStream = null;
         try {
-//            File dir = new File(getApplicationContext().getFilesDir(), "FatMaxOptimizer");
-//            File dir = new File(getApplicationContext().getExternalFilesDir(null), "FatMaxOptimizer");
             String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
             File logsDir = getLogsDir();
             //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
-            File file = new File(logsDir, "/FatMaxOptimiser."+dateString+"."+tag+"."+extension);
+            File file = new File(logsDir, "/ftmxr."+dateString+"."+tag+"."+extension);
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
