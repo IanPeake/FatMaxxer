@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         closeLogs();
         boolean keepLogs = sharedPreferences.getBoolean("keepLogs", false);
         if (!keepLogs) {
-            deleteAllLogFiles();
+            deleteCurrentLogFiles();
         } else {
             Toast.makeText(getBaseContext(), "Not deleting log files", Toast.LENGTH_LONG).show();
         }
@@ -1042,7 +1042,7 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
         if (sharedPreferences.getBoolean("experimental",false)) {
             menu.add(0, menuItem(MENU_START), Menu.NONE, "Start");
-            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Select RR file for playback");
+//            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Select RR file for playback");
 //            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
 //            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
 //            menu.add(0, MENU_SELECT_TAG_FOR_EXPORT, Menu.NONE, "Tag Selected Log File");
@@ -1204,6 +1204,14 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
         shareIntent.setType("text/plain");
         startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+    }
+
+    public void deleteCurrentLogFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        StringBuilder filenames = new StringBuilder();
+        deleteFile(currentLogFiles.get("rr"));
+        deleteFile(currentLogFiles.get("features"));
+        deleteFile(currentLogFiles.get("debug"));
     }
 
     public void deleteOldLogFiles() {
