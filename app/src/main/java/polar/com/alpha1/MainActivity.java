@@ -1446,8 +1446,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void quitSearchForPolarDevices() {
-        broadcastDisposable.dispose();
-        broadcastDisposable = null;
+        if (broadcastDisposable != null) {
+            broadcastDisposable.dispose();
+            broadcastDisposable = null;
+        }
     }
 
     public void searchForPolarDevices() {
