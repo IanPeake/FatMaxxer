@@ -8,7 +8,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -61,25 +60,19 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -108,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
     final double alpha1HRVvt1 = 0.75;
     final double alpha1HRVvt2 = 0.5;
+    private int a1v2cacheMisses = 0;
 
     // FIXME: Catch UncaughtException
     // https://stackoverflow.com/questions/19897628/need-to-handle-uncaught-exception-and-send-log-file
@@ -725,15 +719,17 @@ public class MainActivity extends AppCompatActivity {
         }
         // previously-computed segment length
         if (detrendingFactorMatrices.get(lambda)[T] != null) {
-            String msg = "Pre-cached matrix lambda "+lambda+" length "+T;
-            Log.d(TAG,msg);
-            text_view.setText(msg);
+            //String msg = "Pre-cached matrix lambda "+lambda+" length "+T;
+            //Log.d(TAG,msg);
+            //text_view.setText(msg);
             return detrendingFactorMatrices.get(lambda)[T];
         }
+        a1v2cacheMisses++;
         // new segment length
         String msg = "Computing matrix lambda "+lambda+" length "+T;
+        long startTime = System.currentTimeMillis();
         Log.d(TAG,msg);
-        text_view.setText(msg);
+        //text_view.setText(msg);
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
         for (int i = 0; i < D2.numRows(); i++) {
@@ -742,14 +738,17 @@ public class MainActivity extends AppCompatActivity {
             D2.set(i, i + 1, -2);
             D2.set(i, i + 2, 1);
         }
-        logMatrix("D2",D2);
+        //logMatrix("D2",D2);
         SimpleMatrix sum = I.plus(D2.transpose().scale(lambda * lambda).mult(D2));
         //Log.d(TAG, "createDetrendingFactorMatrix inverse...");
         //Log.d(TAG, "inverse done");
         SimpleMatrix result = I.minus(sum.invert());
-        logMatrix("result",result);
+        //logMatrix("result",result);
         detrendingFactorMatrices.get(lambda)[T] = result;
         //Log.d(TAG, "detrendingFactorMatrix length returned "+result.toString());
+        long endTime = System.currentTimeMillis();
+        String endMsg = "Computing matrix finished "+(endTime - startTime)+"ms, lambda "+lambda+" length "+T;
+        Log.d(TAG,endMsg);
         return result;
     }
 
@@ -2150,7 +2149,7 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText(logstring);
             text_hr.setText("" + data.hr);
             if (experimental) {
-                text_secondary_label.setText("⍺1 v2");
+                text_secondary_label.setText("⍺1v2 ["+ a1v2cacheMisses +"]");
                 text_secondary.setText("" + alpha1RoundedWindowedV2);
             } else {
                 text_secondary_label.setText("RMSSD");
