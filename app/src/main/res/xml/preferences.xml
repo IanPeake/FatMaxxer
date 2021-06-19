@@ -52,7 +52,7 @@
     <SwitchPreferenceCompat
         app:key="experimental"
         app:title="Developer mode"
-        app:summary=""/>
+        app:summary="Do extra a1v2 analysis; disable auto-start"/>
 
     <EditTextPreference
         app:key="lambdaPref"
