@@ -1083,6 +1083,7 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
         if (sharedPreferences.getBoolean("experimental", false)) {
 //            menu.add(0, menuItem(MENU_START), Menu.NONE, "Start");
+            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR File");
             menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Replay RR File");
 //            menu.add(0, MENU_TAG_FOR_EXPORT, Menu.NONE, "Tag Current Logs For Export");
 //            menu.add(0, MENU_EXPORT_TAGGED, Menu.NONE, "Export Tagged Logs");
@@ -1090,7 +1091,6 @@ public class MainActivity extends AppCompatActivity {
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Log Files");
         menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, "Delete Selected Log Files");
-        menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR File");
 //        menu.add(0, MENU_EXPORT, Menu.NONE, "Export Current Logs");
         menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, "Delete Old Logs");
 //        menu.add(0, MENU_EXPORT_DEBUG, Menu.NONE, "Export Debug Logs");
