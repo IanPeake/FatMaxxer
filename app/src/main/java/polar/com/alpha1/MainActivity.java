@@ -891,9 +891,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean started = false;
     double rmssdWindowed = 0;
     // last known alpha1 (default resting nominally 1.0)
-    double alpha1Windowed = 1.0;
+    double alpha1V1Windowed = 1.0;
     double alpha1V1RoundedWindowed = 1.0;
-    double alpha1WindowedV2 = 1.0;
+    double alpha1V2Windowed = 1.0;
     double alpha1V2RoundedWindowed = 1.0;
     int artifactsPercentWindowed;
     int lambdaSetting = 500;
@@ -2073,10 +2073,10 @@ public class MainActivity extends AppCompatActivity {
         if ((elapsed > alpha1EvalPeriod) && (elapsed % alpha1EvalPeriod <= 2) && (currentTimeMS > prevA1Timestamp + 3000)) {
             graphEnabled = true;
             Log.d(TAG,"alpha1...");
-            alpha1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
-            alpha1V1RoundedWindowed = round(alpha1Windowed * 100) / 100.0;
-            alpha1WindowedV2 = dfaAlpha1V2(samples, 2, 4, 30);
-            alpha1V2RoundedWindowed = round(alpha1WindowedV2 * 100) / 100.0;
+            alpha1V1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
+            alpha1V1RoundedWindowed = round(alpha1V1Windowed * 100) / 100.0;
+            alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
+            alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1Timestamp = currentTimeMS;
             writeLogFile("" + timestamp
                     + "," + hrMeanWindowed
@@ -2109,7 +2109,7 @@ public class MainActivity extends AppCompatActivity {
                             .setPriority(NotificationManager.IMPORTANCE_HIGH)
                             .setCategory(Notification.CATEGORY_MESSAGE)
                             .setContentIntent(pendingIntent)
-                            .setContentTitle("a1 " + alpha1V1RoundedWindowed + " drop " + artifactsPercentWindowed + "%");
+                            .setContentTitle("a1 " + alpha1V2RoundedWindowed + " drop " + artifactsPercentWindowed + "%");
                     if (notificationDetailSetting.equals("full")) {
                         uiNotificationBuilder.setContentText("HR " + currentHR + " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
                     } else if (notificationDetailSetting.equals("titleHR")) {
@@ -2153,17 +2153,17 @@ public class MainActivity extends AppCompatActivity {
             double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
             // wait for run-in period
             if (elapsed > 30) {
-                if (alpha1V1RoundedWindowed < alpha1HRVvt2) {
+                if (alpha1V2RoundedWindowed < alpha1HRVvt2) {
                     text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                } else if (alpha1V1RoundedWindowed < alpha1HRVvt1) {
+                } else if (alpha1V2RoundedWindowed < alpha1HRVvt1) {
                     text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                } else if (alpha1V1RoundedWindowed < alpha1MaxOptimal) {
+                } else if (alpha1V2RoundedWindowed < alpha1MaxOptimal) {
                     text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
                 } else {
                     text_a1.setBackgroundResource(R.color.colorEasyIntensity);
                 }
             }
-            Log.d(TAG, data.hr + " " + alpha1V1RoundedWindowed + " " + rmssdWindowed);
+            Log.d(TAG, data.hr + " " + alpha1V2RoundedWindowed + " " + rmssdWindowed);
             Log.d(TAG, logstring);
             Log.d(TAG, "Elapsed % alpha1EvalPeriod" + (elapsed % alpha1EvalPeriod));
         }
@@ -2173,9 +2173,9 @@ public class MainActivity extends AppCompatActivity {
         if (graphEnabled) {
                 hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
                 if (experimental) {
-                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1Windowed * 100.0), scrollToEnd, maxDataPoints);
+                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1V1Windowed * 100.0), scrollToEnd, maxDataPoints);
                 }
-                a1V2Series.appendData(new DataPoint(elapsedMin, alpha1WindowedV2 * 100.0), scrollToEnd, maxDataPoints);
+                a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (scrollToEnd) {
                     double nextX = elapsedMin + tenSecAsMin;
                     a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
@@ -2309,7 +2309,7 @@ public class MainActivity extends AppCompatActivity {
             long timeSinceLastSpokenUpdate_s = (long) (currentTime_ms - prevSpokenUpdateMS) / 1000;
             //long timeSinceLastSpokenArtifactsUpdate_s = (long) (currentTime_ms - prevSpokenArtifactsUpdateMS) / 1000;
 
-            double a1 = alpha1V1RoundedWindowed;
+            double a1 = alpha1V2RoundedWindowed;
             int rmssd = (int) round(rmssdWindowed);
             int minUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("minUpdateWaitSeconds", "15"));
             int maxUpdateWaitSeconds = Integer.parseInt(sharedPreferences.getString("maxUpdateWaitSeconds", "60"));
@@ -2327,14 +2327,14 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
                 if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
-                    featuresUpdate = alpha1V1RoundedWindowed + " " + data.hr;
+                    featuresUpdate = alpha1V2RoundedWindowed + " " + data.hr;
                 // higher end of optimal - prioritise a1, close to undertraining?
-                } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1V1RoundedWindowed < upperOptimalAlpha1Threshold)) {
-                    featuresUpdate =  "Alpha one, " + alpha1V1RoundedWindowed + " heart rate " + data.hr;
+                } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1V2RoundedWindowed < upperOptimalAlpha1Threshold)) {
+                    featuresUpdate =  "Alpha one, " + alpha1V2RoundedWindowed + " heart rate " + data.hr;
                 // lower end of optimal - prioritise a1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                     data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
-                    featuresUpdate = "Alpha one " + alpha1V1RoundedWindowed + " heart rate "+ data.hr;
+                    featuresUpdate = "Alpha one " + alpha1V2RoundedWindowed + " heart rate "+ data.hr;
                 // warm up / cool down --- low priority, update RMSSD instead of alpha1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                         timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
