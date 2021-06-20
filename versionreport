@@ -1,0 +1,7 @@
+sha512sum ./app/release/app-release.aab > release-checksum
+sha512sum ./app/build/outputs/apk/debug/app-debug.apk > dev-checksum
+
+git log -p | grep release-version > versioncode
+echo VersionCode `cat versioncode`
+
+echo 'fatmaxxer' `git rev-parse --short HEAD` > versionid
