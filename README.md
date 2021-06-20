@@ -46,6 +46,10 @@ Graph plots:
 - secondary Y axis (0-10):
   - blue trace: artifacts (%)
 
+## FAQ ##
+- *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
+- *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
+
 ## Audio / notification (wearable) updates ##
 Reports ⍺1 and other features via audio and/or notifications (configurable), adjusting to work rate:
 
