@@ -65,7 +65,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -1012,6 +1014,7 @@ public class MainActivity extends AppCompatActivity {
         MENU_PLAYBACK_TEST,
         MENU_START,
         MENU_IMPORT,
+        MENU_RENAME_LOGS,
         MENU_CONNECT_DISCOVERED // MUST BE LAST in enum as extra connection options are based off it
     }
 
@@ -1032,6 +1035,7 @@ public class MainActivity extends AppCompatActivity {
         if (sharedPreferences.getBoolean("experimental", false)) {
             menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
             menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Replay RR Log");
+            menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Logs");
         menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, "Delete Selected Logs");
@@ -1106,15 +1110,56 @@ public class MainActivity extends AppCompatActivity {
 
     public List<Uri> logFiles() {
         Log.d(TAG, "logFiles...");
-        ArrayList<Uri> allUris = new ArrayList<Uri>();
         File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        Arrays.sort(allFiles, new Comparator<File>() {
+            public int compare(File f1, File f2) {
+//                return f2.getName().compareTo(f1.getName());
+                return -Long.compare(f1.lastModified(),f2.lastModified());
+            }
+        });
         for (File f : allFiles) {
             Log.d(TAG, "Found log file: " + getUri(f));
             allUris.add(getUri(f));
         }
         return allUris;
     }
+
+    public void renameLogs() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle("Rename");
+        alert.setMessage("Give a new name for log file");
+        // Set an EditText view to get user input
+        final EditText input = new EditText(this);
+        alert.setView(input);
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                String value = input.getText().toString();
+                String msg = "Rename to " + value;
+                Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                Log.d(TAG, msg);
+                File logsDir = getLogsDir();
+                File newRR = new File(logsDir,makeLogfileName(value,"rr"));
+                File newFeatures = new File(logsDir,makeLogfileName(value,"features"));
+                File newDebug = new File(logsDir,makeLogfileName(value,"debug"));
+                if (currentLogFiles.get("rr").renameTo(newRR))
+                    currentLogFiles.put("rr",newRR);
+                if (currentLogFiles.get("features").renameTo(newFeatures))
+                    currentLogFiles.put("features",newFeatures);
+                if (currentLogFiles.get("debug").renameTo(newDebug))
+                    currentLogFiles.put("debug",newDebug);
+            }
+        });
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                // Canceled.
+            }
+        });
+
+        alert.show();
+    }
+
 
     // all but current logs
     public ArrayList<Uri> oldLogFiles() {
@@ -1465,7 +1510,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected... " + item.getItemId());
         int itemID = item.getItemId();
         if (itemID == menuItem(MENU_QUIT)) finish();
-        if (itemID == menuItem(MENU_START)) startAnalysis();
+//        if (itemID == menuItem(MENU_START)) startAnalysis();
+        if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_PLAYBACK_TEST)) testWithRRFile();
 //        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
 //        if (itemID == MENU_SELECT_TAG_FOR_EXPORT) tagSelectedLogsForExport();
@@ -2254,17 +2300,21 @@ public class MainActivity extends AppCompatActivity {
         return logStream;
     }
 
+    @NotNull
+    private String makeLogfileName(String stem, String type) {
+        String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
+        String extension = type.equals("debug") ? "log" : "csv";
+        return "/ftmxr_"+stem+"_"+dateString+"."+type+"."+extension;
+    }
+
     Map<String,File> currentLogFiles = new HashMap<String,File>();
-
-
 
     private FileWriter createLogFileNew(String tag, String extension) {
         FileWriter logStream = null;
         try {
-            String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
             File logsDir = getLogsDir();
             //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
-            File file = new File(logsDir, "/ftmxr."+dateString+"."+tag+"."+extension);
+            File file = new File(logsDir, makeLogfileName("", tag));
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
             Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
