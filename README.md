@@ -10,14 +10,14 @@ See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatma
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
 
-There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to the first ventilatory threshold "VT1" or FatMax
+There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to the first ventilatory threshold "VT1" or roughly FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 This requires a reliable heart rate strap that can measure inter-heartbeat intervals very accurately (Polar H10)
 and a tool to measure ⍺1.
 
 FatMaxxer reports ⍺1 for the past two minutes in "near real time" via the GUI,
 speech (speaker/headphones, configurable) and notifications (configurable).
-The ⍺1 value and other features are calculated over a two minute rolling window of RR values,
+The ⍺1 value and other features are calculated over the two minute rolling window of RR values,
 with ⍺1 calculated every 20 seconds (configurable).
 The RR stream is subject to artifact filtering, where adjacent RR intervals change by more than +/- threshold (%).
 Threshold settings are 5%, 25% and "Auto".
@@ -71,10 +71,14 @@ Output to "external" storage; may not work on Android versions later than 9-ish.
 - UI cleanup to show battery, demote RMSSD, remove ugly status line
 - features.csv does not output SDNN
 
-## Acknowledgements ##
+## Acknowledgements and References ##
 - Marco Altini's Python colab
   (https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
-  FatMaxxer ⍺1 has been checked to approximately correspond to this code.
+  FatMaxxer's ⍺1 has been developed to approximately correspond to this code. The so-called smoothness priors method used by Kubios and Runalyzer is also now
+  incorporated (https://ieeexplore.ieee.org/document/979357). Detailed testing stil to come. 
 - Manas Sharma's polynomial fitting implementation (https://www.bragitoff.com/2017/04/polynomial-fitting-java-codeprogram-works-android-well/)
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
+- The Efficient Java Matrix Library (http://ejml.org/)
 - GraphView (https://github.com/jjoe64/GraphView)
+- Bruce Rogers' blog has a wealth of information (http://www.muscleoxygentraining.com/p/index.html).
+  Bruce has been extremely active with early testing and usability feedback.
