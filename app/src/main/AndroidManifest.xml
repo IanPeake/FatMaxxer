@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="polar.com.alpha1">
+    package="online.fatmaxxer.alpha1">
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="polar.com.alpha1.MainActivity"
+            android:name="online.fatmaxxer.alpha1.MainActivity"
             android:configChanges="orientation"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -41,10 +41,10 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
-        <service android:name=".MainActivity$LocalService"/>
+        <service android:name="online.fatmaxxer.alpha1.MainActivity$LocalService"/>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="polar.com.alpha1.fileprovider"
+            android:authorities="online.fatmaxxer.alpha1.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data

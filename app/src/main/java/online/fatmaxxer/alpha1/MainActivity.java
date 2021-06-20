@@ -1,4 +1,4 @@
-package polar.com.alpha1;
+package online.fatmaxxer.alpha1;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -79,6 +79,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Function;
+import online.fatmaxxer.alpha1.R;
 import polar.com.sdk.api.PolarBleApi;
 import polar.com.sdk.api.PolarBleApiCallback;
 import polar.com.sdk.api.PolarBleApiDefaultImpl;
@@ -91,7 +92,7 @@ import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
 
-import static polar.com.alpha1.MainActivity.FMMenuItem.*;
+import static online.fatmaxxer.alpha1.MainActivity.FMMenuItem.*;
 
 public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
@@ -235,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
         public void onCreate() {
             Log.d(TAG, "FatMaxxer service onCreate");
             super.onCreate();
+            createNotificationChannel();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 startMyOwnForeground();
             else
@@ -242,13 +244,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void startMyOwnForeground() {
-//            NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID, SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-//            chan.setLightColor(Color.BLUE);
-//            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-//            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-//            assert manager != null;
-//            manager.createNotificationChannel(chan);
-
             // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
             final Intent notificationIntent = new Intent(this, MainActivity.class)
                     .setAction(Intent.ACTION_MAIN)
@@ -1129,7 +1124,7 @@ public class MainActivity extends AppCompatActivity {
     public void renameLogs() {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle("Rename");
-        alert.setMessage("Give a new name for log file");
+        alert.setMessage("Tag to include in current log names");
         // Set an EditText view to get user input
         final EditText input = new EditText(this);
         alert.setView(input);
@@ -1572,8 +1567,8 @@ public class MainActivity extends AppCompatActivity {
                 UI_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
 //            chan.lightColor = Color.BLUE;
 //            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
-        NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        service.createNotificationChannel(chan);
+        NotificationManager serviceNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        serviceNotificationManager.createNotificationChannel(chan);
         return UI_CHANNEL_ID;
     }
 
@@ -2304,7 +2299,7 @@ public class MainActivity extends AppCompatActivity {
     private String makeLogfileName(String stem, String type) {
         String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
         String extension = type.equals("debug") ? "log" : "csv";
-        return "/ftmxr_"+stem+"_"+dateString+"."+type+"."+extension;
+        return "/ftmxr_"+dateString+"_"+stem+"."+type+"."+extension;
     }
 
     Map<String,File> currentLogFiles = new HashMap<String,File>();

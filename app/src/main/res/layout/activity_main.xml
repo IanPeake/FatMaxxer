@@ -6,7 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="polar.com.alpha1.MainActivity"
+    tools:context="online.fatmaxxer.alpha1.MainActivity"
     android:id="@+id/application_container"
     >
 
