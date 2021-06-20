@@ -23,6 +23,9 @@ The RR stream is subject to artifact filtering, where adjacent RR intervals chan
 Threshold settings are 5%, 25% and "Auto".
 The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
+## Release Status: Testers Wanted ##
+FatMaxxer is in a very early stage of development. The APK is provided as part of the project. Feel free to contact me with a preferred email address if you would like to be part of testing for an Android Store version.
+
 ## License
 Apache 2.0 for any code that was authored by me.
 
