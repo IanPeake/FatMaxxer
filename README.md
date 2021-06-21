@@ -28,8 +28,9 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 ## Status: Testers Wanted ##
 FatMaxxer is in a very early stage of development.
 The app is provided here as a APK (debug version) and as a public test release on the Google Play store.
+The Play Store beta releases may lag behind the APK version on Github by as much as 24 hours.
 The app may crash or not work properly.
-*To help me fix your issue efficiently*, use the Github issue tracker above to report bugs.
+*To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
 On a first time install you may have to manually set the preferences: lambda = 500, alpha1 calculation period = 10, threshold = "Auto", etc.
 
 ## License
