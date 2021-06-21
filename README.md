@@ -3,6 +3,8 @@
 According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
 measured using just a Polar H10 heart rate strap.
 
+Free public test of the (upcoming) paid version on the Google Play store: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1
+
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240" alt="Screenshot"/> | <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/>
@@ -23,13 +25,12 @@ The RR stream is subject to artifact filtering, where adjacent RR intervals chan
 Threshold settings are 5%, 25% and "Auto".
 The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
-## Release Status: Testers Wanted ##
+## Status: Testers Wanted ##
 FatMaxxer is in a very early stage of development.
-The app is provided here as a APK (debug version).
-The app currently crashes a lot on certain devices.
+The app is provided here as a APK (debug version) and as a public test release on the Google Play store.
+The app may crash or not work properly.
 *To help me fix your issue efficiently*, use the Github issue tracker above to report bugs.
-Contact me with a preferred email if you would like to be part of testing an upcoming Android Store version.
-Currently the testers-only Google Play app is failing at installation time: https://github.com/IanPeake/FatMaxxer/issues/7 .
+On a first time install you may have to manually set the preferences: lambda = 500, alpha1 calculation period = 10, threshold = "Auto", etc.
 
 ## License
 Apache 2.0 for any code that was authored by me.
