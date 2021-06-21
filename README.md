@@ -56,7 +56,8 @@ Graph plots:
 - secondary Y axis (0-10):
   - blue trace: artifacts (%)
 
-## FAQ ##
+## Frequently Asked Questions ##
+- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10; it's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK that FatMaxxer uses.
 - *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
