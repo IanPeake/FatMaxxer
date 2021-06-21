@@ -32,7 +32,7 @@
                 android:textColor="@color/colorText"
                 android:textAlignment="center"
                 android:gravity="center_vertical"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:layout_weight="1"
                 />
 
@@ -62,7 +62,7 @@
                 android:textColor="@color/colorText"
                 android:textAlignment="center"
                 android:gravity="center_vertical"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:layout_weight="1"
                 />
 

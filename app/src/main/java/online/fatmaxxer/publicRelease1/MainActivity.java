@@ -77,7 +77,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Function;
-import online.fatmaxxer.publicRelease1.R;
 import polar.com.sdk.api.PolarBleApi;
 import polar.com.sdk.api.PolarBleApiCallback;
 import polar.com.sdk.api.PolarBleApiDefaultImpl;
@@ -99,6 +98,15 @@ public class MainActivity extends AppCompatActivity {
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
     private static final int NOTIFICATION_ID = 1;
     private static final String NOTIFICATION_TAG = "alpha1update";
+    public static final String ALPHA_1_CALC_PERIOD_PREFERENCE_STRING = "alpha1CalcPeriod";
+    public static final String LAMBDA_PREFERENCE_STRING = "lambdaPref";
+    public static final String ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING = "artifactThreshold";
+    public static final String NOTIFICATIONS_ENABLED_PREFERENCE_STRING = "notificationsEnabled";
+    public static final String POLAR_DEVICE_ID_PREFERENCE_STRING = "polarDeviceID";
+    public static final String KEEP_LOGS_PREFERENCE_STRING = "keepLogs";
+    public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
+    public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
+    public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
 
     final double alpha1HRVvt1 = 0.75;
     final double alpha1HRVvt2 = 0.5;
@@ -138,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         closeLogs();
-        boolean keepLogs = sharedPreferences.getBoolean("keepLogs", false);
+        boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
         if (!keepLogs) {
             deleteCurrentLogFiles();
         } else {
@@ -851,6 +859,7 @@ public class MainActivity extends AppCompatActivity {
     TextView text_secondary;
     TextView text_secondary_label;
     TextView text_a1;
+    TextView text_a1_label;
     TextView text_artifacts;
 
     public boolean experimental = false;
@@ -1025,7 +1034,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
-        if (sharedPreferences.getBoolean("experimental", false)) {
+        if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
             menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
             menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Replay RR Log");
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
@@ -1035,7 +1044,7 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, "Delete All Old Logs");
         menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, "Delete All Debug Logs");
         menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
-        String tmpDeviceId = sharedPreferences.getString("polarDeviceID", "");
+        String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
         if (tmpDeviceId.length() > 0) {
             menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, "Connect preferred device " + tmpDeviceId);
         }
@@ -1288,13 +1297,12 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode==REQUEST_IMPORT_CSV) {
             if (data == null) {
-                Toast.makeText(getBaseContext(), "Import CSV failed: data is null");
+                Toast.makeText(getBaseContext(), "Import CSV failed: data is null", Toast.LENGTH_LONG);
             } else {
-                Uri = data.getData();
-                if (Uri == null) {
-                    Toast.makeText(getBaseContext(), "Import CSV failed: could not get Uri from data");
+                Uri uri = data.getData();
+                if (uri == null) {
+                    Toast.makeText(getBaseContext(), "Import CSV failed: could not get Uri from data", Toast.LENGTH_LONG);
                 } else {
-                    Uri uri = data.getData();
                     importFile(getLogsDir(),uri);
                 }
             }
@@ -1463,7 +1471,7 @@ public class MainActivity extends AppCompatActivity {
             }
             line = reader.readLine();
         }
-        Toast.makeText(getBaseContext(), "Imported RR file " + f.getName(), Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), "Started RR file playback: " + f.getName(), Toast.LENGTH_LONG).show();
     }
 
     void deleteSelectedLogFiles() {
@@ -1641,49 +1649,6 @@ public class MainActivity extends AppCompatActivity {
                 PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO);
         api.setPolarFilter(false);
 
-//        final Button connect = this.findViewById(R.id.connect_button);
-//        connect.setVisibility(View.GONE);
-//        final Button speech_on = this.findViewById(R.id.speech_on_button);
-//        speech_on.setVisibility(View.GONE);
-//        final Button speech_off = this.findViewById(R.id.speech_off_button);
-//        speech_off.setVisibility(View.GONE);
-//        final Button test_feature = this.findViewById(R.id.testFeature_button);
-//        test_feature.setVisibility(View.GONE);
-//        final Button setDeviceIDButton = this.findViewById(R.id.setDeviceIdButton);
-//        setDeviceIDButton.setVisibility(View.GONE);
-//        final Button broadcast = this.findViewById(R.id.broadcast_button);
-//        broadcast.setVisibility(View.GONE);
-//        final Button disconnect = this.findViewById(R.id.disconnect_button);
-//        disconnect.setVisibility(View.GONE);
-//        final Button autoConnect = this.findViewById(R.id.auto_connect_button);
-//        autoConnect.setVisibility(View.GONE);
-//        final Button ecg = this.findViewById(R.id.ecg_button);
-//        ecg.setVisibility(View.GONE);
-//        final Button acc = this.findViewById(R.id.acc_button);
-//        acc.setVisibility(View.GONE);
-//        final Button gyr = this.findViewById(R.id.gyr_button);
-//        gyr.setVisibility(View.GONE);
-//        final Button mag = this.findViewById(R.id.mag_button);
-//        mag.setVisibility(View.GONE);
-//        final Button ppg = this.findViewById(R.id.ohr_ppg_button);
-//        ppg.setVisibility(View.GONE);
-//        final Button ppi = this.findViewById(R.id.ohr_ppi_button);
-//        ppi.setVisibility(View.GONE);
-//        final Button scan = this.findViewById(R.id.scan_button);
-//        scan.setVisibility(View.GONE);
-//        final Button list = this.findViewById(R.id.list_exercises);
-//        list.setVisibility(View.GONE);
-//        final Button read = this.findViewById(R.id.read_exercise);
-//        read.setVisibility(View.GONE);
-//        final Button remove = this.findViewById(R.id.remove_exercise);
-//        remove.setVisibility(View.GONE);
-//        final Button startH10Recording = this.findViewById(R.id.start_h10_recording);
-//        startH10Recording.setVisibility(View.GONE);
-//        final Button stopH10Recording = this.findViewById(R.id.stop_h10_recording);
-//        stopH10Recording.setVisibility(View.GONE);
-//        final Button readH10RecordingStatus = this.findViewById(R.id.h10_recording_status);
-//        readH10RecordingStatus.setVisibility(View.GONE);
-
         text_time = this.findViewById(R.id.timeView);
         text_batt = this.findViewById(R.id.battView);
         text_mode = this.findViewById(R.id.modeView);
@@ -1692,6 +1657,7 @@ public class MainActivity extends AppCompatActivity {
         text_secondary = this.findViewById(R.id.hrvTextView);
         text_secondary_label = this.findViewById(R.id.hrvLabel);
         text_a1 = this.findViewById(R.id.a1TextView);
+        text_a1_label = this.findViewById(R.id.a1Label);
         text_artifacts = this.findViewById(R.id.artifactsView);
         text_view = this.findViewById(R.id.textView);
 
@@ -1739,6 +1705,12 @@ public class MainActivity extends AppCompatActivity {
         writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
         debugLogStream = createLogFileNew("debug", "log");
 
+        ensurePreferenceSet(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
+        ensurePreferenceSet(LAMBDA_PREFERENCE_STRING, "500");
+        ensurePreferenceSet(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
+        ensurePreferenceSet(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
+        sharedPreferences.edit().commit();
+
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
 
@@ -1755,7 +1727,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
         graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
-        graphView.addSeries(a1V1Series);
+//        graphView.addSeries(a1V1Series);
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);
         graphView.addSeries(a1175Series);
@@ -1823,13 +1795,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
                 text_view.setText("Connected to " + polarDeviceInfo.deviceId);
                 Toast.makeText(getBaseContext(), "Connected to " + polarDeviceInfo.deviceId, Toast.LENGTH_SHORT).show();
-                // if no default device, store this one
-                DEVICE_ID = sharedPreferences.getString("polarDeviceID", "");
-                if (DEVICE_ID.length() == 0) {
-                    Log.d(TAG, "Setting default device " + polarDeviceInfo.deviceId);
-                    text_view.setText("Setting default device " + polarDeviceInfo.deviceId);
-                    sharedPreferences.edit().putString("polarDeviceID", polarDeviceInfo.deviceId).commit();
-                }
+                ensurePreferenceSet(POLAR_DEVICE_ID_PREFERENCE_STRING,polarDeviceInfo.deviceId);
             }
 
             @Override
@@ -1897,8 +1863,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // auto-start
-        if(!sharedPreferences.getBoolean("experimental",false)) {
+        if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
             startAnalysis();
+        }
+    }
+
+    private void ensurePreferenceSet(String key, String defaultValue) {
+        if (!sharedPreferences.contains(key)) {
+            sharedPreferences.edit().putString(key, defaultValue).apply();
         }
     }
 
@@ -1964,10 +1936,10 @@ public class MainActivity extends AppCompatActivity {
         wakeLock.acquire();
         Log.d(TAG, "updateTrackedFeatures");
         if (starting || realTime || elapsedSeconds % 60 == 0) {
-            String lambdaPref = sharedPreferences.getString("lambdaPref", "500");
+            String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
             lambdaSetting = Integer.valueOf(lambdaPref);
-            experimental = sharedPreferences.getBoolean("experimental", false);
-            if (sharedPreferences.getBoolean("keepScreenOn", false)) {
+            experimental = sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false);
+            if (sharedPreferences.getBoolean(KEEP_SCREEN_ON_PREFERENCE_STRING, false)) {
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             } else {
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1975,7 +1947,7 @@ public class MainActivity extends AppCompatActivity {
         }
         currentHR = data.hr;
         if (starting || realTime || elapsedSeconds % 60 == 0) {
-            String artifactCorrectionThresholdSetting = sharedPreferences.getString("artifactThreshold", "Auto");
+            String artifactCorrectionThresholdSetting = sharedPreferences.getString(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
             if (artifactCorrectionThresholdSetting.equals("Auto")) {
                 if (data.hr > 95) {
                     exerciseMode = "Workout";
@@ -1995,22 +1967,22 @@ public class MainActivity extends AppCompatActivity {
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
         if (starting || realTime || elapsedSeconds % 60 == 0) {
-            notificationDetailSetting = sharedPreferences.getString("notificationDetail", "full");
-            alpha1EvalPeriodSetting = sharedPreferences.getString("alpha1CalcPeriod", "20");
+            notificationDetailSetting = sharedPreferences.getString(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
+            alpha1EvalPeriodSetting = sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
             try {
                 alpha1EvalPeriod = Integer.parseInt(alpha1EvalPeriodSetting);
             } catch (final NumberFormatException e) {
                 Log.d(TAG, "Number format exception alpha1EvalPeriod " + alpha1EvalPeriodSetting + " " + e.toString());
                 alpha1EvalPeriod = 20;
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("alpha1CalcPeriod", "20");
+                editor.putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
                 editor.apply();
-                Log.d(TAG, "alpha1CalcPeriod wrote " + sharedPreferences.getString("alpha1CalcPeriod", "??"));
+                Log.d(TAG, "alpha1CalcPeriod wrote " + sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "??"));
             }
             if (alpha1EvalPeriod < 5) {
                 Log.d(TAG, "alpha1EvalPeriod<5");
                 alpha1EvalPeriod = 5;
-                sharedPreferences.edit().putString("alpha1CalcPeriod", "5").commit();
+                sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
         long timestamp = currentTimeMS;
@@ -2069,7 +2041,7 @@ public class MainActivity extends AppCompatActivity {
         //
         long absSeconds = Math.abs(elapsedSeconds);
         String positive = String.format(
-                "%02d:%02d:%02d",
+                "%2d:%02d:%02d",
                 absSeconds / 3600,
                 (absSeconds % 3600) / 60,
                 absSeconds % 60);
@@ -2130,7 +2102,7 @@ public class MainActivity extends AppCompatActivity {
                     + "," + hrMeanWindowed
                     + "," + rmssdWindowed
                     + ","
-                    + "," + alpha1V1RoundedWindowed
+                    + "," //+ alpha1V1RoundedWindowed
                     + "," + nrArtifacts
                     + "," + nrSamples
                     + "," + artifactsPercentWindowed
@@ -2141,7 +2113,7 @@ public class MainActivity extends AppCompatActivity {
 //                    featureLogStreamLegacy,
                     "features");
             if (starting || realTime || elapsedSeconds % 60 == 0) {
-                if (sharedPreferences.getBoolean("notificationsEnabled", false)) {
+                if (sharedPreferences.getBoolean(NOTIFICATIONS_ENABLED_PREFERENCE_STRING, false)) {
                     Log.d(TAG, "Feature notification...");
                     // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
                     final Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -2181,7 +2153,7 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append(", rrsMs: " + data.rrsMs);
             logmsg.append(rejMsg);
             logmsg.append(", a1V2 " + alpha1V2RoundedWindowed);
-            logmsg.append(", a1V1 " + alpha1V1RoundedWindowed);
+            //logmsg.append(", a1V1 " + alpha1V1RoundedWindowed);
             logmsg.append(", total rejected: " + totalRejected);
             String logstring = logmsg.toString();
 
@@ -2197,6 +2169,7 @@ public class MainActivity extends AppCompatActivity {
             text_secondary_label.setText("RMSSD");
             text_secondary.setText("" + round(rmssdWindowed));
             text_a1.setText("" + alpha1V2RoundedWindowed);
+            text_a1_label.setText("⍺1v2 ["+a1v2cacheMisses+"]");
             // configurable top-of-optimal threshold for alpha1
             double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
             // wait for run-in period
@@ -2220,9 +2193,9 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
         if (graphEnabled) {
                 hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-                if (experimental) {
-                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1V1Windowed * 100.0), scrollToEnd, maxDataPoints);
-                }
+//                if (experimental) {
+//                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1V1Windowed * 100.0), scrollToEnd, maxDataPoints);
+//                }
                 a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (scrollToEnd) {
                     double nextX = elapsedMin + tenSecAsMin;
@@ -2256,7 +2229,7 @@ public class MainActivity extends AppCompatActivity {
     private void tryPolarConnect() {
         //quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect");
-        DEVICE_ID = sharedPreferences.getString("polarDeviceID","");
+        DEVICE_ID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
         if (DEVICE_ID.length()>0) {
             try {
                 text_view.setText("Trying to connect to: " + DEVICE_ID);
