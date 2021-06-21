@@ -972,7 +972,7 @@ public class MainActivity extends AppCompatActivity {
 
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
-    LineGraphSeries<DataPoint> a1V1Series = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> rrSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1V2Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt1Series = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> a1HRVvt2Series = new LineGraphSeries<DataPoint>();
@@ -1728,7 +1728,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
         graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
-//        graphView.addSeries(a1V1Series);
+        graphView.addSeries(rrSeries);
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);
         graphView.addSeries(a1175Series);
@@ -1740,8 +1740,8 @@ public class MainActivity extends AppCompatActivity {
         graphView.getSecondScale().addSeries(artifactSeries);
         graphView.getSecondScale().setMaxY(10);
         graphView.getSecondScale().setMinY(0);
-        a1V1Series.setColor(Color.MAGENTA);
-        a1V1Series.setThickness(5);
+        rrSeries.setColor(Color.MAGENTA);
+        rrSeries.setThickness(5);
         a1V2Series.setColor(Color.GREEN);
         a1V2Series.setThickness(5);
         a1HRVvt1Series.setColor(getResources().getColor(R.color.colorHRVvt1));
@@ -1991,6 +1991,10 @@ public class MainActivity extends AppCompatActivity {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
             writeLogFile(msg, rrLogStreamNew, "rr");
             logRRelapsedMS += rr;
+            ////
+            double tmpRRMins = logRRelapsedMS / 60000.0;
+            rrSeries.appendData(new DataPoint(tmpRRMins, rr/8.0), false, maxDataPoints);
+            ////
             timestamp += rr;
         }
         //
@@ -2194,9 +2198,6 @@ public class MainActivity extends AppCompatActivity {
         boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
         if (graphEnabled) {
                 hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-//                if (experimental) {
-//                    a1V1Series.appendData(new DataPoint(elapsedMin, alpha1V1Windowed * 100.0), scrollToEnd, maxDataPoints);
-//                }
                 a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (scrollToEnd) {
                     double nextX = elapsedMin + tenSecAsMin;
