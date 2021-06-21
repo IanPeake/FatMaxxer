@@ -7,8 +7,8 @@ android {
         applicationId "online.fatmaxxer.publicRelease1"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 4
-        versionName "20210621_092446.main.540708e"
+        versionCode 20
+        versionName "20210621_133154.main.be35919"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {

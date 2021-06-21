@@ -1053,11 +1053,10 @@ public class MainActivity extends AppCompatActivity {
         try {
             return FileProvider.getUriForFile(
                     MainActivity.this,
-                    "polar.com.alpha1.fileprovider",
+                    "online.fatmaxxer.publicRelease1.fileprovider",
                     f);
         } catch (IllegalArgumentException e) {
-            Log.e("File Selector",
-                    "The selected file can't be shared: " + f.toString());
+            logException("getUri "+f.toString(), e);
         }
         return null;
     }
@@ -1176,6 +1175,7 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
         shareIntent.setType("text/plain");
+        Log.d(TAG,"Exporting log file/s via ShareSheet "+allUris.toString());
         startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
     }
 
@@ -1284,11 +1284,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
+        Log.d(TAG, "onActivityResult "+requestCode+" "+resultCode);
         super.onActivityResult(requestCode, resultCode, data);
-        Toast.makeText(getBaseContext(), "Activity result "+requestCode+" "+resultCode, Toast.LENGTH_LONG).show();
         if (requestCode==REQUEST_IMPORT_CSV) {
-            Uri uri = data.getData();
-            importFile(getLogsDir(),uri);
+            if (data == null) {
+                Toast.makeText(getBaseContext(), "Import CSV failed: data is null");
+            } else {
+                Uri = data.getData();
+                if (Uri == null) {
+                    Toast.makeText(getBaseContext(), "Import CSV failed: could not get Uri from data");
+                } else {
+                    Uri uri = data.getData();
+                    importFile(getLogsDir(),uri);
+                }
+            }
         }
     }
 
