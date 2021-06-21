@@ -3,14 +3,37 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 29
-    defaultConfig {
-        applicationId "online.fatmaxxer.publicRelease1"
-        minSdkVersion 21
-        targetSdkVersion 29
-        versionCode 20
-        versionName "20210621_133154.main.be35919"
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+
+    def versionPropsFile = file('/home/ipeake/sandbox/fatmaxxer/version.properties')
+    if (versionPropsFile.canRead()) {
+        def Properties versionProps = new Properties()
+        versionProps.load(new FileInputStream(versionPropsFile))
+        def String versionNameFromProps = versionProps['VERSION_NAME']
+        def String versionCodeStringFromProps = versionProps['VERSION_CODE']
+        def versionCodeIntegerFromProps = versionCodeStringFromProps.toInteger()
+        defaultConfig {
+            applicationId "online.fatmaxxer.publicRelease1"
+            versionCode versionCodeIntegerFromProps
+            versionName versionNameFromProps
+            minSdkVersion 21
+            targetSdkVersion 29
+            testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        }
     }
+    else {
+        throw new GradleException("Could not read version.properties!")
+    }
+//
+//    defaultConfig {
+//        applicationId "online.fatmaxxer.publicRelease1"
+//        minSdkVersion 21
+//        targetSdkVersion 29
+//        versionCode 20
+//        versionName "20210621_133154.main.be35919"
+//        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+//    }
+
+
     buildTypes {
         release {
             minifyEnabled false

@@ -121,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
         Log = new Log();
     }
 
-
     public void deleteFile(File f) {
         Log.d(TAG, "deleteFile " + f.getPath());
         File fdelete = f;
@@ -263,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
             Notification notification =
                     notificationBuilder.setOngoing(true)
                             .setSmallIcon(R.mipmap.ic_launcher_foreground)
-                            .setContentTitle("FatMaxxer service started")
+                            .setContentTitle("FatMaxxer started")
                             .setPriority(NotificationManager.IMPORTANCE_HIGH)
                             .setCategory(Notification.CATEGORY_SERVICE)
                             .setContentIntent(pendingIntent)
@@ -1622,6 +1621,8 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String action = intent.getAction();
         String type = intent.getType();
+        Log.d(TAG, "FatMaxxer version_name "+BuildConfig.VERSION_NAME);
+        Log.d(TAG, "FatMaxxer version_code "+BuildConfig.VERSION_CODE);
         Log.d(TAG,"MainActivity checking invocation context: intent, action, type: "+intent+" "+action+" "+type);
 
         uiNotificationManager = NotificationManagerCompat.from(this);

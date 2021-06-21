@@ -1,10 +1,12 @@
+#!/bin/bash
 sha512sum ./app/release/app-release.aab > release-checksum
 sha512sum ./app/build/outputs/apk/debug/app-debug.apk > dev-checksum
 
-git log -p | egrep 'release-checksum|dev-checksum' | wc -l > versioncode
-echo versionCode `cat versioncode`
+VERSION_CODE=`git log -p | egrep 'release-checksum|dev-checksum' | wc -l`
+echo "VERSION_CODE=${VERSION_CODE}" > version.properties 
 
 dt=$(date '+%Y%m%d_%H%M%S');
+VERSION_NAME=${dt}'.'`git branch --show-current`'.'`git rev-parse --short HEAD`
+echo "VERSION_NAME=${VERSION_NAME}" >> version.properties 
 
-echo ${dt}'.'`git branch --show-current`.`git rev-parse --short HEAD` > versionid
-echo versionID `cat versionid`
+cat version.properties

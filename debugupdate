@@ -1,5 +1,5 @@
 cp ./app/build/outputs/apk/debug/app-debug.apk .
 adb install -r app-debug.apk
-sha512sum app-debug.apk >> dev-version
+sha512sum app-debug.apk > dev-version
 
 ./versionreport
