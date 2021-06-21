@@ -1,7 +1,10 @@
 sha512sum ./app/release/app-release.aab > release-checksum
 sha512sum ./app/build/outputs/apk/debug/app-debug.apk > dev-checksum
 
-git log -p | grep release-version | wc -l > versioncode
-echo VersionCode `cat versioncode`
+git log -p | egrep 'release-checksum|dev-checksum' | wc -l > versioncode
+echo versionCode `cat versioncode`
 
-echo 'fatmaxxer' `git rev-parse --short HEAD` > versionid
+dt=$(date '+%Y%m%d_%H%M%S');
+
+echo ${dt}'.'`git branch --show-current`.`git rev-parse --short HEAD` > versionid
+echo versionID `cat versionid`

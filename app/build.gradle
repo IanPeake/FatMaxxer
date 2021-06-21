@@ -4,11 +4,11 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "online.fatmaxxer.alpha1"
+        applicationId "online.fatmaxxer.publicRelease1"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 2
-        versionName "0.1"
+        versionCode 4
+        versionName "20210621_092446.main.540708e"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
