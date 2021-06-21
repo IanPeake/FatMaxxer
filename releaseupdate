@@ -1,6 +1,2 @@
 cp ./app/release/app-release.aab .
-sha512sum app-release.aab > release-version
-
 ./versionreport
-
-echo MANUAL UPDATE REQUIRED: App build.gradle with versionCode and versionName
