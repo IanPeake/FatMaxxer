@@ -1,4 +1,4 @@
 cp ./app/release/app-release.aab .
-sha512sum app-release.aab >> release-version
+sha512sum app-release.aab > release-version
 
 ./versionreport
