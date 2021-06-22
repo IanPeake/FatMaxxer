@@ -12,16 +12,44 @@
         <item>full</item>
     </string-array>
 
-<string-array name="artifactThresholdEntries">
-    <item>0.05</item>
-    <item>0.25</item>
-    <item>Auto</item>
-</string-array>
+    <string-array name="artifactThresholdEntries">
+        <item>0.05</item>
+        <item>0.25</item>
+        <item>Auto</item>
+    </string-array>
 
-<string-array name="artifactThresholdEntryValues">
-    <item>0.05</item>
-    <item>0.25</item>
-    <item>Auto</item>
-</string-array>
+    <string-array name="artifactThresholdEntryValues">
+        <item>0.05</item>
+        <item>0.25</item>
+        <item>Auto</item>
+    </string-array>
+
+    <string-array name="graphFeaturesEntries">
+        <item>Heart Rate</item>
+        <item>RR</item>
+        <item>Alpha1 (Window)</item>
+        <item>RMSSD (Window)</item>
+        <item>Heart Rate (Window)</item>
+        <item>Artifact (%)</item>
+    </string-array>
+
+    <string-array name="graphFeaturesValues">
+        <item>Heart Rate</item>
+        <item>RR</item>
+        <item>Alpha1 (Window)</item>
+        <item>RMSSD (Window)</item>
+        <item>Heart Rate (Window)</item>
+        <item>Artifact (%)</item>
+    </string-array>
+
+    <string-array name="graphFeaturesDefaultValues">
+        <item>true</item>
+        <item>false</item>
+        <item>true</item>
+        <item>false</item>
+        <item>false</item>
+        <item>true</item>
+        <item></item>
+    </string-array>
 
 </resources>

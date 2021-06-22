@@ -44,6 +44,16 @@
         app:useSimpleSummaryProvider="true"
         app:summary="Time in seconds to wait between Alpha1 calculations, >= 5 sec"/>
 
+    <MultiSelectListPreference
+        android:dialogTitle="Select Graph Features"
+        android:key="graphFeaturesSelectorKey"
+        android:summary=""
+        android:title="Select Graph Features"
+        android:entries="@array/graphFeaturesEntries"
+        android:entryValues="@array/graphFeaturesValues"
+        android:defaultValue="@array/graphFeaturesDefaultValues"
+        />
+
     <EditTextPreference
         app:key="polarDeviceID"
         app:title="Preferred device ID (hex; restart required)"
