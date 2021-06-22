@@ -131,7 +131,8 @@ public class MainActivity extends AppCompatActivity {
             if (fdelete.delete()) {
                 Log.d(TAG, "file Deleted :" + fdelete.getPath());
             } else {
-                Log.d(TAG, "file not Deleted :" + fdelete.getPath());
+                Log.d(TAG, "file not Deleted? Will try after exit :" + fdelete.getPath());
+                fdelete.deleteOnExit();
             }
         } else {
             Log.d(TAG, "file does not exist??" + fdelete.getPath());
@@ -149,6 +150,7 @@ public class MainActivity extends AppCompatActivity {
         closeLogs();
         boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
         if (!keepLogs) {
+            Log.d(TAG,"finish: delete current log files");
             deleteCurrentLogFiles();
         } else {
             Toast.makeText(getBaseContext(), "Not deleting log files", Toast.LENGTH_LONG).show();
@@ -907,6 +909,7 @@ public class MainActivity extends AppCompatActivity {
     double rrMeanWindowed = 0;
     // maximum tolerable variance of adjacent RR intervals
     double artifactCorrectionThreshold = 0.05;
+    final Set<String> emptyStringSet = new HashSet<String>();
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
     // the last time (since epoch) a1 was evaluated
@@ -1941,9 +1944,9 @@ public class MainActivity extends AppCompatActivity {
         }
         elapsedMS = (currentTimeMS - firstSampleMS);
         elapsedSecondsTrunc = elapsedMS / 1000;
-        Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
+        //Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
         wakeLock.acquire();
-        Log.d(TAG, "updateTrackedFeatures");
+        //Log.d(TAG, "updateTrackedFeatures");
         if (timeForUIupdate(realTime)) {
             String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
             lambdaSetting = Integer.valueOf(lambdaPref);
@@ -1973,27 +1976,27 @@ public class MainActivity extends AppCompatActivity {
                 artifactCorrectionThreshold = 0.05;
             }
         }
-        final Set<String> emptyStringSet = new HashSet<String>();
-        Set<String> graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
-        Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
+        Set<String> graphFeaturesSelected = emptyStringSet;
         // preference updates
         if (timeForUIupdate(realTime)) {
+            graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
+            //Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
             notificationDetailSetting = sharedPreferences.getString(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
             alpha1EvalPeriodSetting = sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
             try {
                 alpha1EvalPeriod = Integer.parseInt(alpha1EvalPeriodSetting);
             } catch (final NumberFormatException e) {
-                Log.d(TAG, "Number format exception alpha1EvalPeriod " + alpha1EvalPeriodSetting + " " + e.toString());
+                //Log.d(TAG, "Number format exception alpha1EvalPeriod " + alpha1EvalPeriodSetting + " " + e.toString());
                 alpha1EvalPeriod = 20;
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
                 editor.apply();
-                Log.d(TAG, "alpha1CalcPeriod wrote " + sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "??"));
+                //Log.d(TAG, "alpha1CalcPeriod wrote " + sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "??"));
             }
             if (alpha1EvalPeriod < 5) {
-                Log.d(TAG, "alpha1EvalPeriod<5");
+                //Log.d(TAG, "alpha1EvalPeriod<5");
                 alpha1EvalPeriod = 5;
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
@@ -2012,27 +2015,23 @@ public class MainActivity extends AppCompatActivity {
         String rejected = "";
         boolean haveArtifacts = false;
         List<Integer> rrsMs = data.rrsMs;
-//        double lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
-//        double upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
         for (int si = 0; si < data.rrsMs.size(); si++) {
             double newrr = data.rrsMs.get(si);
             double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
             double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-//            lowerBound = rrMeanWindowed * (1 - artifactCorrectionThreshold);
-//            upperBound = rrMeanWindowed * (1 + artifactCorrectionThreshold);
             Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
             if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
-                Log.d(TAG, "accept RR within threshold" + newrr);
+                //Log.d(TAG, "accept RR within threshold" + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
                 rrInterval[newestSample] = newrr;
                 rrIntervalTimestamp[newestSample] = currentTimeMS;
                 newestSample = (newestSample + 1) % maxrrs;
                 thisIsFirstSample = false;
             } else {
-                Log.d(TAG, "drop...");
+                //Log.d(TAG, "drop...");
                 artifactTimestamp[newestArtifactSample] = currentTimeMS;
                 newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
-                Log.d(TAG, "reject artifact " + newrr);
+                //Log.d(TAG, "reject artifact " + newrr);
                 rejected += "" + newrr;
                 haveArtifacts = true;
                 totalRejected++;
@@ -2046,21 +2045,20 @@ public class MainActivity extends AppCompatActivity {
             oldestSample = (oldestSample + 1) % maxrrs;
             expired++;
         }
-        Log.d(TAG, "Expire old artifacts");
+        //Log.d(TAG, "Expire old artifacts");
         while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSizeSec * 1000) {
-            Log.d(TAG, "Expire at " + oldestArtifactSample);
+            //Log.d(TAG, "Expire at " + oldestArtifactSample);
             oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
         }
-        Log.d(TAG, "elapsedMS " + elapsedMS);
+        //Log.d(TAG, "elapsedMS " + elapsedMS);
         //
         long absSeconds = Math.abs(elapsedSecondsTrunc);
-        String positive = String.format(
-                "%2d:%02d:%02d",
-                absSeconds / 3600,
-                (absSeconds % 3600) / 60,
-                absSeconds % 60);
-
         if (timeForUIupdate(realTime)) {
+            String positive = String.format(
+                    "%2d:%02d:%02d",
+                    absSeconds / 3600,
+                    (absSeconds % 3600) / 60,
+                    absSeconds % 60);
             //text_time.setText(mode + "    " +positive + "    \uD83D\uDD0B"+batteryLevel);
             text_mode.setText(exerciseMode);
             text_time.setText(positive);
@@ -2072,7 +2070,7 @@ public class MainActivity extends AppCompatActivity {
         // https://www.kubios.com/hrv-preprocessing/
         //
         long elapsedSecondsTrunc = elapsedMS / 1000;
-        Log.d(TAG,"elapsed seconds (trunc) = "+elapsedSecondsTrunc);
+        //Log.d(TAG,"elapsed seconds (trunc) = "+elapsedSecondsTrunc);
         int nrSamples = getNrSamples();
         int nrArtifacts = getNrArtifacts();
         // get full window (c. 220sec)
@@ -2084,8 +2082,8 @@ public class MainActivity extends AppCompatActivity {
 //            featureWindowSamples = copySamplesFeatureWindow();
 //            samples = featureWindowSamples;
 //        }
-        Log.d(TAG, "Samples: " + v_toString(samples));
-        double[] dRR = v_differential(samples);
+        //Log.d(TAG, "Samples: " + v_toString(samples));
+//        double[] dRR = v_differential(samples);
         //Log.d(TAG, "dRR: " + v_toString(dRR));
 
         //
@@ -2094,9 +2092,9 @@ public class MainActivity extends AppCompatActivity {
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
         rrMeanWindowed = v_mean(samples);
-        Log.d(TAG,"rrMeanWindowed "+rrMeanWindowed);
+        //Log.d(TAG,"rrMeanWindowed "+rrMeanWindowed);
         hrMeanWindowed = round(60 * 1000 * 100 / rrMeanWindowed) / 100.0;
-        Log.d(TAG,"hrMeanWindowed "+hrMeanWindowed);
+        //Log.d(TAG,"hrMeanWindowed "+hrMeanWindowed);
         // Periodic actions: check alpha1 and issue voice update
         // - skip one period's worth after first HR update
         // - only within the first two seconds of this period window
@@ -2105,16 +2103,14 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: The prev_a1_check now seems redundant
         if (timeForUIupdate(realTime)) Log.d(TAG,"Elapsed "+elapsedSecondsTrunc+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
         boolean graphEnabled = realTime;
-
         boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriod;
         boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
         boolean enoughSinceLast = currentTimeMS >= prevA1Timestamp + alpha1EvalPeriod*1000;
-        Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
+        //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
+        // Logging must not be throttled during playback
         if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
             graphEnabled = true;
             Log.d(TAG,"alpha1...");
-//            alpha1V1Windowed = dfaAlpha1V1(samples, 2, 4, 30, false);
-//            alpha1V1RoundedWindowed = round(alpha1V1Windowed * 100) / 100.0;
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1Timestamp = currentTimeMS;
@@ -2217,15 +2213,13 @@ public class MainActivity extends AppCompatActivity {
         boolean pre2 = elapsedSecondsTrunc > lastScrollToEndElapsedSec + 20;
         boolean scrollToEnd = (realTime && pre1 && pre2) || (!realTime && pre1);
         if (scrollToEnd) lastScrollToEndElapsedSec = elapsedSecondsTrunc;
-//        if (realTime) {
-//            if (graphFeaturesSelected.contains("rr")) {
-//                for (int rr : data.rrsMs) {
-//                    logRRelapsedMS_snapshot += rr;
-//                    double tmpRRMins = logRRelapsedMS_snapshot / 60000.0;
-//                    rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
-//                }
-//            }
-//        }
+        if (graphFeaturesSelected.contains("rr")) {
+            for (int rr : data.rrsMs) {
+                logRRelapsedMS_snapshot += rr;
+                double tmpRRMins = logRRelapsedMS_snapshot / 60000.0;
+                rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
+            }
+        }
         Log.d(TAG, "scrollToEnd antecedents "+pre1+" "+pre2);
         Log.d(TAG, "tenSecAsMin "+tenSecAsMin);
         Log.d(TAG, "elapsedMin "+elapsedMin);
