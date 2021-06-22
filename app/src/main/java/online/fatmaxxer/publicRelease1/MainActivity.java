@@ -1979,10 +1979,11 @@ public class MainActivity extends AppCompatActivity {
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
         Set<String> graphFeaturesSelected = emptyStringSet;
+        graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
         // preference updates
         if (timeForUIupdate(realTime)) {
-            graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
-            //Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
+            Log.d(TAG,"timeForUIupdate");
+            Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
             notificationDetailSetting = sharedPreferences.getString(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
             alpha1EvalPeriodSetting = sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
             try {
@@ -2105,7 +2106,7 @@ public class MainActivity extends AppCompatActivity {
         boolean graphEnabled = realTime;
         boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriod;
         boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
-        boolean enoughSinceLast = currentTimeMS >= prevA1Timestamp + alpha1EvalPeriod*1000;
+        boolean enoughSinceLast = currentTimeMS >= (prevA1Timestamp + alpha1EvalPeriod*1000);
         //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
         // Logging must not be throttled during playback
         if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
@@ -2220,24 +2221,32 @@ public class MainActivity extends AppCompatActivity {
                 rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
             }
         }
+        Log.d(TAG, "realTime "+realTime);
         Log.d(TAG, "scrollToEnd antecedents "+pre1+" "+pre2);
         Log.d(TAG, "tenSecAsMin "+tenSecAsMin);
         Log.d(TAG, "elapsedMin "+elapsedMin);
         Log.d(TAG, "scrollToEnd "+scrollToEnd);
         Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
         Log.d(TAG, "graphEnabled "+graphEnabled);
-        if (graphEnabled) {
+        if (timeForUIupdate(realTime)) {
+                Log.d(TAG,"plot...");
                 if (graphFeaturesSelected.contains("hr")) {
-                    Log.d(TAG,"plot HR");
+                    Log.d(TAG,"plot hr");
                     hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
+                } else {
+                    Log.d(TAG,"no plot HR");
                 }
                 if (graphFeaturesSelected.contains("a1")) {
                     Log.d(TAG,"plot a1");
                     a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
+                } else {
+                    Log.d(TAG,"no plot a1");
                 }
                 if (graphFeaturesSelected.contains("artifacts")) {
                     Log.d(TAG,"plot artifacts");
                     artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                } else {
+                    Log.d(TAG,"no plot artifacts");
                 }
                 if (graphFeaturesSelected.contains("rmssd")) {
                     Log.d(TAG,"plot rmssd");
