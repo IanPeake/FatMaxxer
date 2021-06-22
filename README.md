@@ -1,7 +1,7 @@
 # <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Fatmaxxer_Icon_v0.2.png" height="36"/> FatMaxxer
 
 According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
-measured using just a Polar H10 heart rate strap.
+measured using just a Polar H10 heart rate strap. **This app requires a Polar H10** (or possibly H9).
 
 Free public test of the (upcoming) paid version on the Google Play store: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1
 
@@ -27,8 +27,10 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 
 ## Status: Testers Wanted ##
 FatMaxxer is in a very early stage of development.
-The app is provided here as a APK (debug version) and as a public test release on the Google Play store.
-The Play Store beta releases may lag behind the APK version on Github by as much as 24 hours.
+The app is provided on Github as a APK (debug version) and as a public test release on the Google Play store.
+Email fatmaxxer@gmail.com for access to more up to date releases through the Play Store.
+The Play Store public beta releases lag behind the APK version on Github by as much as 24 hours.
+
 The app may crash or not work properly.
 *To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
 On a first time install you may have to manually set the preferences: lambda = 500, alpha1 calculation period = 10, threshold = "Auto", etc.
@@ -56,7 +58,8 @@ Graph plots:
 - secondary Y axis (0-10):
   - blue trace: artifacts (%)
 
-## FAQ ##
+## Frequently Asked Questions ##
+- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10; it's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK that FatMaxxer uses.
 - *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
