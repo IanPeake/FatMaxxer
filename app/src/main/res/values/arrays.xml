@@ -26,30 +26,26 @@
 
     <string-array name="graphFeaturesEntries">
         <item>Heart Rate</item>
-        <item>RR</item>
-        <item>Alpha1 (Window)</item>
-        <item>RMSSD (Window)</item>
-        <item>Heart Rate (Window)</item>
-        <item>Artifact (%)</item>
+        <item>RR /5</item>
+        <item>Alpha1 x100 (2 min)</item>
+        <item>RMSSD x2 (2 min)</item>
+        <item>Heart Rate (2 min avg)</item>
+        <item>Artifacts (2 min, %)</item>
     </string-array>
 
     <string-array name="graphFeaturesValues">
-        <item>Heart Rate</item>
-        <item>RR</item>
-        <item>Alpha1 (Window)</item>
-        <item>RMSSD (Window)</item>
-        <item>Heart Rate (Window)</item>
-        <item>Artifact (%)</item>
+        <item>hr</item>
+        <item>rr</item>
+        <item>a1</item>
+        <item>rmssd</item>
+        <item>hrWin</item>
+        <item>artifactsPercent</item>
     </string-array>
 
     <string-array name="graphFeaturesDefaultValues">
-        <item>true</item>
-        <item>false</item>
-        <item>true</item>
-        <item>false</item>
-        <item>false</item>
-        <item>true</item>
-        <item></item>
+        <item>hr</item>
+        <item>a1</item>
+        <item>artifactsPercent</item>
     </string-array>
 
 </resources>

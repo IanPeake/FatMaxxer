@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -981,6 +982,8 @@ public class MainActivity extends AppCompatActivity {
     LineGraphSeries<DataPoint> a1175Series = new LineGraphSeries<DataPoint>();
     //LineGraphSeries<DataPoint> hrvSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> rmssdSeries = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> hrWinSeries = new LineGraphSeries<DataPoint>();
     final int maxDataPoints = 65535;
     final double graphViewPortWidth = 2.0;
     final int graphMaxHR = 200;
@@ -1730,6 +1733,8 @@ public class MainActivity extends AppCompatActivity {
         graphView.addSeries(a1HRVvt2Series);
         graphView.addSeries(hrSeries);
         graphView.addSeries(a1V2Series);
+        graphView.addSeries(rmssdSeries);
+        graphView.addSeries(hrWinSeries);
         // REQUIRED
         graphView.getSecondScale().addSeries(artifactSeries);
         graphView.getSecondScale().setMaxY(10);
@@ -1748,6 +1753,8 @@ public class MainActivity extends AppCompatActivity {
         a1175Series.setThickness(1);
         hrSeries.setColor(Color.RED);
         artifactSeries.setColor(Color.BLUE);
+        rmssdSeries.setColor(getResources().getColor(R.color.rmssdSeries));
+        hrWinSeries.setColor(getResources().getColor(R.color.hrWinSeries));
         // yellow is a lot less visible that red
         a1HRVvt1Series.setThickness(6);
         // red is a lot more visible than yellow
@@ -1959,6 +1966,9 @@ public class MainActivity extends AppCompatActivity {
                 artifactCorrectionThreshold = 0.05;
             }
         }
+        final Set<String> emptyStringSet = new HashSet<String>();
+        Set<String> graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
+        Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
         if (starting || realTime || elapsedSeconds % 60 == 0) {
@@ -1987,7 +1997,8 @@ public class MainActivity extends AppCompatActivity {
             logRRelapsedMS += rr;
             ////
             double tmpRRMins = logRRelapsedMS / 60000.0;
-            rrSeries.appendData(new DataPoint(tmpRRMins, rr/8.0), false, maxDataPoints);
+            if (graphFeaturesSelected.contains("rr"))
+                rrSeries.appendData(new DataPoint(tmpRRMins, rr/5.0), false, maxDataPoints);
             ////
             timestamp += rr;
         }
@@ -2191,8 +2202,10 @@ public class MainActivity extends AppCompatActivity {
         double tenSecAsMin = 1.0 / 6.0;
         boolean scrollToEnd = (elapsedMin > (graphViewPortWidth - tenSecAsMin)) && (elapsed % 10 == 0);
         if (graphEnabled) {
-                hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-                a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
+                if (graphFeaturesSelected.contains("hr"))
+                    hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
+                if (graphFeaturesSelected.contains("a1"))
+                    a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
                 if (scrollToEnd) {
                     double nextX = elapsedMin + tenSecAsMin;
                     a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
@@ -2201,7 +2214,12 @@ public class MainActivity extends AppCompatActivity {
                     a1125Series.appendData(new DataPoint(nextX, 125), scrollToEnd, maxDataPoints);
                     a1175Series.appendData(new DataPoint(nextX, 175), scrollToEnd, maxDataPoints);
                 }
-                artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                if (graphFeaturesSelected.contains("artifacts"))
+                    artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                if (graphFeaturesSelected.contains("rmssd"))
+                    rmssdSeries.appendData(new DataPoint(elapsedMin, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
+                if (graphFeaturesSelected.contains("hrWin"))
+                    hrWinSeries.appendData(new DataPoint(elapsedMin, hrMeanWindowed), scrollToEnd, maxDataPoints);
         }
 
         audioUpdate(data, currentTimeMS);

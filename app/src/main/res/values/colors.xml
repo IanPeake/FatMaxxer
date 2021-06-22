@@ -16,4 +16,6 @@
     <color name="colorGreen">#0BB110</color>
     <color name="colorA1V2">#0BB110</color>
     <color name="colorBlue">#0532F8</color>
+    <color name="rmssdSeries">#36F4EB</color>
+    <color name="hrWinSeries">#C64407</color>
 </resources>
