@@ -59,6 +59,7 @@
         app:title="Lambda (integer)"
         app:summary="Value for lambda in a1v2 calculation"
         android:digits="0123456789"
+        app:defaultValue="500"
         android:maxLength="3"
         />
 

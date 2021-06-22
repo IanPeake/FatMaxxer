@@ -1706,11 +1706,11 @@ public class MainActivity extends AppCompatActivity {
         writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
         debugLogStream = createLogFileNew("debug", "log");
 
-        ensurePreferenceSet(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
-        ensurePreferenceSet(LAMBDA_PREFERENCE_STRING, "500");
-        ensurePreferenceSet(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
-        ensurePreferenceSet(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
-        sharedPreferences.edit().commit();
+//        ensurePreferenceSet(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
+//        ensurePreferenceSet(LAMBDA_PREFERENCE_STRING, "500");
+//        ensurePreferenceSet(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
+//        ensurePreferenceSet(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
+//        sharedPreferences.edit().commit();
 
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
