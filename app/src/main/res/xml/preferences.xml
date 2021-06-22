@@ -16,6 +16,7 @@
         app:key="notificationDetail"
         app:title="Notification Detail"
         app:summary=""
+        app:defaultValue="full"
         app:entries="@array/notificationDetailEntries"
         app:entryValues="@array/notificationDetailValues"/>
 
@@ -33,6 +34,7 @@
         app:key="artifactThreshold"
         app:title="Artifact rejection threshold"
         app:summary="RRs differing by more than +/- threshold from the previous are rejected."
+        app:defaultValue="Auto"
         app:entries="@array/artifactThresholdEntries"
         app:entryValues="@array/artifactThresholdEntryValues"/>
 
@@ -41,6 +43,7 @@
         app:title="⍺1 inter-calculation period (sec)"
         android:digits="0123456789"
         android:maxLength="4"
+        app:defaultValue="20"
         app:useSimpleSummaryProvider="true"
         app:summary="Time in seconds to wait between Alpha1 calculations, >= 5 sec"/>
 
