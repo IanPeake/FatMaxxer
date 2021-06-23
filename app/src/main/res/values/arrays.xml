@@ -39,13 +39,13 @@
         <item>a1</item>
         <item>rmssd</item>
         <item>hrWin</item>
-        <item>artifactsPercent</item>
+        <item>artifacts</item>
     </string-array>
 
     <string-array name="graphFeaturesDefaultValues">
         <item>hr</item>
         <item>a1</item>
-        <item>artifactsPercent</item>
+        <item>artifacts</item>
     </string-array>
 
 </resources>
