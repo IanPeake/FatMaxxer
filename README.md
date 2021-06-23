@@ -7,7 +7,12 @@ Free public test of the (upcoming) paid version on the Google Play store: https:
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshot-run-scaled-cropped.jpg" height="240" alt="Screenshot"/> | <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/>
+<img src="https://github.com/IanPeake/FatMaxxer/blob/main/screenshots/Screenshot_20210623-102602_FatMaxxer.jpg" height="240" alt="Screenshot"/> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Screenshot_20210623-102638_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102644_FatMaxxer.jpg" height="240" alt="Garmin notification"/>
+
 
 ## Overview ##
 Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
