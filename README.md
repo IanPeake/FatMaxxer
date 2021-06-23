@@ -9,9 +9,9 @@ See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatma
 
 <img src="https://github.com/IanPeake/FatMaxxer/blob/main/screenshots/Screenshot_20210623-102602_FatMaxxer.jpg" height="240" alt="Screenshot"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/> |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102608_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102638_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
-<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102644_FatMaxxer.jpg" height="240" alt="Garmin notification"/>
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102644_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
+<img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102608_FatMaxxer.jpg" height="240" alt="Garmin notification"/> 
 
 
 ## Overview ##
