@@ -14,7 +14,7 @@
 
     <ListPreference
         app:key="notificationDetail"
-        app:title="Notification Detail"
+        app:title="Notification detail"
         app:summary=""
         app:defaultValue="full"
         app:entries="@array/notificationDetailEntries"
@@ -50,10 +50,10 @@
         app:summary="Time in seconds to wait between Alpha1 calculations, >= 5 sec"/>
 
     <MultiSelectListPreference
-        android:dialogTitle="Select Graph Features"
+        android:dialogTitle="Select graph features"
         android:key="graphFeaturesSelectorKey"
         android:summary=""
-        android:title="Select Graph Features"
+        android:title="Select graph features"
         android:entries="@array/graphFeaturesEntries"
         android:entryValues="@array/graphFeaturesValues"
         android:defaultValue="@array/graphFeaturesDefaultValues"
