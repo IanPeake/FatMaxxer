@@ -4,7 +4,7 @@ According to recent research (see below) the FatMaxxer Android app may help you 
 measured using just a Polar H10 heart rate strap. **This app requires a Polar H10** (or possibly H9).
 
 Free public test of the (upcoming) paid version on the Google Play store: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 .
-See also "Testers Wanted" below.
+New Google Group https://groups.google.com/g/fatmaxxer-closed-testing should provide access "closed" testing versions.
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
