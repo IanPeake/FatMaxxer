@@ -1106,7 +1106,8 @@ public class MainActivity extends AppCompatActivity {
         File[] allFiles = logsDir.listFiles();
         List<File> rrLogFiles = new ArrayList<File>();
         for (File f : allFiles) {
-            if (f.getName().endsWith(".rr.csv")) {
+            String name = f.getName();
+            if (name.endsWith(".rr.csv") || name.endsWith("RRintervals.csv")) {
                 Log.d(TAG, "Found log file: " + getUri(f));
                 rrLogFiles.add(f);
             }
@@ -2210,7 +2211,7 @@ public class MainActivity extends AppCompatActivity {
         double tenSecAsMin = 1.0 / 6.0;
         boolean pre1 = elapsedMin > (graphViewPortWidth - tenSecAsMin);
         // 20 sec delay before next scroll
-        Log.d(TAG,"lastScrollToEndElapsedSed "+lastScrollToEndElapsedSec);
+        //Log.d(TAG,"lastScrollToEndElapsedSed "+lastScrollToEndElapsedSec);
         boolean pre2 = elapsedSecondsTrunc > lastScrollToEndElapsedSec + 20;
         boolean scrollToEnd = (realTime && pre1 && pre2) || (!realTime && pre1);
         if (scrollToEnd) lastScrollToEndElapsedSec = elapsedSecondsTrunc;
@@ -2221,39 +2222,33 @@ public class MainActivity extends AppCompatActivity {
                 rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
             }
         }
-        Log.d(TAG, "realTime "+realTime);
-        Log.d(TAG, "scrollToEnd antecedents "+pre1+" "+pre2);
-        Log.d(TAG, "tenSecAsMin "+tenSecAsMin);
-        Log.d(TAG, "elapsedMin "+elapsedMin);
-        Log.d(TAG, "scrollToEnd "+scrollToEnd);
-        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
-        Log.d(TAG, "graphEnabled "+graphEnabled);
+//        Log.d(TAG, "realTime "+realTime);
+//        Log.d(TAG, "scrollToEnd antecedents "+pre1+" "+pre2);
+//        Log.d(TAG, "tenSecAsMin "+tenSecAsMin);
+//        Log.d(TAG, "elapsedMin "+elapsedMin);
+//        Log.d(TAG, "scrollToEnd "+scrollToEnd);
+//        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
+//        Log.d(TAG, "graphEnabled "+graphEnabled);
         if (timeForUIupdate(realTime)) {
                 Log.d(TAG,"plot...");
                 if (graphFeaturesSelected.contains("hr")) {
-                    Log.d(TAG,"plot hr");
+                    //Log.d(TAG,"plot hr");
                     hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-                } else {
-                    Log.d(TAG,"no plot HR");
                 }
                 if (graphFeaturesSelected.contains("a1")) {
-                    Log.d(TAG,"plot a1");
+                    //Log.d(TAG,"plot a1");
                     a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
-                } else {
-                    Log.d(TAG,"no plot a1");
                 }
                 if (graphFeaturesSelected.contains("artifacts")) {
-                    Log.d(TAG,"plot artifacts");
+                    //Log.d(TAG,"plot artifacts");
                     artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
-                } else {
-                    Log.d(TAG,"no plot artifacts");
                 }
                 if (graphFeaturesSelected.contains("rmssd")) {
-                    Log.d(TAG,"plot rmssd");
+                    //Log.d(TAG,"plot rmssd");
                     rmssdSeries.appendData(new DataPoint(elapsedMin, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeaturesSelected.contains("hrWin")) {
-                    Log.d(TAG,"plot hrWin");
+                    //Log.d(TAG,"plot hrWin");
                     hrWinSeries.appendData(new DataPoint(elapsedMin, hrMeanWindowed), scrollToEnd, maxDataPoints);
                 }
                 if (scrollToEnd) {
