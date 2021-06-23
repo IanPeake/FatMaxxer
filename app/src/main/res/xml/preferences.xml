@@ -18,6 +18,7 @@
         app:summary=""
         app:defaultValue="full"
         app:entries="@array/notificationDetailEntries"
+        app:useSimpleSummaryProvider="true"
         app:entryValues="@array/notificationDetailValues"/>
 
     <SwitchPreferenceCompat
@@ -36,6 +37,7 @@
         app:summary="RRs differing by more than +/- threshold from the previous are rejected."
         app:defaultValue="Auto"
         app:entries="@array/artifactThresholdEntries"
+        app:useSimpleSummaryProvider="true"
         app:entryValues="@array/artifactThresholdEntryValues"/>
 
     <EditTextPreference
@@ -60,19 +62,21 @@
     <EditTextPreference
         app:key="polarDeviceID"
         app:title="Preferred device ID (hex; restart required)"
+        app:useSimpleSummaryProvider="true"
         app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
 
     <SwitchPreferenceCompat
         app:key="experimental"
         app:title="Developer mode"
-        app:summary="Experimental features. E.g. Replay / disable auto-start"/>
+        app:summary="Experimental features (replay / disable auto-start)"/>
 
     <EditTextPreference
         app:key="lambdaPref"
         app:title="Lambda (integer)"
-        app:summary="Value for lambda in a1v2 calculation"
+        app:summary="Value of Lambda for smoothn pre-DFA detrending"
         android:digits="0123456789"
         app:defaultValue="500"
+        app:useSimpleSummaryProvider="true"
         android:maxLength="3"
         />
 
