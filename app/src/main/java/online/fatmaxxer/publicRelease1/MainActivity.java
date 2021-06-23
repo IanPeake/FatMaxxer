@@ -1454,7 +1454,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             if (!testDataQueue.isEmpty()) {
                 TestDataPacket data = testDataQueue.remove();
-                Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
+                //Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
                 updateTrackedFeatures(data.polarData, data.timestamp, false);
                 timerHandler.postDelayed(this, 1);
             }
@@ -2064,7 +2064,7 @@ public class MainActivity extends AppCompatActivity {
             double newrr = data.rrsMs.get(si);
             double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
             double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-            Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
+            //Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
             if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
                 //Log.d(TAG, "accept RR within threshold" + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
