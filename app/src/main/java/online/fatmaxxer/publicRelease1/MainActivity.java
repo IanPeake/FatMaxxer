@@ -1085,7 +1085,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             return FileProvider.getUriForFile(
                     MainActivity.this,
-                    "online.fatmaxxer.publicRelease1.fileprovider",
+//                    "online.fatmaxxer.publicRelease1.fileprovider",
+                    BuildConfig.APPLICATION_ID+".fileprovider",
                     f);
         } catch (IllegalArgumentException e) {
             logException("getUri "+f.toString(), e);
