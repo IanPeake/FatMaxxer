@@ -108,6 +108,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
     public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
     public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
+    public static final String IMPORT_CSV_FAILED_DATA_IS_NULL = "Import CSV failed: data is null";
+    public static final String IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA = "Import CSV failed: could not get Uri from data";
+    public static final String RR_LOGFILE_HEADER = "timestamp, rr, since_start ";
 
     final double alpha1HRVvt1 = 0.75;
     final double alpha1HRVvt2 = 0.5;
@@ -944,6 +947,11 @@ public class MainActivity extends AppCompatActivity {
             return android.util.Log.d(tag, msg);
         }
 
+        public int w(String tag, String msg) {
+            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            return android.util.Log.e(tag, msg);
+        }
+
         public int e(String tag, String msg) {
             if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
             return android.util.Log.e(tag, msg);
@@ -1018,7 +1026,7 @@ public class MainActivity extends AppCompatActivity {
         MENU_OLD_LOG_FILES,
         MENU_EXPORT_SELECTED_LOG_FILES,
         MENU_DELETE_SELECTED_LOG_FILES,
-        MENU_PLAYBACK_TEST,
+        MENU_REPLAY,
         MENU_START,
         MENU_IMPORT,
         MENU_RENAME_LOGS,
@@ -1038,10 +1046,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
-        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit");
+        String startedStatus = "";
+        if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
+        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
             menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
-            menu.add(0, menuItem(MENU_PLAYBACK_TEST), Menu.NONE, "Replay RR Log");
+            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Logs");
@@ -1050,17 +1060,25 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, "Delete All Debug Logs");
         menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
-        if (tmpDeviceId.length() > 0) {
+        // Offer connect if not already connected/replaying
+        if (tmpDeviceId.length() > 0 && !logOrReplayStarted()) {
             menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, "Connect preferred device " + tmpDeviceId);
         }
         int i = 0;
-        for (String tmpDeviceID : discoveredDevices.keySet()) {
-            menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, "Connect " + discoveredDevices.get(tmpDeviceID));
-            discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i, tmpDeviceID);
-            i++;
+        // Offer connect for discovered devices if not already connected/replaying
+        if (!logOrReplayStarted()) {
+            for (String tmpDeviceID : discoveredDevices.keySet()) {
+                menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, "Connect " + discoveredDevices.get(tmpDeviceID));
+                discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i, tmpDeviceID);
+                i++;
+            }
         }
         menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    private boolean logOrReplayStarted() {
+        return started; //testDataQueue!=null && !testDataQueue.isEmpty();
     }
 
     public Uri getUri(File f) {
@@ -1079,7 +1097,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void importLogFile() {
         Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        receiveIntent.setType("*/*");
+        receiveIntent.setType("text/csv");
         receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
     }
@@ -1107,12 +1125,18 @@ public class MainActivity extends AppCompatActivity {
         List<File> rrLogFiles = new ArrayList<File>();
         for (File f : allFiles) {
             String name = f.getName();
-            if (name.endsWith(".rr.csv") || name.endsWith("RRintervals.csv")) {
-                Log.d(TAG, "Found log file: " + getUri(f));
+            if (isRRfileName(name)) {
+                Log.d(TAG, "Found RR log file: " + getUri(f));
                 rrLogFiles.add(f);
+            } else {
+                Log.d(TAG, "Not RR log file: " + getUri(f));
             }
         }
         return rrLogFiles;
+    }
+
+    private boolean isRRfileName(String name) {
+        return name.endsWith(".rr.csv") || name.endsWith("RRIntervals.csv");
     }
 
     public List<Uri> logFiles() {
@@ -1303,40 +1327,49 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode==REQUEST_IMPORT_CSV) {
             if (data == null) {
-                Toast.makeText(getBaseContext(), "Import CSV failed: data is null", Toast.LENGTH_LONG);
+                Log.w(TAG, IMPORT_CSV_FAILED_DATA_IS_NULL);
+                Toast.makeText(getBaseContext(), IMPORT_CSV_FAILED_DATA_IS_NULL, Toast.LENGTH_LONG);
             } else {
                 Uri uri = data.getData();
                 if (uri == null) {
-                    Toast.makeText(getBaseContext(), "Import CSV failed: could not get Uri from data", Toast.LENGTH_LONG);
+                    Log.w(TAG, IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA);
+                    Toast.makeText(getBaseContext(), IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA, Toast.LENGTH_LONG);
                 } else {
-                    importFile(getLogsDir(),uri);
+                    importRRFile(uri, getLogsDir());
                 }
             }
         }
     }
 
     // https://stackoverflow.com/questions/10854211/android-store-inputstream-in-file/39956218
-    private void importFile(File dir, Uri uri) {
+    private void importRRFile(Uri uri, File dir) {
         String filename = getFileName(uri);
-        Log.d(TAG,"Importing "+filename+" into logs");
-        Toast.makeText(getBaseContext(), "Importing: " + filename, Toast.LENGTH_LONG).show();
+        if (!isRRfileName(filename)) {
+            String msg = "Not RR log, not importing: "+filename;
+            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
+            Log.w(TAG, msg);
+            return;
+        }
+        Log.d(TAG,"Importing RR file "+filename+" into logs");
         try {
             InputStream input = getContentResolver().openInputStream(uri);
             try {
                 File file = new File(dir, filename);
                 try (OutputStream output = new FileOutputStream(file)) {
+                    Log.d(TAG,"Opened "+filename);
                     byte[] buffer = new byte[4 * 1024]; // or other buffer size
                     int read;
                     while ((read = input.read(buffer)) != -1) {
                         output.write(buffer, 0, read);
                     }
                     output.flush();
+                    Toast.makeText(getBaseContext(), "Imported RR file: " + filename, Toast.LENGTH_LONG).show();
                 }
             } finally {
                     input.close();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            logException("Exception importing RR log",e);
         }
     }
 
@@ -1381,9 +1414,8 @@ public class MainActivity extends AppCompatActivity {
         adb.show();
     }
 
-    // selectRRfile
-    void testWithRRFile() {
-        Log.d(TAG, "testWithRRFile");
+    void selectReplayRRfile() {
+        Log.d(TAG, "selectReplayRRfile");
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         List<File> logFiles = rrLogFiles();
         int nrLogFiles = 0;
@@ -1402,20 +1434,17 @@ public class MainActivity extends AppCompatActivity {
         adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        try {
-                            dialogInterface.dismiss();
-                            int selectedPosition = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
-                            File f = files[selectedPosition];
-                            testAnalysisWithRRfile(f);
-                        } catch (IOException e) {
-                            Log.d(TAG, "Test RR file IOException " + e);
-                        }
+                        dialogInterface.dismiss();
+                        int selectedPosition = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
+                        File f = files[selectedPosition];
+                        replayRRfile(f);
                     }
                 }
         );
         adb.setTitle("Select RR file for test input");
         adb.show();
     }
+    //                            logException("Exception opening RR log for replay", e);
 
     //runs without a timer by reposting handler at the end of the runnable
     Handler timerHandler = new Handler();
@@ -1438,46 +1467,66 @@ public class MainActivity extends AppCompatActivity {
 
     Queue<TestDataPacket> testDataQueue;
 
-    private void testAnalysisWithRRfile(File f) throws IOException {
-        if (!f.getName().endsWith(".rr.csv")) {
-            Toast.makeText(getBaseContext(), "Playback file is not .rr.csv: " + f.getName(), Toast.LENGTH_LONG).show();
+    private void replayRRfile(File f) {
+        FileReader fr = null;
+        try {
+            fr = new FileReader(f);
+        } catch (FileNotFoundException e) {
+            logException("Exception trying to open RR file "+f.getName()+" for replay", e);
             return;
         }
-        FileReader fr = new FileReader(f);
-        Toast.makeText(getBaseContext(), "Starting test with " + f.getName(), Toast.LENGTH_LONG).show();
         testDataQueue = new ConcurrentLinkedQueue<TestDataPacket>();
         Log.d(TAG, "Starting RR reader test with " + f.getName());
         BufferedReader reader = new BufferedReader(fr);
         // header
-        String line = reader.readLine();
-        // gap
-        line = reader.readLine();
-        double polarHR = 0;
-        int lineCount = 0;
-        while (line != null) {
-            //Log.d(TAG, "RR file line: " + line);
-            String[] fields = line.split(",");
-            if (fields.length >= 3) {
-                //Log.d(TAG, "RR file line fields: " + fields[0] + " " + fields[1] + " " + fields[2]);
-                int rr = Integer.valueOf(fields[1]);
-                long localTimeStamp = Long.valueOf(fields[0]);
-                List<Integer> rrs = new ArrayList<Integer>();
-                rrs.add(rr);
-                PolarHrData data = new PolarHrData((60000 / rr), rrs, true, true, true);
-                TestDataPacket testData = new TestDataPacket();
-                testData.polarData = data;
-                testData.timestamp = localTimeStamp;
-                testDataQueue.add(testData);
-                //updateTrackedFeatures(data);
-                lineCount++;
-                if (lineCount == 1) {
-                    Log.d(TAG, "Started timer");
-                    timerHandler.postDelayed(timerRunnable, 1000);
-                }
+        try {
+            String header = reader.readLine();
+            String headerExpected = RR_LOGFILE_HEADER;
+            if (!header.equals(headerExpected)) {
+                String msg = f.getName() + ": warning, expected header " + headerExpected + " got " + header;
+                Log.w(TAG, msg);
+                Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
+//                return;
             }
-            line = reader.readLine();
+            // gap
+            String gap = reader.readLine();
+            if (!header.equals(headerExpected)) {
+                String msg = f.getName() + ": warning, expected empty line, got " + gap;
+                Log.w(TAG, msg);
+                Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
+                return;
+            }
+            // body
+            String line = reader.readLine();
+            double polarHR = 0;
+            int lineCount = 0;
+            while (line != null) {
+                //Log.d(TAG, "RR file line: " + line);
+                String[] fields = line.split(",");
+                if (fields.length >= 3) {
+                    //Log.d(TAG, "RR file line fields: " + fields[0] + " " + fields[1] + " " + fields[2]);
+                    int rr = Integer.valueOf(fields[1]);
+                    long localTimeStamp = Long.valueOf(fields[0]);
+                    List<Integer> rrs = new ArrayList<Integer>();
+                    rrs.add(rr);
+                    PolarHrData data = new PolarHrData((60000 / rr), rrs, true, true, true);
+                    TestDataPacket testData = new TestDataPacket();
+                    testData.polarData = data;
+                    testData.timestamp = localTimeStamp;
+                    testDataQueue.add(testData);
+                    //updateTrackedFeatures(data);
+                    lineCount++;
+                    if (lineCount == 1) {
+                        Log.d(TAG, "Started replay timer");
+                        timerHandler.postDelayed(timerRunnable, 1000);
+                    }
+                }
+                line = reader.readLine();
+            }
+            Toast.makeText(getBaseContext(), "Started RR file replay: " + f.getName(), Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            logException("Reading replay data from RR file", e);
         }
-        Toast.makeText(getBaseContext(), "Started RR file playback: " + f.getName(), Toast.LENGTH_LONG).show();
     }
 
     void deleteSelectedLogFiles() {
@@ -1526,23 +1575,16 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onOptionsItemSelected... " + item.getItemId());
         int itemID = item.getItemId();
         if (itemID == menuItem(MENU_QUIT)) finish();
-//        if (itemID == menuItem(MENU_START)) startAnalysis();
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
-        if (itemID == menuItem(MENU_PLAYBACK_TEST)) testWithRRFile();
-//        if (itemID == MENU_TAG_FOR_EXPORT) tagCurrentLogsForExport();
-//        if (itemID == MENU_SELECT_TAG_FOR_EXPORT) tagSelectedLogsForExport();
+        if (itemID == menuItem(MENU_REPLAY)) selectReplayRRfile();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
-//        if (itemID == MENU_EXPORT_TAGGED) exportTaggedFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
         if (itemID == menuItem(MENU_IMPORT)) importLogFile();
-//        if (itemID == MENU_EXPORT_ALL) exportAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
-//        if (itemID == MENU_EXPORT_DEBUG) exportAllDebugFiles();
         if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
         if (itemID == menuItem(MENU_CONNECT_DEFAULT)) tryPolarConnect();
         if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
-        //if (itemID == MENU_LIST_FILES) listFiles(logFiles());
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
             tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
@@ -1707,7 +1749,7 @@ public class MainActivity extends AppCompatActivity {
         rrLogStreamNew = createLogFileNew("rr", "csv");
 //        writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
 //        writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
-        writeLogFile("timestamp, rr, since_start ", rrLogStreamNew, "rr");
+        writeLogFile(RR_LOGFILE_HEADER, rrLogStreamNew, "rr");
         writeLogFile("", rrLogStreamNew, "rr");
         featureLogStreamNew = createLogFileNew("features", "csv");
         writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
@@ -2109,7 +2151,7 @@ public class MainActivity extends AppCompatActivity {
         boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
         boolean enoughSinceLast = currentTimeMS >= (prevA1Timestamp + alpha1EvalPeriod*1000);
         //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
-        // Logging must not be throttled during playback
+        // Logging must not be throttled during replay
         if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
             graphEnabled = true;
             Log.d(TAG,"alpha1...");
@@ -2272,19 +2314,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void tryPolarConnect(String tmpDeviceID) {
-//        quitSearchForPolarDevices();
         Log.d(TAG,"tryPolarConnect to "+tmpDeviceID);
         try {
             text_view.setText("Trying to connect to: " + tmpDeviceID);
             api.connectToDevice(tmpDeviceID);
         } catch (PolarInvalidArgument polarInvalidArgument) {
-            text_view.setText("PolarInvalidArgument: " + polarInvalidArgument);
-            polarInvalidArgument.printStackTrace();
+            String msg = "PolarInvalidArgument: " + polarInvalidArgument;
+            text_view.setText(msg);
+            logException("tryPolarConnect Exception", polarInvalidArgument);
         }
     }
 
     private void tryPolarConnect() {
-        //quitSearchForPolarDevices();
+        Log.d(TAG,"tryPolarConnect to preferred device...");
+        DEVICE_ID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
+        if (DEVICE_ID.length()>0) {
+            tryPolarConnect(DEVICE_ID);
+        } else {
+            text_view.setText("No device ID set");
+        }
+    }
+
+
+    /*
+    private void tryPolarConnect() {
         Log.d(TAG,"tryPolarConnect");
         DEVICE_ID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
         if (DEVICE_ID.length()>0) {
@@ -2299,6 +2352,7 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText("No device ID set");
         }
     }
+    */
 
     private void writeLogFile(String msg, FileWriter logStream, String tag) {
         try {
