@@ -1107,7 +1107,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void importLogFile() {
         Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        receiveIntent.setType("text/csv");
+        receiveIntent.setType("text/*");
         receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
     }
