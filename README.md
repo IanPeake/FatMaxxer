@@ -3,7 +3,7 @@
 According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
 measured using just a Polar H10 heart rate strap. **This app requires a Polar H10** (or possibly H9).
 
-Free public test of the (upcoming) paid version on the Google Play store: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1
+Download: see https://github.com/IanPeake/FatMaxxer#testers-wanted below.
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
@@ -30,11 +30,11 @@ The RR stream is subject to artifact filtering, where adjacent RR intervals chan
 Threshold settings are 5%, 25% and "Auto".
 The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
-## Status: Testers Wanted ##
+## Testers Wanted ##
 FatMaxxer is in a very early stage of development.
-The app is provided on Github as a APK (debug version) and as a public test release on the Google Play store.
-Email fatmaxxer@gmail.com for access to more up to date releases through the Play Store.
-The Play Store public beta releases lag behind the APK version on Github by as much as 24 hours.
+Sideload a recent test version from the APK downloadable from the Github repository.
+Free public beta test of (upcoming) paid version is coming to the Google Play store: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 (waiting on Google).
+Join the https://groups.google.com/g/fatmaxxer-closed-testing for discussion and access to Google Play test versions.
 
 The app may crash or not work properly.
 *To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
