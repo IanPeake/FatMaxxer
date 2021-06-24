@@ -2169,20 +2169,22 @@ public class MainActivity extends AppCompatActivity {
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1Timestamp = currentTimeMS;
-            writeLogFile("" + timestamp
-                    + "," + hrMeanWindowed
-                    + "," + rmssdWindowed
-                    + ","
-                    + "," //+ alpha1V1RoundedWindowed
-                    + "," + nrArtifacts
-                    + "," + nrSamples
-                    + "," + artifactsPercentWindowed
-                    + "," + artifactCorrectionThreshold
-                    + "," + alpha1V2RoundedWindowed
-                    ,
-                    featureLogStreamNew,
+            if (elapsedSecondsTrunc > 120) {
+                writeLogFile("" + timestamp
+                                + "," + hrMeanWindowed
+                                + "," + rmssdWindowed
+                                + ","
+                                + "," //+ alpha1V1RoundedWindowed
+                                + "," + nrArtifacts
+                                + "," + nrSamples
+                                + "," + artifactsPercentWindowed
+                                + "," + artifactCorrectionThreshold
+                                + "," + alpha1V2RoundedWindowed
+                        ,
+                        featureLogStreamNew,
 //                    featureLogStreamLegacy,
-                    "features");
+                        "features");
+            }
             if (timeForUIupdate(realTime)) {
                 if (sharedPreferences.getBoolean(NOTIFICATIONS_ENABLED_PREFERENCE_STRING, false)) {
                     Log.d(TAG, "Feature notification...");
