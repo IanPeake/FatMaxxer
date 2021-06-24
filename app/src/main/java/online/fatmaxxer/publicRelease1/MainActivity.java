@@ -14,12 +14,14 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -28,6 +30,7 @@ import android.speech.tts.TextToSpeech;
 //import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ScrollView;
@@ -66,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -735,9 +739,9 @@ public class MainActivity extends AppCompatActivity {
         }
         a1v2cacheMisses++;
         // new segment length
-        String msg = "Computing matrix lambda "+lambda+" length "+T;
+        //String msg = "Computing matrix lambda "+lambda+" length "+T;
         long startTime = System.currentTimeMillis();
-        Log.d(TAG,msg);
+        //Log.d(TAG,msg);
         //text_view.setText(msg);
         SimpleMatrix I = SimpleMatrix.identity(T);
         SimpleMatrix D2 = new SimpleMatrix(T - 2, T);
@@ -797,11 +801,11 @@ public class MainActivity extends AppCompatActivity {
         smoothN = false;
 
         String smoothn = smoothN ? "v2" : "v1";
-        Log.d(TAG, "dfaAlpha1...v2? " + smoothN);
+        //Log.d(TAG, "dfaAlpha1...v2? " + smoothN);
         double mean = v_mean(x);
-        Log.d(TAG, "dfaAlpha1 mean " + mean);
+        //Log.d(TAG, "dfaAlpha1 mean " + mean);
         double[] y = v_cumsum(v_subscalar(x, mean));
-        Log.d(TAG, "dfaAlpha1 alpha1 y " + v_toString(y));
+        //Log.d(TAG, "dfaAlpha1 alpha1 y " + v_toString(y));
         // scales = (2**np.arange(scale_lim[0], scale_lim[1], scale_dens)).astype(np.int)
         double[] scales = v_power_s1(2, arange(l_lim, u_lim, nrscales));
         double[] exp_scales = {3., 4., 4., 4., 4., 5., 5., 5., 5., 6., 6., 6., 7., 7., 7., 8., 8., 9.,
@@ -826,13 +830,13 @@ public class MainActivity extends AppCompatActivity {
             //Log.d(TAG, "  - scale "+i+" "+sc+" fluct "+fluct[i]);
         }
         //Log.d(TAG, "Polar dfa_alpha1, x "+v_toString(x));
-        Log.d(TAG, "dfa_alpha1, scales " + v_toString(scales));
-        Log.d(TAG, "dfa_alpha1 " + smoothn + " fluct: " + v_toString(fluct));
+        //Log.d(TAG, "dfa_alpha1, scales " + v_toString(scales));
+        //Log.d(TAG, "dfa_alpha1 " + smoothn + " fluct: " + v_toString(fluct));
         // # fitting a line to rms data
         double[] coeff = v_reverse(polyFit(v_logN(scales, 2), v_logN(fluct, 2), 1));
-        Log.d(TAG, "dfa_alpha1 coefficients " + v_toString(coeff));
+        //Log.d(TAG, "dfa_alpha1 coefficients " + v_toString(coeff));
         double alpha = coeff[0];
-        Log.d(TAG, "dfa_alpha1 = " + alpha);
+        //Log.d(TAG, "dfa_alpha1 = " + alpha);
         return alpha;
     }
 
@@ -955,6 +959,11 @@ public class MainActivity extends AppCompatActivity {
         public int e(String tag, String msg) {
             if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
             return android.util.Log.e(tag, msg);
+        }
+
+        public int i(String tag, String msg) {
+            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            return android.util.Log.i(tag, msg);
         }
     }
 
@@ -1457,6 +1466,9 @@ public class MainActivity extends AppCompatActivity {
                 //Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
                 updateTrackedFeatures(data.polarData, data.timestamp, false);
                 timerHandler.postDelayed(this, 1);
+            } else {
+                Toast.makeText(getBaseContext(), "Finished replay", Toast.LENGTH_LONG).show();
+                takeScreenshot();
             }
         }
     };
@@ -2154,8 +2166,8 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
         // Logging must not be throttled during replay
         if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
-            graphEnabled = true;
-            Log.d(TAG,"alpha1...");
+//            graphEnabled = true;
+            //Log.d(TAG,"alpha1...");
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1Timestamp = currentTimeMS;
@@ -2273,7 +2285,7 @@ public class MainActivity extends AppCompatActivity {
 //        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
 //        Log.d(TAG, "graphEnabled "+graphEnabled);
         if (timeForUIupdate(realTime)) {
-                Log.d(TAG,"plot...");
+                //Log.d(TAG,"plot...");
                 if (graphFeaturesSelected.contains("hr")) {
                     //Log.d(TAG,"plot hr");
                     hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
@@ -2515,6 +2527,36 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText("Resumed");
             super.onResume();
             api.foregroundEntered();
+        }
+
+        private void takeScreenshot() {
+            Date now = new Date();
+            android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
+            try {
+                // create bitmap screen capture
+                View v1 = getWindow().getDecorView().getRootView();
+                v1.setDrawingCacheEnabled(true);
+                Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+                v1.setDrawingCacheEnabled(false);
+                // image naming and path  to include sd card  appending name you choose for file
+                String mPath = "FatMaxxer_"+ now + ".jpg";
+                File imageDir = this.getExternalFilesDir(null);
+                // minimum version
+                //File imageDir = this.getExternalFilesDir(Environment.DIRECTORY_SCREENSHOTS);
+                File imageFile = new File(imageDir, mPath);
+                FileOutputStream outputStream = new FileOutputStream(imageFile);
+                int quality = 100;
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
+                outputStream.flush();
+                outputStream.close();
+                String msg = "Screenshot saved in "+imageFile.getCanonicalPath();
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Log.i(TAG,msg);
+                //openScreenshot(imageFile);
+            } catch (Throwable e) {
+                // Several error may come out with file handling or DOM
+                e.printStackTrace();
+            }
         }
 
         @Override
