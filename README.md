@@ -33,7 +33,7 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 
 ## Status: Testers Wanted ##
 FatMaxxer is in a very early stage of development.
-The app is provided on Github as a APK (debug version) and as a public test release on the Google Play store.
+Sideload a recent test version from the APK downloadable from the Github repository.
 Email fatmaxxer@gmail.com for access to more up to date releases through the Play Store.
 The Play Store public beta releases lag behind the APK version on Github by as much as 24 hours.
 
