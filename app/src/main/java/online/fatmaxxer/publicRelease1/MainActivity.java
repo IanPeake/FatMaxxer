@@ -1669,16 +1669,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Setup handler for uncaught exceptions.
+        super.onCreate(savedInstanceState);
+        // Set up handler for uncaught exceptions.
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, Throwable e) {
                 handleUncaughtException(thread, e);
             }
         });
-
-        super.onCreate(savedInstanceState);
-
         // Get intent, action and MIME type
         Intent intent = getIntent();
         String action = intent.getAction();
