@@ -174,14 +174,18 @@ public class MainActivity extends AppCompatActivity {
 
     private long pressedTime;
 
+//    public void onBackPressed() {
+//        if (pressedTime + 2000 > System.currentTimeMillis()) {
+//            super.onBackPressed();
+//            finish();
+//        } else {
+//            Toast.makeText(getBaseContext(), "Press back again to exit", Toast.LENGTH_SHORT).show();
+//        }
+//        pressedTime = System.currentTimeMillis();
+//    }
+
     public void onBackPressed() {
-        if (pressedTime + 2000 > System.currentTimeMillis()) {
-            super.onBackPressed();
-            finish();
-        } else {
-            Toast.makeText(getBaseContext(), "Press back again to exit", Toast.LENGTH_SHORT).show();
-        }
-        pressedTime = System.currentTimeMillis();
+        Toast.makeText(getBaseContext(), "Use Menu > Quit to exit", Toast.LENGTH_LONG).show();
     }
 
     private final double[] samples1 = {667.0, 674.0, 688.0, 704.0, 690.0, 688.0, 671.0, 652.0, 644.0, 636.0, 631.0, 639.0, 637.0, 634.0, 642.0, 642.0,
