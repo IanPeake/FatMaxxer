@@ -21,7 +21,6 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -103,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
     private static final int NOTIFICATION_ID = 1;
     private static final String NOTIFICATION_TAG = "alpha1update";
+
     public static final String ALPHA_1_CALC_PERIOD_PREFERENCE_STRING = "alpha1CalcPeriod";
     public static final String LAMBDA_PREFERENCE_STRING = "lambdaPref";
     public static final String ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING = "artifactThreshold";
@@ -112,8 +112,10 @@ public class MainActivity extends AppCompatActivity {
     public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
     public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
     public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
-    public static final String IMPORT_CSV_FAILED_DATA_IS_NULL = "Import CSV failed: data is null";
-    public static final String IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA = "Import CSV failed: could not get Uri from data";
+
+    public static final String ImportCSVFailedDataIsNull = "Import CSV failed: data is null";
+    public static final String ImportCSVFailedCouldNotGetURIFromData = "Import CSV failed: could not get Uri from data";
+
     public static final String RR_LOGFILE_HEADER = "timestamp, rr, since_start ";
 
     final double alpha1HRVvt1 = 0.75;
@@ -134,11 +136,11 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "deleteFile " + f.getPath());
         File fdelete = f;
         if (fdelete.exists()) {
-            Log.d(TAG, "file Deleted :" + fdelete.getPath());
+            Log.d(TAG, "deleteFile: File deleted: " + fdelete.getPath());
             if (fdelete.delete()) {
-                Log.d(TAG, "file Deleted :" + fdelete.getPath());
+                Log.d(TAG, "deleteFile: file deleted: " + fdelete.getPath());
             } else {
-                Log.d(TAG, "file not Deleted? Will try after exit :" + fdelete.getPath());
+                Log.d(TAG, "File not deleted(?) Will try after exit: " + fdelete.getPath());
                 fdelete.deleteOnExit();
             }
         } else {
@@ -160,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG,"finish: delete current log files");
             deleteCurrentLogFiles();
         } else {
-            Toast.makeText(getBaseContext(), "Not deleting log files", Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), R.string.KeepingCurrentLogFiles, Toast.LENGTH_LONG).show();
         }
         uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
@@ -185,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
     public void onBackPressed() {
-        Toast.makeText(getBaseContext(), "Use Menu > Quit to exit", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), R.string.UseMenuQuitToExit, Toast.LENGTH_LONG).show();
     }
 
     private final double[] samples1 = {667.0, 674.0, 688.0, 704.0, 690.0, 688.0, 671.0, 652.0, 644.0, 636.0, 631.0, 639.0, 637.0, 634.0, 642.0, 642.0,
@@ -347,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
             mBoundService = ((LocalService.LocalBinder) service).getService();
 
             // Tell the user about this for our demo.
-            Toast.makeText(MainActivity.this, "FatMaxxer bound to service",
+            Toast.makeText(MainActivity.this, R.string.FatMaxxerBoundToService,
                     Toast.LENGTH_SHORT).show();
         }
 
@@ -1061,7 +1063,6 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         String startedStatus = "";
         if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
-        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
             menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
             menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
@@ -1086,6 +1087,7 @@ public class MainActivity extends AppCompatActivity {
                 i++;
             }
         }
+        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
         return super.onPrepareOptionsMenu(menu);
     }
@@ -1181,7 +1183,7 @@ public class MainActivity extends AppCompatActivity {
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 String value = input.getText().toString();
-                String msg = "Rename to " + value;
+                String msg = getString(R.string.RenameTo) +" "+ value;
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
                 Log.d(TAG, msg);
                 File logsDir = getLogsDir();
@@ -1254,7 +1256,7 @@ public class MainActivity extends AppCompatActivity {
         }
         String deletedFiles = filenames.toString();
         if (deletedFiles.length() > 0) {
-            Toast.makeText(getBaseContext(), "Deleted " + filenames.toString(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), getString(R.string.Deleted)+ " " + filenames.toString(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -1280,7 +1282,7 @@ public class MainActivity extends AppCompatActivity {
                 f.deleteOnExit();
             }
         }
-        Toast.makeText(getBaseContext(), "Deleted " + filenames.toString(), Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), R.string.Deleted+" "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
     public void exportDebug() {
@@ -1310,7 +1312,7 @@ public class MainActivity extends AppCompatActivity {
                 filenames.append(f.getName() + " ");
             }
         }
-        Toast.makeText(getBaseContext(), "Deleting (on exit) " + filenames.toString(), Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), getString(R.string.DeletingOnExit)+" "+filenames.toString(), Toast.LENGTH_LONG).show();
     }
 
     public String getFileName(Uri uri) {
@@ -1341,13 +1343,13 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode==REQUEST_IMPORT_CSV) {
             if (data == null) {
-                Log.w(TAG, IMPORT_CSV_FAILED_DATA_IS_NULL);
-                Toast.makeText(getBaseContext(), IMPORT_CSV_FAILED_DATA_IS_NULL, Toast.LENGTH_LONG);
+                Log.w(TAG, ImportCSVFailedDataIsNull);
+                Toast.makeText(getBaseContext(), ImportCSVFailedDataIsNull, Toast.LENGTH_LONG);
             } else {
                 Uri uri = data.getData();
                 if (uri == null) {
-                    Log.w(TAG, IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA);
-                    Toast.makeText(getBaseContext(), IMPORT_CSV_FAILED_COULD_NOT_GET_URI_FROM_DATA, Toast.LENGTH_LONG);
+                    Log.w(TAG, ImportCSVFailedCouldNotGetURIFromData);
+                    Toast.makeText(getBaseContext(), ImportCSVFailedCouldNotGetURIFromData, Toast.LENGTH_LONG);
                 } else {
                     importRRFile(uri, getLogsDir());
                 }
@@ -1359,7 +1361,7 @@ public class MainActivity extends AppCompatActivity {
     private void importRRFile(Uri uri, File dir) {
         String filename = getFileName(uri);
         if (!isRRfileName(filename)) {
-            String msg = "Not RR log, not importing: "+filename;
+            String msg = getString(R.string.NotRRLogNotImporting)+": "+filename;
             Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
             Log.w(TAG, msg);
             return;
@@ -1377,7 +1379,7 @@ public class MainActivity extends AppCompatActivity {
                         output.write(buffer, 0, read);
                     }
                     output.flush();
-                    Toast.makeText(getBaseContext(), "Imported RR file: " + filename, Toast.LENGTH_LONG).show();
+                    Toast.makeText(getBaseContext(), getString(R.string.ImportedRRFile)+": " + filename, Toast.LENGTH_LONG).show();
                 }
             } finally {
                     input.close();
@@ -1406,14 +1408,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i, boolean b) {
                 checkItems[i] = b;
-                //Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
             }
         });
         adb.setNegativeButton("Cancel", null);
         adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int iOption) {
-                        //Toast.makeText(getBaseContext(), "Options: " + checkItems.toString(), Toast.LENGTH_SHORT).show();
                         ArrayList<Uri> exports = new ArrayList();
                         for (int i = 0; i < items.length; i++) {
                             if (checkItems[i]) {
@@ -1424,7 +1424,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
-        adb.setTitle("Select files for export");
+        adb.setTitle(R.string.SelectFilesForExport);
         adb.show();
     }
 
@@ -1471,7 +1471,7 @@ public class MainActivity extends AppCompatActivity {
                 updateTrackedFeatures(data.polarData, data.timestamp, false);
                 timerHandler.postDelayed(this, 1);
             } else {
-                Toast.makeText(getBaseContext(), "Finished replay", Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(), R.string.FinishedReplay, Toast.LENGTH_LONG).show();
                 takeScreenshot();
             }
         }
@@ -1500,7 +1500,7 @@ public class MainActivity extends AppCompatActivity {
             String header = reader.readLine();
             String headerExpected = RR_LOGFILE_HEADER;
             if (!header.equals(headerExpected)) {
-                String msg = f.getName() + ": warning, expected header " + headerExpected + " got " + header;
+                String msg = f.getName() + ": "+getString(R.string.WarningExpectedHeader)+ ": " + headerExpected +" "+getString(R.string.Got)+" "+header;
                 Log.w(TAG, msg);
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
 //                return;
@@ -1508,10 +1508,10 @@ public class MainActivity extends AppCompatActivity {
             // gap
             String gap = reader.readLine();
             if (!header.equals(headerExpected)) {
-                String msg = f.getName() + ": warning, expected empty line, got " + gap;
+                String msg = f.getName() + ": "+getString(R.string.WarningExpectedEmptyLineGot)+" " + gap;
                 Log.w(TAG, msg);
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
-                return;
+//                return;
             }
             // body
             String line = reader.readLine();
@@ -1540,7 +1540,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 line = reader.readLine();
             }
-            Toast.makeText(getBaseContext(), "Started RR file replay: " + f.getName(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), getString(R.string.StartedRRFileReplay)+": " + f.getName(), Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             logException("Reading replay data from RR file", e);
         }
@@ -1560,7 +1560,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i, boolean b) {
                 checkItems[i] = b;
-                //Toast.makeText(getBaseContext(), "Option " + i + " selected", Toast.LENGTH_SHORT).show();
             }
         });
         adb.setNegativeButton("Cancel", null);
@@ -1617,15 +1616,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void searchForPolarDevices() {
-        text_view.setText("Searching for Polar devices...");
+        Toast.makeText(getBaseContext(), R.string.SearchingForPolarHRDevices, Toast.LENGTH_SHORT).show();
         if (broadcastDisposable == null) {
             broadcastDisposable = api.startListenForPolarHrBroadcasts(null)
                     .subscribe(polarBroadcastData -> {
                                 if (!discoveredDevices.containsKey(polarBroadcastData.polarDeviceInfo.deviceId)) {
                                     String desc = polarBroadcastData.polarDeviceInfo.name;
-                                    String msg = "Discovered " + desc + " HR " + polarBroadcastData.hr;
+                                    String msg = getString(R.string.Discovered)+" " + desc + " "+getString(R.string.HeartRateAbbrev)+" " + polarBroadcastData.hr;
                                     discoveredDevices.put(polarBroadcastData.polarDeviceInfo.deviceId, desc);
-                                    text_view.setText(msg);
+                                    Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
                                     Log.d(TAG, msg);
                                 }
                             },
@@ -1718,7 +1717,6 @@ public class MainActivity extends AppCompatActivity {
         text_batt = this.findViewById(R.id.battView);
         text_mode = this.findViewById(R.id.modeView);
         text_hr = this.findViewById(R.id.hrTextView);
-        //text_hr.setText("\u2764"+"300");
         text_secondary = this.findViewById(R.id.hrvTextView);
         text_secondary_label = this.findViewById(R.id.hrvLabel);
         text_a1 = this.findViewById(R.id.a1TextView);
@@ -1728,8 +1726,6 @@ public class MainActivity extends AppCompatActivity {
 
         //text.setTextSize(100);
         //text.setMovementMethod(new ScrollingMovementMethod());
-        // text.setText(message);
-        text_view.setText("Text output goes here...");
 
         scrollView = this.findViewById(R.id.application_container);
         // FIXME: Why does the scrollable not start with top visible?
@@ -1842,7 +1838,6 @@ public class MainActivity extends AppCompatActivity {
 
         //setContentView(R.layout.activity_settings);
         Log.d(TAG, "Settings...");
-        text_view.setText("Settings");
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.settings_container, MySettingsFragment.class, null)
@@ -1863,21 +1858,20 @@ public class MainActivity extends AppCompatActivity {
             public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 quitSearchForPolarDevices();
                 Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
-                text_view.setText("Connected to " + polarDeviceInfo.deviceId);
-                Toast.makeText(getBaseContext(), "Connected to " + polarDeviceInfo.deviceId, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), getString(R.string.ConnectedToDevice)+" " + polarDeviceInfo.deviceId, Toast.LENGTH_SHORT).show();
                 ensurePreferenceSet(POLAR_DEVICE_ID_PREFERENCE_STRING,polarDeviceInfo.deviceId);
             }
 
             @Override
             public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
-                Log.d(TAG, "Polar device CONNECTING: " + polarDeviceInfo.deviceId);
-                text_view.setText("Connecting to " + polarDeviceInfo.deviceId);
+                Log.d(TAG, "Polar device CONNECTING"+": " + polarDeviceInfo.deviceId);
+                text_view.setText(getString(R.string.ConnectingToHRDevice)+" " + polarDeviceInfo.deviceId);
             }
 
             @Override
             public void deviceDisconnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
-                text_view.setText("Disconnected from " + polarDeviceInfo.deviceId);
+                text_view.setText(getString(R.string.DisconnectedFromHRDevice)+" " + polarDeviceInfo.deviceId);
                 ecgDisposable = null;
                 accDisposable = null;
                 gyrDisposable = null;
@@ -2118,7 +2112,6 @@ public class MainActivity extends AppCompatActivity {
                     absSeconds / 3600,
                     (absSeconds % 3600) / 60,
                     absSeconds % 60);
-            //text_time.setText(mode + "    " +positive + "    \uD83D\uDD0B"+batteryLevel);
             text_mode.setText(exerciseMode);
             text_time.setText(positive);
             text_batt.setText("\uD83D\uDD0B" + batteryLevel);
@@ -2244,10 +2237,10 @@ public class MainActivity extends AppCompatActivity {
             }
             text_view.setText(logstring);
             text_hr.setText("" + data.hr);
-            text_secondary_label.setText("RMSSD");
+            text_secondary_label.setText(R.string.RootMeanSquaredStandardDeviationAbbreviation);
             text_secondary.setText("" + round(rmssdWindowed));
             text_a1.setText("" + alpha1V2RoundedWindowed);
-            text_a1_label.setText("⍺1v2 ["+a1v2cacheMisses+"]");
+            text_a1_label.setText(getString(R.string.alpha1)+" ["+a1v2cacheMisses+"]");
             // configurable top-of-optimal threshold for alpha1
             double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
             // wait for run-in period
@@ -2333,7 +2326,9 @@ public class MainActivity extends AppCompatActivity {
     private void tryPolarConnect(String tmpDeviceID) {
         Log.d(TAG,"tryPolarConnect to "+tmpDeviceID);
         try {
-            text_view.setText("Trying to connect to: " + tmpDeviceID);
+            String text = getString(R.string.TryingToConnectToHRDevice)+": " + tmpDeviceID;
+            //text_view.setText(text);
+            Toast.makeText(this, text, Toast.LENGTH_LONG).show();
             api.connectToDevice(tmpDeviceID);
         } catch (PolarInvalidArgument polarInvalidArgument) {
             String msg = "PolarInvalidArgument: " + polarInvalidArgument;
@@ -2553,7 +2548,7 @@ public class MainActivity extends AppCompatActivity {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
                 outputStream.flush();
                 outputStream.close();
-                String msg = "Screenshot saved in "+imageFile.getCanonicalPath();
+                String msg = getString(R.string.ScreenshotSavedIn) +imageFile.getCanonicalPath();
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                 Log.i(TAG,msg);
                 //openScreenshot(imageFile);
@@ -2566,7 +2561,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDestroy() {
             text_view.setText("Destroyed");
-            Toast.makeText(this, "FatMaxxer stopped", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.FatMaxxerAppClosed, Toast.LENGTH_SHORT).show();
             super.onDestroy();
             try {
                 rrLogStreamNew.close();
