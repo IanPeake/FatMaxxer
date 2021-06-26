@@ -4,7 +4,8 @@ FatMaxxer for Android may help you exercise at the best intensity for fat burnin
 measured using just a Polar H10 heart rate strap, according to recent research (see below).
 **This app requires a Polar H10** (or possibly H9). 
 
-Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 . This version may lag significantly behind various test versions (see below).
+Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 .
+The Google Play version may lag significantly behind the open source project hosted on Github and early test builds (see below).
 
 Download: see https://github.com/IanPeake/FatMaxxer#testers-wanted below.
 
