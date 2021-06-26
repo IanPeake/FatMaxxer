@@ -40,7 +40,6 @@ Join the https://groups.google.com/g/fatmaxxer-closed-testing for access to Goog
 
 The app may crash or not work properly.
 *To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
-On a first time install you may have to manually set the preferences: lambda = 500, alpha1 calculation period = 10, threshold = "Auto", etc.
 
 ## License
 Apache 2.0 for any code that was authored by me.
@@ -55,18 +54,21 @@ Apache 2.0 for any code that was authored by me.
   On startup, app will try to connect to your preferred device.
 
 ## User Interface ##
-Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
+Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD).
+Android UI screenshot above shows output after walk/run intervals on an earlier version.
 
 Graph plots:
 - X axis: time (minutes) with a 2 minute viewport
-- primary Y axis (0-200):
-  - red trace: HR (BPM)
-  - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75). Yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100). Grid lines at multiples of 25
+- primary Y axis (0-200) configurable:
+  - red: HR (BPM)
+  - green: ⍺1 x 100 (e.g. 0.75 reads as 75). Yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100). Grid lines at multiples of 25
+  - magenta: RR intervals / 5
+  - cyan: RMSSD
 - secondary Y axis (0-10):
-  - blue trace: artifacts (%)
+  - blue: artifacts (%)
 
 ## Frequently Asked Questions ##
-- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10; it's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK that FatMaxxer uses.
+- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK used by FatMaxxer.
 - *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
