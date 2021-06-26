@@ -1,7 +1,8 @@
 # <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Fatmaxxer_Icon_v0.2.png" height="36"/> FatMaxxer
 
-According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
-measured using just a Polar H10 heart rate strap. **This app requires a Polar H10** (or possibly H9).
+FatMaxxer for Android may help you exercise at the best intensity for fat burning,
+measured using just a Polar H10 heart rate strap, according to recent research (see below).
+**This app requires a Polar H10** (or possibly H9). 
 
 Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 . This version may lag significantly behind various test versions (see below).
 
