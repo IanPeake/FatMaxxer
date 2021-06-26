@@ -42,6 +42,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
@@ -49,7 +50,10 @@ import androidx.preference.PreferenceManager;
 // https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.OnDataPointTapListener;
+import com.jjoe64.graphview.series.Series;
 
 import org.ejml.simple.SimpleMatrix;
 import org.jetbrains.annotations.NotNull;
@@ -152,6 +156,19 @@ public class MainActivity extends AppCompatActivity {
         searchForPolarDevices();
         // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
         tryPolarConnect();
+    }
+
+    public void confirmQuit() {
+        new AlertDialog.Builder(this)
+                .setMessage("FatMaxxer: Confirm Quit")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 
     @Override
@@ -886,7 +903,7 @@ public class MainActivity extends AppCompatActivity {
     //public final int rrWindowSizeSec = featureWindowSizeSec + sampleBufferMarginSec;
     public final int rrWindowSizeSec = featureWindowSizeSec;
     // time between alpha1 calculations
-    public int alpha1EvalPeriod;
+    public int alpha1EvalPeriodSec;
     // max hr approx 300bpm(!?) across 120s window
     // FIXME: this is way larger than needed
     public final int maxrrs = 300 * rrWindowSizeSec;
@@ -926,7 +943,10 @@ public class MainActivity extends AppCompatActivity {
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
     // the last time (since epoch) a1 was evaluated
-    public long prevA1Timestamp = 0;
+    public long prevA1TimestampMS = 0;
+    public long prevHRPlotTimestampMS = 0;
+    public long prevRRPlotTimestampMS = 0;
+    public long prevFeatPlotTimestampMS = 0;
     public double prevrr = 0;
     public boolean starting = false;
     public long prevSpokenUpdateMS = 0;
@@ -934,6 +954,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean thisIsFirstSample = false;
     long currentTimeMS;
     long elapsedMS;
+    long prevTimeMS;
     long elapsedSecondsTrunc;
     double elapsedMin;
 
@@ -1063,6 +1084,7 @@ public class MainActivity extends AppCompatActivity {
         menu.clear();
         String startedStatus = "";
         if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
+        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
             menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
             menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
@@ -1087,7 +1109,6 @@ public class MainActivity extends AppCompatActivity {
                 i++;
             }
         }
-        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
         return super.onPrepareOptionsMenu(menu);
     }
@@ -1495,6 +1516,7 @@ public class MainActivity extends AppCompatActivity {
         testDataQueue = new ConcurrentLinkedQueue<TestDataPacket>();
         Log.d(TAG, "Starting RR reader test with " + f.getName());
         BufferedReader reader = new BufferedReader(fr);
+        int prevRR = 1000;
         // header
         try {
             String header = reader.readLine();
@@ -1517,16 +1539,33 @@ public class MainActivity extends AppCompatActivity {
             String line = reader.readLine();
             double polarHR = 0;
             int lineCount = 0;
+            // RR file is complex: In the RR files produced by FatMaxxer
+            // there is the possibility of local inconsistency
+            // between elapsed and timestamp columns. Timestamp is constructed
+            // from a polar HR update's initial timestamp and then offset incrementally by the
+            // RRs provided. But it seems this leads to the loss of monotonicity on the
+            // timestamp column: the last timestamp constructed may be larger than the
+            // timestamp provided in the next HR update.
+            // Here we replay using the initial timestamp + the (monotonic) current value of the elapsed
+            // field for the provided time in MS; this may lead to a discrepancy of a few seconds
+            // in the overall activity(?!)
+            long baseTimeStamp = 0;
             while (line != null) {
                 //Log.d(TAG, "RR file line: " + line);
                 String[] fields = line.split(",");
                 if (fields.length >= 3) {
                     //Log.d(TAG, "RR file line fields: " + fields[0] + " " + fields[1] + " " + fields[2]);
                     int rr = Integer.valueOf(fields[1]);
-                    long localTimeStamp = Long.valueOf(fields[0]);
+                    int rrMean = (rr + prevRR) / 2;
+                    prevRR = rr;
+                    int hr = 60000 / rrMean;
+                    if (baseTimeStamp==0)
+                        baseTimeStamp = Long.valueOf(fields[0]);
+                    long elapsed = Long.valueOf(fields[2]);
+                    long localTimeStamp = baseTimeStamp + elapsed;
                     List<Integer> rrs = new ArrayList<Integer>();
                     rrs.add(rr);
-                    PolarHrData data = new PolarHrData((60000 / rr), rrs, true, true, true);
+                    PolarHrData data = new PolarHrData(hr, rrs, true, true, true);
                     TestDataPacket testData = new TestDataPacket();
                     testData.polarData = data;
                     testData.timestamp = localTimeStamp;
@@ -1590,7 +1629,7 @@ public class MainActivity extends AppCompatActivity {
         //respond to menu item selection
         Log.d(TAG, "onOptionsItemSelected... " + item.getItemId());
         int itemID = item.getItemId();
-        if (itemID == menuItem(MENU_QUIT)) finish();
+        if (itemID == menuItem(MENU_QUIT)) confirmQuit();
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_REPLAY)) selectReplayRRfile();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
@@ -1729,7 +1768,6 @@ public class MainActivity extends AppCompatActivity {
 
         scrollView = this.findViewById(R.id.application_container);
         // FIXME: Why does the scrollable not start with top visible?
-        // scrollView.scrollTo(0,0);
 
         /////
         /////
@@ -1817,6 +1855,51 @@ public class MainActivity extends AppCompatActivity {
         a1HRVvt1Series.setThickness(6);
         // red is a lot more visible than yellow
         a1HRVvt2Series.setThickness(2);
+
+        rrSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
+        hrSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
+        a1V2Series.appendData(new DataPoint(0,0), false, maxDataPoints);
+        rmssdSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
+        hrWinSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
+        artifactSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
+
+        a1V2Series.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "Alpha1(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+        rmssdSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "RMSSD(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+        hrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "HR: "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+        hrWinSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "HR(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+        artifactSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "Artifacts: "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+        rrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                Toast.makeText(thisContext, "RR: "+dataPoint, Toast.LENGTH_LONG).show();
+            }
+        });
+
         a1HRVvt1Series.appendData(new DataPoint(0, alpha1HRVvt1 * 100), false, maxDataPoints);
         a1HRVvt2Series.appendData(new DataPoint(0, alpha1HRVvt2 * 100), false, maxDataPoints);
         a125Series.appendData(new DataPoint(0, 25), false, maxDataPoints);
@@ -1828,11 +1911,6 @@ public class MainActivity extends AppCompatActivity {
         a1125Series.appendData(new DataPoint(graphViewPortWidth, 125), false, maxDataPoints);
         a1175Series.appendData(new DataPoint(graphViewPortWidth, 175), false, maxDataPoints);
 
-        rrSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
-        hrSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
-        a1V2Series.appendData(new DataPoint(0,0), false, maxDataPoints);
-        rmssdSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
-        hrWinSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
 
         //hrvSeries.setColor(Color.BLUE);
 
@@ -1926,6 +2004,12 @@ public class MainActivity extends AppCompatActivity {
             this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
+        scrollView.post(new Runnable() {
+            public void run() {
+                scrollView.scrollTo(0, 0);
+            }
+        });
+
         // auto-start
         if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
             startAnalysis();
@@ -1983,8 +2067,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateTrackedFeatures(@NotNull PolarHrData data, long currentVirtualTimeMS, boolean realTime) {
-////////////////        currentTimeMS = System.currentTimeMillis();
+        wakeLock.acquire();
         currentTimeMS = currentVirtualTimeMS;
+        if (currentTimeMS <= prevTimeMS) {
+            throw new IllegalStateException("assertion failed: cur "+currentTimeMS+" "+prevTimeMS);
+        }
+        prevTimeMS = currentTimeMS;
         if (!started) {
             Log.d(TAG, "hrNotificationReceived: started!");
             started = true;
@@ -1995,11 +2083,13 @@ public class MainActivity extends AppCompatActivity {
             scrollView.scrollTo(0,0);
         }
         elapsedMS = (currentTimeMS - firstSampleMS);
+        //Log.d(TAG, "====================");
+        //Log.d(TAG, "elapsedMS: "+elapsedMS);
         elapsedSecondsTrunc = elapsedMS / 1000;
         //Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
-        wakeLock.acquire();
         //Log.d(TAG, "updateTrackedFeatures");
-        if (timeForUIupdate(realTime)) {
+        boolean timeForUIupdate = timeForUIupdate(realTime);
+        if (timeForUIupdate) {
             String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
             lambdaSetting = Integer.valueOf(lambdaPref);
             experimental = sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false);
@@ -2010,7 +2100,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         currentHR = data.hr;
-        if (timeForUIupdate(realTime)) {
+        if (timeForUIupdate) {
             String artifactCorrectionThresholdSetting = sharedPreferences.getString(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
             if (artifactCorrectionThresholdSetting.equals("Auto")) {
                 if (data.hr > 95) {
@@ -2031,26 +2121,30 @@ public class MainActivity extends AppCompatActivity {
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
         Set<String> graphFeaturesSelected = emptyStringSet;
-        graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey",emptyStringSet);
+        if (realTime) {
+            graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey", emptyStringSet);
+        } else {
+            graphFeaturesSelected = sharedPreferences.getStringSet("graphReplayFeaturesSelectorKey", emptyStringSet);
+        }
         // preference updates
-        if (timeForUIupdate(realTime)) {
+        if (timeForUIupdate) {
             Log.d(TAG,"timeForUIupdate");
             Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
             notificationDetailSetting = sharedPreferences.getString(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
             alpha1EvalPeriodSetting = sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
             try {
-                alpha1EvalPeriod = Integer.parseInt(alpha1EvalPeriodSetting);
+                alpha1EvalPeriodSec = Integer.parseInt(alpha1EvalPeriodSetting);
             } catch (final NumberFormatException e) {
                 //Log.d(TAG, "Number format exception alpha1EvalPeriod " + alpha1EvalPeriodSetting + " " + e.toString());
-                alpha1EvalPeriod = 20;
+                alpha1EvalPeriodSec = 20;
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
                 editor.apply();
                 //Log.d(TAG, "alpha1CalcPeriod wrote " + sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "??"));
             }
-            if (alpha1EvalPeriod < 5) {
+            if (alpha1EvalPeriodSec < 5) {
                 //Log.d(TAG, "alpha1EvalPeriod<5");
-                alpha1EvalPeriod = 5;
+                alpha1EvalPeriodSec = 5;
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
@@ -2104,9 +2198,10 @@ public class MainActivity extends AppCompatActivity {
             oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
         }
         //Log.d(TAG, "elapsedMS " + elapsedMS);
-        //
+        //timeForHRplot
         long absSeconds = Math.abs(elapsedSecondsTrunc);
-        if (timeForUIupdate(realTime)) {
+        boolean timeForHRplot = timeForHRplot(realTime);
+        if (timeForHRplot) {
             String positive = String.format(
                     "%2d:%02d:%02d",
                     absSeconds / 3600,
@@ -2138,9 +2233,9 @@ public class MainActivity extends AppCompatActivity {
 //        double[] dRR = v_differential(samples);
         //Log.d(TAG, "dRR: " + v_toString(dRR));
 
-        //
-        // FEATURES
-        //
+        // ******************
+        // WINDOWED FEATURES
+        // ******************
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
         rrMeanWindowed = v_mean(samples);
@@ -2153,11 +2248,11 @@ public class MainActivity extends AppCompatActivity {
         // - only when at least three seconds have elapsed since last invocation
         // FIXME: what precisely is required for alpha1 to be well-defined?
         // FIXME: The prev_a1_check now seems redundant
-        if (timeForUIupdate(realTime)) Log.d(TAG,"Elapsed "+elapsedSecondsTrunc+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+alpha1EvalPeriod+" prevA1Timestamp "+prevA1Timestamp);
+        if (timeForUIupdate) Log.d(TAG,"Elapsed "+elapsedSecondsTrunc+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+ alpha1EvalPeriodSec +" prevA1Timestamp "+ prevA1TimestampMS);
         boolean graphEnabled = realTime;
-        boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriod;
+        boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriodSec;
         boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
-        boolean enoughSinceLast = currentTimeMS >= (prevA1Timestamp + alpha1EvalPeriod*1000);
+        boolean enoughSinceLast = currentTimeMS >= (prevA1TimestampMS + alpha1EvalPeriodSec *1000);
         //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
         // Logging must not be throttled during replay
         if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
@@ -2165,7 +2260,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.d(TAG,"alpha1...");
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
-            prevA1Timestamp = currentTimeMS;
+            prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
                 writeLogFile("" + timestamp
                                 + "," + hrMeanWindowed
@@ -2182,7 +2277,7 @@ public class MainActivity extends AppCompatActivity {
 //                    featureLogStreamLegacy,
                         "features");
             }
-            if (timeForUIupdate(realTime)) {
+            if (timeForUIupdate) {
                 if (sharedPreferences.getBoolean(NOTIFICATIONS_ENABLED_PREFERENCE_STRING, false)) {
                     Log.d(TAG, "Feature notification...");
                     // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
@@ -2214,7 +2309,8 @@ public class MainActivity extends AppCompatActivity {
         // UI (DISPLAY // AUDIO // LOGGING)
         //
         // Device Display
-        if (timeForUIupdate(realTime)) {
+        // if (timeForUIupdate()) {
+        if (timeForHRplot) {
             if (haveArtifacts && sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
                 //spokenOutput("drop");
                 mp.start();
@@ -2223,8 +2319,6 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append(elapsedSecondsTrunc + "s");
             logmsg.append(", rrsMs: " + data.rrsMs);
             logmsg.append(rejMsg);
-            logmsg.append(", a1V2 " + alpha1V2RoundedWindowed);
-            //logmsg.append(", a1V1 " + alpha1V1RoundedWindowed);
             logmsg.append(", total rejected: " + totalRejected);
             String logstring = logmsg.toString();
 
@@ -2240,26 +2334,40 @@ public class MainActivity extends AppCompatActivity {
             text_secondary_label.setText(R.string.RootMeanSquaredStandardDeviationAbbreviation);
             text_secondary.setText("" + round(rmssdWindowed));
             text_a1.setText("" + alpha1V2RoundedWindowed);
-            text_a1_label.setText(getString(R.string.alpha1)+" ["+a1v2cacheMisses+"]");
+            text_a1_label.setText(getString(R.string.alpha1) + " [" + a1v2cacheMisses + "]");
             // configurable top-of-optimal threshold for alpha1
             double alpha1MaxOptimal = Double.parseDouble(sharedPreferences.getString("alpha1MaxOptimal", "1.0"));
-            // wait for run-in period
-            if (elapsedSecondsTrunc > 30) {
-                if (alpha1V2RoundedWindowed < alpha1HRVvt2) {
-                    text_a1.setBackgroundResource(R.color.colorMaxIntensity);
-                } else if (alpha1V2RoundedWindowed < alpha1HRVvt1) {
-                    text_a1.setBackgroundResource(R.color.colorMedIntensity);
-                } else if (alpha1V2RoundedWindowed < alpha1MaxOptimal) {
-                    text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
-                } else {
-                    text_a1.setBackgroundResource(R.color.colorEasyIntensity);
-                }
+            if (elapsedSecondsTrunc < 20) {
+                int undefColor = getFatMaxxerColor(R.color.colorTextUndefinedData);
+                text_a1.setTextColor(undefColor);
+                text_secondary.setTextColor(undefColor);
+            } else if (elapsedSecondsTrunc < 120) {
+                int unreliableColor = getFatMaxxerColor(R.color.colorTextUnreliableData);
+                text_a1.setTextColor(unreliableColor);
+                text_secondary.setTextColor(unreliableColor);
+            } else {
+                text_a1.setTextColor(getFatMaxxerColor(R.color.colorTextData));
+                text_secondary.setTextColor(getFatMaxxerColor(R.color.colorTextData));
             }
-            Log.d(TAG, data.hr + " " + alpha1V2RoundedWindowed + " " + rmssdWindowed);
+            if (elapsedSecondsTrunc > 30) {
+                    if (alpha1V2RoundedWindowed < alpha1HRVvt2) {
+                        text_a1.setBackgroundResource(R.color.colorMaxIntensity);
+                    } else if (alpha1V2RoundedWindowed < alpha1HRVvt1) {
+                        text_a1.setBackgroundResource(R.color.colorMedIntensity);
+                    } else if (alpha1V2RoundedWindowed < alpha1MaxOptimal) {
+                        text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
+                    } else {
+                        text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+                    }
+            }
+            Log.d(TAG, "HR "+data.hr + " " + alpha1V2RoundedWindowed + " " + rmssdWindowed);
             Log.d(TAG, logstring);
-            Log.d(TAG, "Elapsed % alpha1EvalPeriod " + (elapsedSecondsTrunc % alpha1EvalPeriod));
+            Log.d(TAG, "Elapsed % alpha1EvalPeriod " + (elapsedSecondsTrunc % alpha1EvalPeriodSec));
         }
-        elapsedMin = this.elapsedSecondsTrunc / 60.0;
+        elapsedMin = this.elapsedMS / 60000.0;
+        ///////////////////////elapsedMin = this.elapsedSecondsTrunc / 60.0;
+        //Log.d(TAG,"elapsedSecondsTrunc: "+elapsedSecondsTrunc);
+        //Log.d(TAG,"elapsedMin: "+elapsedMin);
         double tenSecAsMin = 1.0 / 6.0;
         boolean pre1 = elapsedMin > (graphViewPortWidth - tenSecAsMin);
         // 20 sec delay before next scroll
@@ -2281,15 +2389,16 @@ public class MainActivity extends AppCompatActivity {
 //        Log.d(TAG, "scrollToEnd "+scrollToEnd);
 //        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
 //        Log.d(TAG, "graphEnabled "+graphEnabled);
-        if (timeForUIupdate(realTime)) {
+        DataPoint hrDataPoint = new DataPoint(elapsedMin, data.hr);
+        //Log.d(TAG,"hrDataPoint "+hrDataPoint);
+        if (timeForHRplot && graphFeaturesSelected.contains("hr")) {
+            hrSeries.appendData(hrDataPoint, scrollToEnd, maxDataPoints);
+        }
+        if (timeForUIupdate) {
                 //Log.d(TAG,"plot...");
-                if (graphFeaturesSelected.contains("hr")) {
-                    //Log.d(TAG,"plot hr");
-                    hrSeries.appendData(new DataPoint(elapsedMin, data.hr), scrollToEnd, maxDataPoints);
-                }
                 if (graphFeaturesSelected.contains("a1")) {
                     //Log.d(TAG,"plot a1");
-                    a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2Windowed * 100.0), scrollToEnd, maxDataPoints);
+                    a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2RoundedWindowed * 100.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeaturesSelected.contains("artifacts")) {
                     //Log.d(TAG,"plot artifacts");
@@ -2319,8 +2428,34 @@ public class MainActivity extends AppCompatActivity {
         wakeLock.release();
     }
 
+    private int getFatMaxxerColor(int p) {
+        return ContextCompat.getColor(this, p);
+    }
+
+    private boolean timeForHRplot(boolean realTime) {
+        // FIXME: do a true rolling average here?
+        //Log.d(TAG,"since prev HR plot "+(currentTimeMS - prevHRPlotTimestampMS));
+        boolean result = starting || realTime || (currentTimeMS - prevHRPlotTimestampMS) >= 1000;
+        if (result) {
+            prevHRPlotTimestampMS = currentTimeMS;
+        }
+        return result;
+    }
+
+    private boolean timeForRRplot(boolean realTime) {
+        boolean result = starting || realTime || (currentTimeMS - prevRRPlotTimestampMS) >= 10000;
+        prevRRPlotTimestampMS = currentTimeMS;
+        return result;
+    }
+
     private boolean timeForUIupdate(boolean realTime) {
-        return starting || realTime || elapsedSecondsTrunc % 60 == 0;
+        //Log.d(TAG,"since prev feature plot "+(currentTimeMS - prevFeatPlotTimestampMS));
+        boolean result = starting || realTime || (currentTimeMS - prevFeatPlotTimestampMS) >= 60000;
+        if (result) {
+            //Log.d(TAG, "...time for UI update");
+            prevFeatPlotTimestampMS = currentTimeMS;
+        }
+        return result;
     }
 
     private void tryPolarConnect(String tmpDeviceID) {

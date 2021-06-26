@@ -70,6 +70,16 @@
         app:title="Developer mode"
         app:summary="Experimental features (replay / disable auto-start)"/>
 
+    <MultiSelectListPreference
+        android:dialogTitle="Select replay graph features"
+        android:key="graphReplayFeaturesSelectorKey"
+        android:summary=""
+        android:title="Select replay graph features"
+        android:entries="@array/graphFeaturesEntries"
+        android:entryValues="@array/graphFeaturesValues"
+        android:defaultValue="@array/graphReplayFeaturesDefaultValues"
+        />
+
     <EditTextPreference
         app:key="lambdaPref"
         app:title="Lambda (integer)"

@@ -183,7 +183,7 @@
 
         <com.jjoe64.graphview.GraphView
             android:layout_width="match_parent"
-            android:layout_height="200dip"
+            android:layout_height="360dip"
             android:id="@+id/graph"
             />
 
