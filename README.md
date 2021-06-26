@@ -1,11 +1,12 @@
 # <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/Fatmaxxer_Icon_v0.2.png" height="36"/> FatMaxxer
 
-According to recent research (see below) the FatMaxxer Android app may help you to exercise at the optimum effort level for fat burning,
-measured using just a Polar H10 heart rate strap. **This app requires a Polar H10** (or possibly H9).
+FatMaxxer for Android may help you exercise at the best intensity for fat burning,
+measured using just a Polar H10 heart rate strap, according to recent research (see below).
+**This app requires a Polar H10** (or possibly H9). 
 
-Public Release should go here: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 .
-
-Download: see https://github.com/IanPeake/FatMaxxer#testers-wanted below.
+Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 .
+The Google Play version may lag significantly behind the open source project hosted on Github and early test builds
+(https://github.com/IanPeake/FatMaxxer#testers-wanted).
 
 See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
 
@@ -17,12 +18,13 @@ See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatma
 
 
 ## Overview ##
-Android app for the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (⍺1) in real time.
+FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time using a Polar H10.
 
 There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to the first ventilatory threshold "VT1" or roughly FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
-This requires a reliable heart rate strap that can measure inter-heartbeat intervals very accurately (Polar H10)
-and a tool to measure ⍺1.
+Measuring VT1 reliably normally requires a lab test.
+DFA requires only a heart rate strap that can measure inter-heartbeat intervals accurately and reliably.
+FatMaxxer works just for Polar H10 which is the consumer HR strap validated in research.
 
 FatMaxxer reports ⍺1 for the past two minutes in "near real time" via the GUI,
 speech (speaker/headphones, configurable) and notifications (configurable).
@@ -35,11 +37,10 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 ## Testers Wanted ##
 FatMaxxer is in a very early stage of development.
 Sideload a recent test version from the APK downloadable from the Github repository.
-Join the https://groups.google.com/g/fatmaxxer-closed-testing for discussion and access to Google Play test versions.
+Join the https://groups.google.com/g/fatmaxxer-closed-testing for access to Google Play closed test versions.
 
 The app may crash or not work properly.
 *To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
-On a first time install you may have to manually set the preferences: lambda = 500, alpha1 calculation period = 10, threshold = "Auto", etc.
 
 ## License
 Apache 2.0 for any code that was authored by me.
@@ -54,18 +55,21 @@ Apache 2.0 for any code that was authored by me.
   On startup, app will try to connect to your preferred device.
 
 ## User Interface ##
-Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD). Android UI screenshot above (shows out of date buttons) shows output after a recent run including a warmup to a HR in the 130--140 range, then steady at approx 137 bpm, with ⍺1 fluctuating between approx 0.75--1.0.
+Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD).
+Android UI screenshot above shows output after walk/run intervals on an earlier version.
 
 Graph plots:
 - X axis: time (minutes) with a 2 minute viewport
-- primary Y axis (0-200):
-  - red trace: HR (BPM)
-  - green trace: ⍺1 x 100 (e.g. 0.75 reads as 75). Yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100). Grid lines at multiples of 25
+- primary Y axis (0-200) configurable:
+  - red: HR (BPM)
+  - green: ⍺1 x 100 (e.g. 0.75 reads as 75). Yellow and red lines at 75 and 50 (HRVVT1*100 and HRVVT2*100). Grid lines at multiples of 25
+  - magenta: RR intervals / 5
+  - cyan: RMSSD
 - secondary Y axis (0-10):
-  - blue trace: artifacts (%)
+  - blue: artifacts (%)
 
 ## Frequently Asked Questions ##
-- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10; it's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK that FatMaxxer uses.
+- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK used by FatMaxxer.
 - *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
