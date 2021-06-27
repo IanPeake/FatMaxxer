@@ -93,7 +93,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center_vertical"
                 android:textAlignment="center"
-                android:text="⍺1v2"
+                android:text="⍺1"
                 android:textColor="@color/colorA1V2"
                 android:textColorHighlight="@color/colorA1V2"
                 android:layout_weight="1"

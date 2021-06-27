@@ -974,22 +974,22 @@ public class MainActivity extends AppCompatActivity {
 
     private class Log {
         public int d(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            if (debugLogStream != null) writeLogFile(msg, "debug");
             return android.util.Log.d(tag, msg);
         }
 
         public int w(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            if (debugLogStream != null) writeLogFile(msg, "debug");
             return android.util.Log.e(tag, msg);
         }
 
         public int e(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            if (debugLogStream != null) writeLogFile(msg, "debug");
             return android.util.Log.e(tag, msg);
         }
 
         public int i(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, debugLogStream, "debug");
+            if (debugLogStream != null) writeLogFile(msg, "debug");
             return android.util.Log.i(tag, msg);
         }
     }
@@ -1065,6 +1065,7 @@ public class MainActivity extends AppCompatActivity {
         MENU_REPLAY,
         MENU_START,
         MENU_IMPORT,
+        MENU_IMPORT_REPLAY,
         MENU_RENAME_LOGS,
         MENU_CONNECT_DISCOVERED // MUST BE LAST in enum as extra connection options are based off it
     }
@@ -1086,8 +1087,9 @@ public class MainActivity extends AppCompatActivity {
         if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
-            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
-            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
+//            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
+//            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
+            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, "Import+Replay RR Log");
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Logs");
@@ -1097,7 +1099,7 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
         // Offer connect if not already connected/replaying
-        if (tmpDeviceId.length() > 0 && !logOrReplayStarted()) {
+        if (tmpDeviceId.length() > 0) {
             menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, "Connect preferred device " + tmpDeviceId);
         }
         int i = 0;
@@ -1131,12 +1133,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     final int REQUEST_IMPORT_CSV = 1;
+    final int REQUEST_IMPORT_REPLAY_CSV = 2;
 
     public void importLogFile() {
         Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
         receiveIntent.setType("text/*");
         receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
+    }
+
+    private void importReplayLogFile() {
+        Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        receiveIntent.setType("text/*");
+        receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_REPLAY_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
     }
 
     public void exportLogFiles() {
@@ -1208,15 +1218,9 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
                 Log.d(TAG, msg);
                 File logsDir = getLogsDir();
-                File newRR = new File(logsDir,makeLogfileName(value,"rr"));
-                File newFeatures = new File(logsDir,makeLogfileName(value,"features"));
-                File newDebug = new File(logsDir,makeLogfileName(value,"debug"));
-                if (currentLogFiles.get("rr").renameTo(newRR))
-                    currentLogFiles.put("rr",newRR);
-                if (currentLogFiles.get("features").renameTo(newFeatures))
-                    currentLogFiles.put("features",newFeatures);
-                if (currentLogFiles.get("debug").renameTo(newDebug))
-                    currentLogFiles.put("debug",newDebug);
+                renameLogs(value, currentLogFiles, logsDir);
+                File extLogsDir = getExtLogsDir();
+                renameLogs(value, externalLogFiles, extLogsDir);
             }
         });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -1228,6 +1232,17 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
+    private void renameLogs(String value, Map<String, File> logFiles, File logsDir) {
+        File newRR = new File(logsDir,makeLogfileName(value,"rr"));
+        File newFeatures = new File(logsDir,makeLogfileName(value,"features"));
+        File newDebug = new File(logsDir,makeLogfileName(value,"debug"));
+        if (logFiles.get("rr").renameTo(newRR))
+            logFiles.put("rr",newRR);
+        if (logFiles.get("features").renameTo(newFeatures))
+            logFiles.put("features",newFeatures);
+        if (logFiles.get("debug").renameTo(newDebug))
+            logFiles.put("debug",newDebug);
+    }
 
     // all but current logs
     public ArrayList<Uri> oldLogFiles() {
@@ -1362,7 +1377,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
         Log.d(TAG, "onActivityResult "+requestCode+" "+resultCode);
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode==REQUEST_IMPORT_CSV) {
+        if (requestCode==REQUEST_IMPORT_CSV || requestCode==REQUEST_IMPORT_REPLAY_CSV) {
             if (data == null) {
                 Log.w(TAG, ImportCSVFailedDataIsNull);
                 Toast.makeText(getBaseContext(), ImportCSVFailedDataIsNull, Toast.LENGTH_LONG);
@@ -1372,20 +1387,27 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, ImportCSVFailedCouldNotGetURIFromData);
                     Toast.makeText(getBaseContext(), ImportCSVFailedCouldNotGetURIFromData, Toast.LENGTH_LONG);
                 } else {
-                    importRRFile(uri, getLogsDir());
+                    File importedRR = importRRFile(uri, getLogsDir());
+                    if (requestCode ==REQUEST_IMPORT_REPLAY_CSV) {
+                        if (importedRR!=null) {
+                            replayRRfile(importedRR);
+                        } else {
+                            Toast.makeText(getBaseContext(), "Problem with imported file " + uri, Toast.LENGTH_LONG);
+                        }
+                    }
                 }
             }
         }
     }
 
     // https://stackoverflow.com/questions/10854211/android-store-inputstream-in-file/39956218
-    private void importRRFile(Uri uri, File dir) {
+    private File importRRFile(Uri uri, File dir) {
         String filename = getFileName(uri);
         if (!isRRfileName(filename)) {
             String msg = getString(R.string.NotRRLogNotImporting)+": "+filename;
             Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
             Log.w(TAG, msg);
-            return;
+            return null;
         }
         Log.d(TAG,"Importing RR file "+filename+" into logs");
         try {
@@ -1401,6 +1423,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     output.flush();
                     Toast.makeText(getBaseContext(), getString(R.string.ImportedRRFile)+": " + filename, Toast.LENGTH_LONG).show();
+                    return file;
                 }
             } finally {
                     input.close();
@@ -1408,6 +1431,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Throwable e) {
             logException("Exception importing RR log",e);
         }
+        return null;
     }
 
     void exportSelectedLogFiles() {
@@ -1493,7 +1517,7 @@ public class MainActivity extends AppCompatActivity {
                 timerHandler.postDelayed(this, 1);
             } else {
                 Toast.makeText(getBaseContext(), R.string.FinishedReplay, Toast.LENGTH_LONG).show();
-                takeScreenshot();
+                //takeScreenshot();
             }
         }
     };
@@ -1636,6 +1660,7 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
         if (itemID == menuItem(MENU_IMPORT)) importLogFile();
+        if (itemID == menuItem(MENU_IMPORT_REPLAY)) importReplayLogFile();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
         if (itemID == menuItem(MENU_CONNECT_DEFAULT)) tryPolarConnect();
@@ -1792,17 +1817,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        rrLogStreamLegacy = createLogFile("rr");
-//        featureLogStreamLegacy = createLogFile("features");
-
-        rrLogStreamNew = createLogFileNew("rr", "csv");
-//        writeLogFiles("timestamp, rr, since_start ", rrLogStreamNew, rrLogStreamLegacy, "rr");
-//        writeLogFiles("", rrLogStreamNew, rrLogStreamLegacy, "rr");
-        writeLogFile(RR_LOGFILE_HEADER, rrLogStreamNew, "rr");
-        writeLogFile("", rrLogStreamNew, "rr");
-        featureLogStreamNew = createLogFileNew("features", "csv");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", featureLogStreamNew, "features");
-        debugLogStream = createLogFileNew("debug", "log");
+        rrLogStreamNew = createLogFile("rr", "csv");
+        writeLogFile(RR_LOGFILE_HEADER, "rr");
+        writeLogFile("", "rr");
+        featureLogStreamNew = createLogFile("features", "csv");
+        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
+        debugLogStream = createLogFile("debug", "log");
         
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -2152,7 +2172,7 @@ public class MainActivity extends AppCompatActivity {
         long logRRelapsedMS_snapshot = logRRelapsedMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
-            writeLogFile(msg, rrLogStreamNew, "rr");
+            writeLogFile(msg, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
@@ -2273,8 +2293,6 @@ public class MainActivity extends AppCompatActivity {
                                 + "," + artifactCorrectionThreshold
                                 + "," + alpha1V2RoundedWindowed
                         ,
-                        featureLogStreamNew,
-//                    featureLogStreamLegacy,
                         "features");
             }
             if (timeForUIupdate) {
@@ -2501,10 +2519,14 @@ public class MainActivity extends AppCompatActivity {
     }
     */
 
-    private void writeLogFile(String msg, FileWriter logStream, String tag) {
+    private void writeLogFile(String msg, String tag) {
+        FileWriter logStream = currentLogFileWriters.get(tag);
+        FileWriter extLogStream = externalLogFileWriters.get(tag);
         try {
             logStream.append(msg+"\n");
             logStream.flush();
+            extLogStream.append(msg+"\n");
+            extLogStream.flush();
             // avoid feedback loop through the local Log mechanism
             //android.util.Log.d(TAG,"Wrote to "+tag+" log: "+msg);
         } catch (IOException e) {
@@ -2514,24 +2536,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private FileWriter createLogFile(String tag) {
-        FileWriter logStream = null;
-        try {
-            String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
-            File file = new File(getApplicationContext().getExternalFilesDir(null), "/ftmxr."+dateString+"."+tag+".csv");
-            logStream = new FileWriter(file);
-            Log.d(TAG,"Logging RRs to "+file.getAbsolutePath());
-        } catch (FileNotFoundException e) {
-            text_view.setText("FileNotFoundException");
-            Log.d(TAG,"FileNotFoundException");
-            e.printStackTrace();
-        } catch (IOException e) {
-            text_view.setText("IOException creating log file");
-            Log.d(TAG,"IOException creating log file");
-            e.printStackTrace();
-        }
-        return logStream;
-    }
+//    private FileWriter createLogFile(String tag) {
+//        FileWriter logStream = null;
+//        try {
+//            String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
+//            File file = new File(getApplicationContext().getExternalFilesDir(null), "/ftmxr."+dateString+"."+tag+".csv");
+//            logStream = new FileWriter(file);
+//            Log.d(TAG,"Logging RRs to "+file.getAbsolutePath());
+//        } catch (FileNotFoundException e) {
+//            text_view.setText("FileNotFoundException");
+//            Log.d(TAG,"FileNotFoundException");
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            text_view.setText("IOException creating log file");
+//            Log.d(TAG,"IOException creating log file");
+//            e.printStackTrace();
+//        }
+//        return logStream;
+//    }
 
     @NotNull
     private String makeLogfileName(String stem, String type) {
@@ -2541,17 +2563,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     Map<String,File> currentLogFiles = new HashMap<String,File>();
+    Map<String,FileWriter> currentLogFileWriters = new HashMap<String,FileWriter>();
+    Map<String,File> externalLogFiles = new HashMap<String,File>();
+    Map<String,FileWriter> externalLogFileWriters = new HashMap<String,FileWriter>();
 
-    private FileWriter createLogFileNew(String tag, String extension) {
+    private FileWriter createLogFile(String tag, String extension) {
         FileWriter logStream = null;
+        FileWriter extLogStream = null;
         try {
             File logsDir = getLogsDir();
-            //File file = new File(getApplicationContext().getExternalFilesDir(null), "/FatMaxOptimiser."+dateString+"."+tag+".csv");
+            File extLogsDir = getExtLogsDir();
             File file = new File(logsDir, makeLogfileName("", tag));
+            File extFile = new File(extLogsDir, makeLogfileName("",tag));
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
+            extLogStream = new FileWriter(extFile);
             Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
             currentLogFiles.put(tag,file);
+            currentLogFileWriters.put(tag,logStream);
+            externalLogFiles.put(tag,extFile);
+            externalLogFileWriters.put(tag,extLogStream);
         } catch (FileNotFoundException e) {
                 text_view.setText("FileNotFoundException");
                 Log.d(TAG,"FileNotFoundException");
@@ -2569,6 +2600,15 @@ public class MainActivity extends AppCompatActivity {
         File privateRootDir = getFilesDir();
         privateRootDir.mkdir();
         File logsDir = new File(privateRootDir, "logs");
+        logsDir.mkdir();
+        return logsDir;
+    }
+
+    @NotNull
+    private File getExtLogsDir() {
+        File rootDir = this.getExternalFilesDir(null);
+        rootDir.mkdir();
+        File logsDir = new File(rootDir, "logs");
         logsDir.mkdir();
         return logsDir;
     }
