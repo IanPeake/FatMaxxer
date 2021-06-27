@@ -1084,12 +1084,18 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
         String startedStatus = "";
+        String startedOpen = "[";
+        String startedClose = "]";
+        if (!logOrReplayStarted()) {
+            startedOpen = "";
+            startedClose = "";
+        }
         if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
 //            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
-//            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, "Replay RR Log");
-            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, "Import+Replay RR Log");
+            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen+"Replay RR Log"+startedClose);
+            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+"Import+Replay RR Log"+startedClose);
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
         }
         menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Logs");
@@ -1098,19 +1104,17 @@ public class MainActivity extends AppCompatActivity {
         menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, "Delete All Debug Logs");
         menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
-        // Offer connect if not already connected/replaying
         if (tmpDeviceId.length() > 0) {
-            menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, "Connect preferred device " + tmpDeviceId);
+            menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, startedOpen+"Connect preferred device " + tmpDeviceId+startedClose);
         }
         int i = 0;
         // Offer connect for discovered devices if not already connected/replaying
-        if (!logOrReplayStarted()) {
-            for (String tmpDeviceID : discoveredDevices.keySet()) {
-                menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, "Connect " + discoveredDevices.get(tmpDeviceID));
-                discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i, tmpDeviceID);
-                i++;
-            }
+        for (String tmpDeviceID : discoveredDevices.keySet()) {
+            menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, startedOpen+"Connect " + discoveredDevices.get(tmpDeviceID)+startedClose);
+            discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i, tmpDeviceID);
+            i++;
         }
+//        }
         menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
         return super.onPrepareOptionsMenu(menu);
     }
@@ -1164,10 +1168,11 @@ public class MainActivity extends AppCompatActivity {
 
     public List<File> rrLogFiles() {
         Log.d(TAG, "logFiles...");
-        File privateRootDir = getFilesDir();
-        privateRootDir.mkdir();
-        File logsDir = new File(privateRootDir, "logs");
-        logsDir.mkdir();
+//        File privateRootDir = getFilesDir();
+//        privateRootDir.mkdir();
+//        File logsDir = new File(privateRootDir, "logs");
+//        logsDir.mkdir();
+        File logsDir = getExtLogsDir();
         File[] allFiles = logsDir.listFiles();
         List<File> rrLogFiles = new ArrayList<File>();
         for (File f : allFiles) {
@@ -1387,7 +1392,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, ImportCSVFailedCouldNotGetURIFromData);
                     Toast.makeText(getBaseContext(), ImportCSVFailedCouldNotGetURIFromData, Toast.LENGTH_LONG);
                 } else {
-                    File importedRR = importRRFile(uri, getLogsDir());
+                    File importedRR = importRRFile(uri, getExtLogsDir());
+//                    File importedRR = importRRFile(uri, getLogsDir());
                     if (requestCode ==REQUEST_IMPORT_REPLAY_CSV) {
                         if (importedRR!=null) {
                             replayRRfile(importedRR);
@@ -1642,6 +1648,13 @@ public class MainActivity extends AppCompatActivity {
         adb.show();
     }
 
+    public boolean quitRequired() {
+        boolean result = logOrReplayStarted();
+        if (result) {
+            Toast.makeText(getBaseContext(), "Quit/restart required after connect/replay", Toast.LENGTH_LONG).show();
+        }
+        return result;
+    }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         //    void tagSelectedLogsForExport() {
@@ -1655,19 +1668,20 @@ public class MainActivity extends AppCompatActivity {
         int itemID = item.getItemId();
         if (itemID == menuItem(MENU_QUIT)) confirmQuit();
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
-        if (itemID == menuItem(MENU_REPLAY)) selectReplayRRfile();
+        if (itemID == menuItem(MENU_REPLAY)) if (!quitRequired()) selectReplayRRfile();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
         if (itemID == menuItem(MENU_IMPORT)) importLogFile();
-        if (itemID == menuItem(MENU_IMPORT_REPLAY)) importReplayLogFile();
+        if (itemID == menuItem(MENU_IMPORT_REPLAY)) if (!quitRequired()) importReplayLogFile();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
-        if (itemID == menuItem(MENU_CONNECT_DEFAULT)) tryPolarConnect();
+        if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnect();
         if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
-            tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
+            if (!quitRequired())
+                tryPolarConnect(discoveredDevicesMenu.get(item.getItemId()));
         }
         return super.onOptionsItemSelected(item);
     }
@@ -2383,6 +2397,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Elapsed % alpha1EvalPeriod " + (elapsedSecondsTrunc % alpha1EvalPeriodSec));
         }
         elapsedMin = this.elapsedMS / 60000.0;
+        double elapsedMinRound = round(this.elapsedMin * 1000) / 1000.0;
         ///////////////////////elapsedMin = this.elapsedSecondsTrunc / 60.0;
         //Log.d(TAG,"elapsedSecondsTrunc: "+elapsedSecondsTrunc);
         //Log.d(TAG,"elapsedMin: "+elapsedMin);
@@ -2396,7 +2411,7 @@ public class MainActivity extends AppCompatActivity {
         if (graphFeaturesSelected.contains("rr")) {
             for (int rr : data.rrsMs) {
                 logRRelapsedMS_snapshot += rr;
-                double tmpRRMins = logRRelapsedMS_snapshot / 60000.0;
+                double tmpRRMins = round(logRRelapsedMS_snapshot / 60.0) / 1000.0;
                 rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
             }
         }
@@ -2407,7 +2422,7 @@ public class MainActivity extends AppCompatActivity {
 //        Log.d(TAG, "scrollToEnd "+scrollToEnd);
 //        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
 //        Log.d(TAG, "graphEnabled "+graphEnabled);
-        DataPoint hrDataPoint = new DataPoint(elapsedMin, data.hr);
+        DataPoint hrDataPoint = new DataPoint(elapsedMinRound, data.hr);
         //Log.d(TAG,"hrDataPoint "+hrDataPoint);
         if (timeForHRplot && graphFeaturesSelected.contains("hr")) {
             hrSeries.appendData(hrDataPoint, scrollToEnd, maxDataPoints);
@@ -2416,22 +2431,22 @@ public class MainActivity extends AppCompatActivity {
                 //Log.d(TAG,"plot...");
                 if (graphFeaturesSelected.contains("a1")) {
                     //Log.d(TAG,"plot a1");
-                    a1V2Series.appendData(new DataPoint(elapsedMin, alpha1V2RoundedWindowed * 100.0), scrollToEnd, maxDataPoints);
+                    a1V2Series.appendData(new DataPoint(elapsedMinRound, alpha1V2RoundedWindowed * 100.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeaturesSelected.contains("artifacts")) {
                     //Log.d(TAG,"plot artifacts");
-                    artifactSeries.appendData(new DataPoint(elapsedMin, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                    artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeaturesSelected.contains("rmssd")) {
                     //Log.d(TAG,"plot rmssd");
-                    rmssdSeries.appendData(new DataPoint(elapsedMin, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
+                    rmssdSeries.appendData(new DataPoint(elapsedMinRound, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeaturesSelected.contains("hrWin")) {
                     //Log.d(TAG,"plot hrWin");
-                    hrWinSeries.appendData(new DataPoint(elapsedMin, hrMeanWindowed), scrollToEnd, maxDataPoints);
+                    hrWinSeries.appendData(new DataPoint(elapsedMinRound, hrMeanWindowed), scrollToEnd, maxDataPoints);
                 }
                 if (scrollToEnd) {
-                    double nextX = elapsedMin + tenSecAsMin;
+                    double nextX = elapsedMinRound + tenSecAsMin;
                     a1HRVvt1Series.appendData(new DataPoint(nextX, 75), scrollToEnd, maxDataPoints);
                     a1HRVvt2Series.appendData(new DataPoint(nextX, 50), scrollToEnd, maxDataPoints);
                     a125Series.appendData(new DataPoint(nextX, 25), scrollToEnd, maxDataPoints);
