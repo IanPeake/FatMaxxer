@@ -186,18 +186,6 @@ public class MainActivity extends AppCompatActivity {
         super.finish();
     }
 
-    private long pressedTime;
-
-//    public void onBackPressed() {
-//        if (pressedTime + 2000 > System.currentTimeMillis()) {
-//            super.onBackPressed();
-//            finish();
-//        } else {
-//            Toast.makeText(getBaseContext(), "Press back again to exit", Toast.LENGTH_SHORT).show();
-//        }
-//        pressedTime = System.currentTimeMillis();
-//    }
-
     public void onBackPressed() {
         Toast.makeText(getBaseContext(), R.string.UseMenuQuitToExit, Toast.LENGTH_LONG).show();
     }
@@ -229,8 +217,6 @@ public class MainActivity extends AppCompatActivity {
     String DEVICE_ID = "";
     SharedPreferences sharedPreferences;
 
-    Notification initialNotification;
-
     Context thisContext = this;
     private int batteryLevel = 0;
     private String exerciseMode = "Light";
@@ -247,7 +233,6 @@ public class MainActivity extends AppCompatActivity {
         public void onDestroy() {
             Log.d(TAG, "LocalService: onDestroy");
             super.onDestroy();
-            //mNM.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         }
 
         public LocalService() {
@@ -296,8 +281,6 @@ public class MainActivity extends AppCompatActivity {
                             .setCategory(Notification.CATEGORY_SERVICE)
                             .setContentIntent(pendingIntent)
                             .build();
-
-            //notification.notify(NOTIFICATION_TAG, NOTIFICATION_ID, );
             startForeground(2, notification);
         }
 
@@ -320,8 +303,6 @@ public class MainActivity extends AppCompatActivity {
         private String createNotificationChannel() {
             NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID,
                     SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-//            chan.lightColor = Color.BLUE;
-//            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
             NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             service.createNotificationChannel(chan);
             return SERVICE_CHANNEL_ID;
@@ -335,7 +316,6 @@ public class MainActivity extends AppCompatActivity {
      * Note that this is implemented as an inner class only keep the sample
      * all together; typically this code would appear in some separate class.
      */
-//    public static class Binding extends Activity {
 
     //
     // SERVICE BINDING
@@ -681,7 +661,6 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"rmsd xfit "+v_toString(xfit));
         //     # detrending and computing RMS of each window
         //     rms[e] = np.sqrt(np.mean((xcut-xfit)**2))
-        //double[] finalSegment = v_subtract(ybox, xfit, offset, scale);
         double[] finalSegment = v_subtract(ybox, xfit, 0, scale);
         //Log.d(TAG,"getDetrendedMean final "+v_toString(finalSegment));
         double mean = v_mean(v_power_s2(finalSegment, 2));
