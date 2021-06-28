@@ -26,7 +26,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.OpenableColumns;
 import android.speech.tts.TextToSpeech;
-//import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -47,7 +46,6 @@ import androidx.core.content.FileProvider;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
-// https://github.com/jjoe64/GraphView
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.DataPointInterface;
@@ -126,9 +124,6 @@ public class MainActivity extends AppCompatActivity {
     final double alpha1HRVvt2 = 0.5;
     private int a1v2cacheMisses = 0;
     private long lastScrollToEndElapsedSec = 0;
-
-    // FIXME: Catch UncaughtException
-    // https://stackoverflow.com/questions/19897628/need-to-handle-uncaught-exception-and-send-log-file
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -1090,32 +1085,32 @@ public class MainActivity extends AppCompatActivity {
             startedOpen = "";
             startedClose = "";
         }
-        if (logOrReplayStarted()) startedStatus=" (before new connect/replay)";
-        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, "Quit "+startedStatus);
+        if (logOrReplayStarted()) startedStatus=" ("+getString(R.string.BeforeNewConnectOrReplay)+")";
+        menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, getString(R.string.Quit)+" "+startedStatus);
         if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
 //            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
-            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen+"Replay RR Log"+startedClose);
-            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+"Import+Replay RR Log"+startedClose);
-            menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, "Rename Current Logs");
+            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen+getString(R.string.ReplayRRIntervalsLog)+startedClose);
+            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+getString(R.string.ImportAndReplayRRIntervalsLog)+startedClose);
+            menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, R.string.RenameCurrentLogFiles);
         }
-        menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, "Export Selected Logs");
-        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, "Delete Selected Logs");
-        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, "Delete All Old Logs");
-        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, "Delete All Debug Logs");
-        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, "Delete All Logs");
+        menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
+        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, R.string.DeleteSelectedLogs);
+        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, R.string.DeleteAllOldLogs);
+        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, R.string.DeleteAllDebugLogs);
+        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, R.string.DeleteAllLogs);
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
         if (tmpDeviceId.length() > 0) {
-            menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, startedOpen+"Connect preferred device " + tmpDeviceId+startedClose);
+            menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, startedOpen+getString(R.string.ConnectedPreferredDevice)+" " + tmpDeviceId+startedClose);
         }
         int i = 0;
         // Offer connect for discovered devices if not already connected/replaying
         for (String tmpDeviceID : discoveredDevices.keySet()) {
-            menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, startedOpen+"Connect " + discoveredDevices.get(tmpDeviceID)+startedClose);
+            menu.add(0, menuItem(MENU_CONNECT_DISCOVERED) + i, Menu.NONE, startedOpen+getString(R.string.Connect)+" " + discoveredDevices.get(tmpDeviceID)+startedClose);
             discoveredDevicesMenu.put(menuItem(MENU_CONNECT_DISCOVERED) + i, tmpDeviceID);
             i++;
         }
 //        }
-        menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, "Search for Polar devices");
+        menu.add(0, menuItem(MENU_SEARCH), Menu.NONE, R.string.SearchForPolarDevices);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -1143,14 +1138,14 @@ public class MainActivity extends AppCompatActivity {
         Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
         receiveIntent.setType("text/*");
         receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
+        startActivityForResult(Intent.createChooser(receiveIntent, getString(R.string.ImportCSVFile)), REQUEST_IMPORT_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
     }
 
     private void importReplayLogFile() {
         Intent receiveIntent = new Intent(Intent.ACTION_GET_CONTENT);
         receiveIntent.setType("text/*");
         receiveIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(Intent.createChooser(receiveIntent, "Import CSV"), REQUEST_IMPORT_REPLAY_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
+        startActivityForResult(Intent.createChooser(receiveIntent, getString(R.string.ImportCSVFile)), REQUEST_IMPORT_REPLAY_CSV); //REQUEST_IMPORT_CSV is just an int representing a request code for the activity result callback later
     }
 
     public void exportLogFiles() {
@@ -1163,7 +1158,7 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, logUris);
         shareIntent.setType("text/plain");
         final int exportLogFilesCode = 254;
-        startActivityForResult(Intent.createChooser(shareIntent, "Share log files to.."), exportLogFilesCode);
+        startActivityForResult(Intent.createChooser(shareIntent, getString(R.string.ExportLogFilesTo)+"..."), exportLogFilesCode);
     }
 
     public List<File> rrLogFiles() {
@@ -1211,12 +1206,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void renameLogs() {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setTitle("Rename");
-        alert.setMessage("Tag to include in current log names");
+        alert.setTitle(R.string.RenameLogFiles);
+        alert.setMessage(R.string.TagToUseForCurrentLogFileNames);
         // Set an EditText view to get user input
         final EditText input = new EditText(this);
         alert.setView(input);
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        alert.setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 String value = input.getText().toString();
                 String msg = getString(R.string.RenameTo) +" "+ value;
@@ -1228,7 +1223,7 @@ public class MainActivity extends AppCompatActivity {
                 renameLogs(value, externalLogFiles, extLogsDir);
             }
         });
-        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        alert.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 // Canceled.
             }
@@ -1272,7 +1267,7 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
         shareIntent.setType("text/plain");
         Log.d(TAG,"Exporting log file/s via ShareSheet "+allUris.toString());
-        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.ExportLogFilesTo)+"..."));
     }
 
     public void deleteCurrentLogFiles() {
@@ -1338,7 +1333,7 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, allUris);
         shareIntent.setType("text/plain");
-        startActivity(Intent.createChooser(shareIntent, "Share log files to.."));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.ExportLogFilesTo)+"..."));
     }
 
     public void deleteAllDebugFiles() {
@@ -1398,7 +1393,7 @@ public class MainActivity extends AppCompatActivity {
                         if (importedRR!=null) {
                             replayRRfile(importedRR);
                         } else {
-                            Toast.makeText(getBaseContext(), "Problem with imported file " + uri, Toast.LENGTH_LONG);
+                            Toast.makeText(getBaseContext(), getString(R.string.ProblemWithImportedFile)+" " + uri, Toast.LENGTH_LONG);
                         }
                     }
                 }
@@ -1435,6 +1430,7 @@ public class MainActivity extends AppCompatActivity {
                     input.close();
             }
         } catch (Throwable e) {
+            Toast.makeText(getBaseContext(), getString(R.string.ProblemImportingRRLog)+": " + filename, Toast.LENGTH_LONG).show();
             logException("Exception importing RR log",e);
         }
         return null;
@@ -1461,8 +1457,8 @@ public class MainActivity extends AppCompatActivity {
                 checkItems[i] = b;
             }
         });
-        adb.setNegativeButton("Cancel", null);
-        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        adb.setNegativeButton(R.string.Cancel, null);
+        adb.setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int iOption) {
                         ArrayList<Uri> exports = new ArrayList();
@@ -1495,8 +1491,8 @@ public class MainActivity extends AppCompatActivity {
             i++;
         }
         adb.setSingleChoiceItems(items, 0, null);
-        adb.setNegativeButton("Cancel", null);
-        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        adb.setNegativeButton(R.string.Cancel, null);
+        adb.setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.dismiss();
@@ -1506,7 +1502,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
-        adb.setTitle("Select RR file for test input");
+        adb.setTitle(R.string.SelectRRFileForTestInput);
         adb.show();
     }
     //                            logException("Exception opening RR log for replay", e);
@@ -1631,8 +1627,8 @@ public class MainActivity extends AppCompatActivity {
                 checkItems[i] = b;
             }
         });
-        adb.setNegativeButton("Cancel", null);
-        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        adb.setNegativeButton(R.string.Cancel, null);
+        adb.setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int iOption) {
                         for (int i = 0; i < items.length; i++) {
@@ -1644,25 +1640,19 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
-        adb.setTitle("Select files for deletion");
+        adb.setTitle(R.string.SelectFilesForDeletion);
         adb.show();
     }
 
     public boolean quitRequired() {
         boolean result = logOrReplayStarted();
         if (result) {
-            Toast.makeText(getBaseContext(), "Quit/restart required after connect/replay", Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), R.string.QuitOrRestartRequiredAfterConnectOrReplay, Toast.LENGTH_LONG).show();
         }
         return result;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        //    void tagSelectedLogsForExport() {
-        //    public boolean onCreateOptionsMenu(Menu menu) {
-        //        MenuInflater inflater = getMenuInflater();
-        //        inflater.inflate(R.menu.options_menu, menu);
-        //        return true;
-        //    }
         //respond to menu item selection
         Log.d(TAG, "onOptionsItemSelected... " + item.getItemId());
         int itemID = item.getItemId();
@@ -1722,8 +1712,6 @@ public class MainActivity extends AppCompatActivity {
     private String createUINotificationChannel() {
         NotificationChannel chan = new NotificationChannel(UI_CHANNEL_ID,
                 UI_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-//            chan.lightColor = Color.BLUE;
-//            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
         NotificationManager serviceNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         serviceNotificationManager.createNotificationChannel(chan);
         return UI_CHANNEL_ID;
@@ -1900,37 +1888,37 @@ public class MainActivity extends AppCompatActivity {
         a1V2Series.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "Alpha1(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.Alpha1)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
         rmssdSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "RMSSD(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.RootMeanSquareSuccessiveDifferencesAbbreviation)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
         hrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "HR: "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
         hrWinSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "HR(2min): "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+"("+getString(R.string.TwoMinutesAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
         artifactSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "Artifacts: "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.Artifacts)+": "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
         rrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, "RR: "+dataPoint, Toast.LENGTH_LONG).show();
+                Toast.makeText(thisContext, getString(R.string.RRIntervalAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
             }
         });
 
@@ -1977,13 +1965,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void deviceConnecting(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 Log.d(TAG, "Polar device CONNECTING"+": " + polarDeviceInfo.deviceId);
-                text_view.setText(getString(R.string.ConnectingToHRDevice)+" " + polarDeviceInfo.deviceId);
+                text_view.setText(getString(R.string.ConnectingToHeartRateSensor)+" " + polarDeviceInfo.deviceId);
             }
 
             @Override
             public void deviceDisconnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
-                text_view.setText(getString(R.string.DisconnectedFromHRDevice)+" " + polarDeviceInfo.deviceId);
+                text_view.setText(getString(R.string.DisconnectedFromHeartRateSensor)+" " + polarDeviceInfo.deviceId);
                 ecgDisposable = null;
                 accDisposable = null;
                 gyrDisposable = null;
@@ -2138,17 +2126,17 @@ public class MainActivity extends AppCompatActivity {
             String artifactCorrectionThresholdSetting = sharedPreferences.getString(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
             if (artifactCorrectionThresholdSetting.equals("Auto")) {
                 if (data.hr > 95) {
-                    exerciseMode = "Workout";
+                    exerciseMode = getString(R.string.Workout);
                     artifactCorrectionThreshold = 0.05;
                 } else if (data.hr < 80) {
-                    exerciseMode = "Light";
+                    exerciseMode = getString(R.string.Light);
                     artifactCorrectionThreshold = 0.25;
                 }
             } else if (artifactCorrectionThresholdSetting.equals("0.25")) {
-                exerciseMode = "Light";
+                exerciseMode = getString(R.string.Light);
                 artifactCorrectionThreshold = 0.25;
             } else {
-                exerciseMode = "Workout";
+                exerciseMode = getString(R.string.Workout);
                 artifactCorrectionThreshold = 0.05;
             }
         }
@@ -2326,11 +2314,11 @@ public class MainActivity extends AppCompatActivity {
                             .setPriority(NotificationManager.IMPORTANCE_HIGH)
                             .setCategory(Notification.CATEGORY_MESSAGE)
                             .setContentIntent(pendingIntent)
-                            .setContentTitle("a1 " + alpha1V2RoundedWindowed + " drop " + artifactsPercentWindowed + "%");
+                            .setContentTitle(getString(R.string.Alpha1AbbrevNonUnicode)+" " + alpha1V2RoundedWindowed + " "+getString(R.string.Drop)+" " + artifactsPercentWindowed + "%");
                     if (notificationDetailSetting.equals("full")) {
-                        uiNotificationBuilder.setContentText("HR " + currentHR + " batt " + batteryLevel + "% rmssd " + rmssdWindowed);
+                        uiNotificationBuilder.setContentText(getString(R.string.HeartRateAbbrev)+" " + currentHR + " "+getString(R.string.BatteryAbbrev)+" " + batteryLevel + "% "+getString(R.string.RootMeanSquareSuccessiveDifferencesAbbrevLowerCase)+" " + rmssdWindowed);
                     } else if (notificationDetailSetting.equals("titleHR")) {
-                        uiNotificationBuilder.setContentText("HR " + currentHR);
+                        uiNotificationBuilder.setContentText(getString(R.string.HeartRateAbbrev)+" " + currentHR);
                     }
                     uiNotificationManager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, uiNotificationBuilder.build());
                 }
@@ -2363,7 +2351,7 @@ public class MainActivity extends AppCompatActivity {
             }
             text_view.setText(logstring);
             text_hr.setText("" + data.hr);
-            text_secondary_label.setText(R.string.RootMeanSquaredStandardDeviationAbbreviation);
+            text_secondary_label.setText(R.string.RootMeanSquareSuccessiveDifferencesAbbreviation);
             text_secondary.setText("" + round(rmssdWindowed));
             text_a1.setText("" + alpha1V2RoundedWindowed);
             text_a1_label.setText(getString(R.string.alpha1) + " [" + a1v2cacheMisses + "]");
@@ -2494,7 +2482,7 @@ public class MainActivity extends AppCompatActivity {
     private void tryPolarConnect(String tmpDeviceID) {
         Log.d(TAG,"tryPolarConnect to "+tmpDeviceID);
         try {
-            String text = getString(R.string.TryingToConnectToHRDevice)+": " + tmpDeviceID;
+            String text = getString(R.string.TryingToConnectToHeartRateSensor)+": " + tmpDeviceID;
             //text_view.setText(text);
             Toast.makeText(this, text, Toast.LENGTH_LONG).show();
             api.connectToDevice(tmpDeviceID);
@@ -2515,25 +2503,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    /*
-    private void tryPolarConnect() {
-        Log.d(TAG,"tryPolarConnect");
-        DEVICE_ID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
-        if (DEVICE_ID.length()>0) {
-            try {
-                text_view.setText("Trying to connect to: " + DEVICE_ID);
-                api.connectToDevice(DEVICE_ID);
-            } catch (PolarInvalidArgument polarInvalidArgument) {
-                text_view.setText("PolarInvalidArgument: " + polarInvalidArgument);
-                polarInvalidArgument.printStackTrace();
-            }
-        } else {
-            text_view.setText("No device ID set");
-        }
-    }
-    */
-
     private void writeLogFile(String msg, String tag) {
         FileWriter logStream = currentLogFileWriters.get(tag);
         FileWriter extLogStream = externalLogFileWriters.get(tag);
@@ -2542,33 +2511,13 @@ public class MainActivity extends AppCompatActivity {
             logStream.flush();
             extLogStream.append(msg+"\n");
             extLogStream.flush();
-            // avoid feedback loop through the local Log mechanism
-            //android.util.Log.d(TAG,"Wrote to "+tag+" log: "+msg);
         } catch (IOException e) {
+            // avoid infinite loop through the local Log mechanism!
             android.util.Log.d(TAG,"IOException writing to "+tag+" log");
             text_view.setText("IOException writing to "+tag+" log");
             e.printStackTrace();
         }
     }
-
-//    private FileWriter createLogFile(String tag) {
-//        FileWriter logStream = null;
-//        try {
-//            String dateString = getDate(System.currentTimeMillis(), "yyyyMMdd_HHmmss");
-//            File file = new File(getApplicationContext().getExternalFilesDir(null), "/ftmxr."+dateString+"."+tag+".csv");
-//            logStream = new FileWriter(file);
-//            Log.d(TAG,"Logging RRs to "+file.getAbsolutePath());
-//        } catch (FileNotFoundException e) {
-//            text_view.setText("FileNotFoundException");
-//            Log.d(TAG,"FileNotFoundException");
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            text_view.setText("IOException creating log file");
-//            Log.d(TAG,"IOException creating log file");
-//            e.printStackTrace();
-//        }
-//        return logStream;
-//    }
 
     @NotNull
     private String makeLogfileName(String stem, String type) {
@@ -2661,22 +2610,22 @@ public class MainActivity extends AppCompatActivity {
             String featuresUpdate = "";
             if (elapsedSecondsTrunc >30 && timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
                 if (artifactsPercentWindowed > 0) {
-                    artifactsUpdate = "dropped " + artifactsPercentWindowed + " percent";
+                    artifactsUpdate = getString(R.string.Dropped_TextToSpeech)+" " + artifactsPercentWindowed + " "+getString(R.string.Percent_TextToSpeech);
                 }
                 // lower end of optimal alph1 - close to overtraining - frequent updates, prioritise a1, abbreviated
                 if (data.hr > upperOptimalHRthreshold || a1 < lowerOptimalAlpha1Threshold) {
                     featuresUpdate = alpha1V2RoundedWindowed + " " + data.hr;
                 // higher end of optimal - prioritise a1, close to undertraining?
                 } else if ((data.hr > (upperOptimalHRthreshold - 10) || alpha1V2RoundedWindowed < upperOptimalAlpha1Threshold)) {
-                    featuresUpdate =  "Alpha one, " + alpha1V2RoundedWindowed + " heart rate " + data.hr;
+                    featuresUpdate =  getString(R.string.AlphaOne_TextToSpeech)+", " + alpha1V2RoundedWindowed + " "+getString(R.string.HeartRate_TextToSpeech)+" " + data.hr;
                 // lower end of optimal - prioritise a1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                     data.hr > upperRestingHRthreshold && timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
-                    featuresUpdate = "Alpha one " + alpha1V2RoundedWindowed + " heart rate "+ data.hr;
+                    featuresUpdate = getString(R.string.AlphaOne_TextToSpeech)+" " + alpha1V2RoundedWindowed + " "+getString(R.string.HeartRate_TextToSpeechFull)+" "+ data.hr;
                 // warm up / cool down --- low priority, update RMSSD instead of alpha1
                 } else if (artifactsPercentWindowed > artifactsRateAlarmThreshold ||
                         timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
-                    featuresUpdate = "Heart rate " + data.hr + ". HRV " + rmssd;
+                    featuresUpdate = getString(R.string.HeartRateFull_TextToSpeech)+" " + data.hr + ". "+getString(R.string.HeartRateVariabilityAbbrev_TextToSpeech)+" " + rmssd;
                 }
             }
             if (featuresUpdate.length() > 0) {
