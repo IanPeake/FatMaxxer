@@ -69,4 +69,8 @@
     <string name="HeartRateFull_TextToSpeech">Heart rate</string>
     <string name="HeartRateVariabilityAbbrev_TextToSpeech">HRV</string>
     <string name="HeartRate_TextToSpeechFull">heart rate</string>
+    <string name="ArtifactsSamplesThreshold_UI">artifacts / samples (%) [threshold]</string>
+    <string name="HeartRateAbbrev">HR</string>
+    <string name="Light">Light</string>
+    <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
 </resources>

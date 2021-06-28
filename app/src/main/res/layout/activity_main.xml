@@ -27,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginRight="-10dp"
-                android:text="Light"
+                android:text="@string/Light"
                 android:fontFamily="sans-serif"
                 android:textColor="@color/colorText"
                 android:textAlignment="center"
@@ -79,7 +79,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:fontFamily="sans-serif"
-                android:text="HR"
+                android:text="@string/HeartRateAbbrev"
                 android:textColor="@color/colorRed"
                 android:textAlignment="center"
                 android:layout_weight="1"
@@ -110,7 +110,7 @@
                 android:layout_weight="1"
                 android:textSize="12sp"
                 android:textColor="@color/colorText"
-                android:text="RMSSD"
+                android:text="@string/RootMeanSquareSuccessiveDifferencesAbbrev"
                 />
 
         </LinearLayout>
@@ -163,7 +163,7 @@
             android:id="@+id/artifactsLabel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="artifacts / samples (%) [threshold]"
+            android:text="@string/ArtifactsSamplesThreshold_UI"
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
             android:textAlignment="center"
