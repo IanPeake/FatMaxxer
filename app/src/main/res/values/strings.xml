@@ -73,4 +73,26 @@
     <string name="HeartRateAbbrev">HR</string>
     <string name="Light">Light</string>
     <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
+    <string name="EnableAudioUpdates">Enable audio updates</string>
+    <string name="Alpha1UpdatesViaAudio">⍺1 updates via audio</string>
+    <string name="EnableNotificationUpdates">Enable notification updates</string>
+    <string name="Alpha1UpdatesViaOngoingNotification">⍺1 updates via ongoing notification</string>
+    <string name="NotificationDetail">Notification detail</string>
+    <string name="KeepScreenOn">Keep screen on</string>
+    <string name="KeepLogs">Keep logs</string>
+    <string name="PreserveThisActivitysLogsOnExit">Preserve this activity\'s logs on exit</string>
+    <string name="ArtifactRejectionThreshold">Artifact rejection threshold</string>
+    <string name="RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">RRs differing by more than +/- threshold from the previous are rejected.</string>
+    <string name="Alpha1InterCalculationPeriodSeconds">⍺1 inter-calculation period (sec)</string>
+    <string name="TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"><![CDATA[Time in seconds to wait between Alpha1 calculations, >= 5 sec]]></string>
+    <string name="SelectGraphFeatures">Select graph features</string>
+    <string name="SelectGraphFeatures">Select graph features</string>
+    <string name="PreferredDeviceIDHex">Preferred device ID (hex; restart required)</string>
+    <string name="HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice">Hexadecimal string, 8 characters. Auto-set to first connected device.</string>
+    <string name="DeveloperMode">Developer mode</string>
+    <string name="ExperimentalFeatures">Experimental features (replay / disable auto-start)</string>
+    <string name="SelectReplayGraphFeatures">Select replay graph features</string>
+    <string name="SelectReplayGraphFeatures">Select replay graph features</string>
+    <string name="LambdaInteger">Lambda (integer)</string>
+    <string name="ValueOfLambdaForSmoothnessPriors">Value of Lambda for smoothness priors pre-DFA detrending</string>
 </resources>

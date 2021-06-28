@@ -1,5 +1,6 @@
 <resources>
 
+    <!--- requires translation -->
     <string-array name="notificationDetailEntries">
         <item>Title with alpha1/drop% only</item>
         <item>Title + HR in body</item>
@@ -24,6 +25,7 @@
         <item>Auto</item>
     </string-array>
 
+    <!-- requires translation -->
     <string-array name="graphFeaturesEntries">
         <item>Heart Rate</item>
         <item>RR /5</item>

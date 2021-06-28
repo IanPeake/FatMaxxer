@@ -4,17 +4,17 @@
 
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
-        app:title="Enable audio updates"
-        app:summary="⍺1 updates via audio"/>
+        app:title="@string/EnableAudioUpdates"
+        app:summary="@string/Alpha1UpdatesViaAudio"/>
 
     <SwitchPreferenceCompat
         app:key="notificationsEnabled"
-        app:title="Enable notification updates"
-        app:summary="⍺1 updates via ongoing notification"/>
+        app:title="@string/EnableNotificationUpdates"
+        app:summary="@string/Alpha1UpdatesViaOngoingNotification"/>
 
     <ListPreference
         app:key="notificationDetail"
-        app:title="Notification detail"
+        app:title="@string/NotificationDetail"
         app:summary=""
         app:defaultValue="full"
         app:entries="@array/notificationDetailEntries"
@@ -23,18 +23,18 @@
 
     <SwitchPreferenceCompat
         app:key="keepScreenOn"
-        app:title="Keep screen on"
+        app:title="@string/KeepScreenOn"
         app:summary=""/>
 
     <SwitchPreferenceCompat
         app:key="keepLogs"
-        app:title="Keep logs"
-        app:summary="Preserve this activity's logs on exit"/>
+        app:title="@string/KeepLogs"
+        app:summary="@string/PreserveThisActivitysLogsOnExit"/>
 
     <ListPreference
         app:key="artifactThreshold"
-        app:title="Artifact rejection threshold"
-        app:summary="RRs differing by more than +/- threshold from the previous are rejected."
+        app:title="@string/ArtifactRejectionThreshold"
+        app:summary="@string/RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected"
         app:defaultValue="Auto"
         app:entries="@array/artifactThresholdEntries"
         app:useSimpleSummaryProvider="true"
@@ -42,18 +42,18 @@
 
     <EditTextPreference
         app:key="alpha1CalcPeriod"
-        app:title="⍺1 inter-calculation period (sec)"
+        app:title="@string/Alpha1InterCalculationPeriodSeconds"
         android:digits="0123456789"
         android:maxLength="4"
         app:defaultValue="20"
         app:useSimpleSummaryProvider="true"
-        app:summary="Time in seconds to wait between Alpha1 calculations, >= 5 sec"/>
+        app:summary="@string/TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"/>
 
     <MultiSelectListPreference
-        android:dialogTitle="Select graph features"
+        android:dialogTitle="@string/SelectGraphFeatures"
         android:key="graphFeaturesSelectorKey"
         android:summary=""
-        android:title="Select graph features"
+        android:title="@string/SelectGraphFeatures"
         android:entries="@array/graphFeaturesEntries"
         android:entryValues="@array/graphFeaturesValues"
         android:defaultValue="@array/graphFeaturesDefaultValues"
@@ -61,20 +61,20 @@
 
     <EditTextPreference
         app:key="polarDeviceID"
-        app:title="Preferred device ID (hex; restart required)"
+        app:title="@string/PreferredDeviceIDHex"
         app:useSimpleSummaryProvider="true"
-        app:summary="Hexadecimal string, 8 characters. Auto-set to first connected device."/>
+        app:summary="@string/HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice"/>
 
     <SwitchPreferenceCompat
         app:key="experimental"
-        app:title="Developer mode"
-        app:summary="Experimental features (replay / disable auto-start)"/>
+        app:title="@string/DeveloperMode"
+        app:summary="@string/ExperimentalFeatures"/>
 
     <MultiSelectListPreference
-        android:dialogTitle="Select replay graph features"
+        android:dialogTitle="@string/SelectReplayGraphFeatures"
         android:key="graphReplayFeaturesSelectorKey"
         android:summary=""
-        android:title="Select replay graph features"
+        android:title="@string/SelectReplayGraphFeatures"
         android:entries="@array/graphFeaturesEntries"
         android:entryValues="@array/graphFeaturesValues"
         android:defaultValue="@array/graphReplayFeaturesDefaultValues"
@@ -82,8 +82,8 @@
 
     <EditTextPreference
         app:key="lambdaPref"
-        app:title="Lambda (integer)"
-        app:summary="Value of Lambda for smoothn pre-DFA detrending"
+        app:title="@string/LambdaInteger"
+        app:summary="@string/ValueOfLambdaForSmoothnessPriors"
         android:digits="0123456789"
         app:defaultValue="500"
         app:useSimpleSummaryProvider="true"
