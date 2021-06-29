@@ -2149,6 +2149,7 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
+        // test: use ONLY for RRs
         long timestamp = currentTimeMS;
         long logRRelapsedMS_snapshot = logRRelapsedMS;
         for (int rr : data.rrsMs) {
@@ -2263,7 +2264,9 @@ public class MainActivity extends AppCompatActivity {
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
-                writeLogFile("" + timestamp
+                writeLogFile(
+//                            "" + timestamp
+                                currentTimeMS
                                 + "," + hrMeanWindowed
                                 + "," + rmssdWindowed
                                 + ","

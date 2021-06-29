@@ -56,7 +56,6 @@
     <string name="HeartRateAbbrev">HR</string>
     <string name="Artifacts">Artifacts</string>
     <string name="RRIntervalAbbrev">RR</string>
-    <string name="Light">Light</string>
     <string name="Workout">Workout</string>
     <string name="Drop">drop</string>
     <string name="BatteryAbbrev">batt</string>
@@ -70,7 +69,6 @@
     <string name="HeartRateVariabilityAbbrev_TextToSpeech">HRV</string>
     <string name="HeartRate_TextToSpeechFull">heart rate</string>
     <string name="ArtifactsSamplesThreshold_UI">artifacts / samples (%) [threshold]</string>
-    <string name="HeartRateAbbrev">HR</string>
     <string name="Light">Light</string>
     <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
     <string name="EnableAudioUpdates">Enable audio updates</string>
@@ -86,12 +84,10 @@
     <string name="Alpha1InterCalculationPeriodSeconds">⍺1 inter-calculation period (sec)</string>
     <string name="TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"><![CDATA[Time in seconds to wait between Alpha1 calculations, >= 5 sec]]></string>
     <string name="SelectGraphFeatures">Select graph features</string>
-    <string name="SelectGraphFeatures">Select graph features</string>
     <string name="PreferredDeviceIDHex">Preferred device ID (hex; restart required)</string>
     <string name="HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice">Hexadecimal string, 8 characters. Auto-set to first connected device.</string>
     <string name="DeveloperMode">Developer mode</string>
     <string name="ExperimentalFeatures">Experimental features (replay / disable auto-start)</string>
-    <string name="SelectReplayGraphFeatures">Select replay graph features</string>
     <string name="SelectReplayGraphFeatures">Select replay graph features</string>
     <string name="LambdaInteger">Lambda (integer)</string>
     <string name="ValueOfLambdaForSmoothnessPriors">Value of Lambda for smoothness priors pre-DFA detrending</string>
