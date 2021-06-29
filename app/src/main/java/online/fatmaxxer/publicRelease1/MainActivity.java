@@ -1575,7 +1575,6 @@ public class MainActivity extends AppCompatActivity {
                     testData.polarData = data;
                     testData.timestamp = localTimeStamp;
                     testDataQueue.add(testData);
-                    //updateTrackedFeatures(data);
                     lineCount++;
                     if (lineCount == 1) {
                         Log.d(TAG, "Started replay timer");
@@ -1802,7 +1801,7 @@ public class MainActivity extends AppCompatActivity {
         writeLogFile(RR_LOGFILE_HEADER, "rr");
         writeLogFile("", "rr");
         featureLogStreamNew = createLogFile("features", "csv");
-        writeLogFile("timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
+        writeLogFile("date,timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
         debugLogStream = createLogFile("debug", "log");
         
         mp = MediaPlayer.create(this, R.raw.artifact);
@@ -2067,8 +2066,10 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
+    int hrNotificationCount = 0;
     private void updateTrackedFeatures(@NotNull PolarHrData data, long currentVirtualTimeMS, boolean realTime) {
         wakeLock.acquire();
+        hrNotificationCount++;
         currentTimeMS = currentVirtualTimeMS;
         if (currentTimeMS <= prevTimeMS) {
             throw new IllegalStateException("assertion failed: cur "+currentTimeMS+" "+prevTimeMS);
@@ -2084,11 +2085,9 @@ public class MainActivity extends AppCompatActivity {
             scrollView.scrollTo(0,0);
         }
         elapsedMS = (currentTimeMS - firstSampleMS);
-        //Log.d(TAG, "====================");
-        //Log.d(TAG, "elapsedMS: "+elapsedMS);
+        Log.d(TAG, "====================");
         elapsedSecondsTrunc = elapsedMS / 1000;
-        //Log.d(TAG, "hrNotificationReceived cur "+currentTimeMS+" elapsed "+elapsedMS);
-        //Log.d(TAG, "updateTrackedFeatures");
+        Log.d(TAG, "updateTrackedFeatures cur "+currentTimeMS+" elapsed "+elapsedMS+" hr notifications "+hrNotificationCount+" calcElapsed"+10*hrNotificationCount);
         boolean timeForUIupdate = timeForUIupdate(realTime);
         if (timeForUIupdate) {
             String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
@@ -2252,21 +2251,21 @@ public class MainActivity extends AppCompatActivity {
         // FIXME: The prev_a1_check now seems redundant
         if (timeForUIupdate) Log.d(TAG,"Elapsed "+elapsedSecondsTrunc+" currentTimeMS "+currentTimeMS+ " a1evalPeriod "+ alpha1EvalPeriodSec +" prevA1Timestamp "+ prevA1TimestampMS);
         boolean graphEnabled = realTime;
-        boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriodSec;
-        boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
-        boolean enoughSinceLast = currentTimeMS >= (prevA1TimestampMS + alpha1EvalPeriodSec *1000);
+//        boolean enoughElapsedSinceStart = elapsedSecondsTrunc > alpha1EvalPeriodSec;
+//        boolean oncePerPeriod = true; //elapsed % alpha1EvalPeriod <= 2;
+//        boolean enoughSinceLast = currentTimeMS >= (prevA1TimestampMS + alpha1EvalPeriodSec *1000);
         //Log.d(TAG,"graphEnabled antecedents "+enoughElapsedSinceStart+" "+oncePerPeriod+" "+enoughElapsedSinceStart);
         // Logging must not be throttled during replay
-        if (enoughElapsedSinceStart && oncePerPeriod && enoughSinceLast) {
+        if (hrNotificationCount % alpha1EvalPeriodSec == 0) {
 //            graphEnabled = true;
-            //Log.d(TAG,"alpha1...");
+            Log.d(TAG,"alpha1...");
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
                 writeLogFile(
-//                            "" + timestamp
-                                currentTimeMS
+                                "" +currentTimeMS
+                                + "," + hrNotificationCount
                                 + "," + hrMeanWindowed
                                 + "," + rmssdWindowed
                                 + ","
