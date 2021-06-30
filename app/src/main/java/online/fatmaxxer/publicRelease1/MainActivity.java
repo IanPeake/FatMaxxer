@@ -115,8 +115,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
     public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
 
-    public static final String ImportCSVFailedDataIsNull = "Import CSV failed: data is null";
-    public static final String ImportCSVFailedCouldNotGetURIFromData = "Import CSV failed: could not get Uri from data";
+    public final String ImportCSVFailedDataIsNull = getString(R.string.ImportCSVFailedDataIsNull);
+    public final String ImportCSVFailedCouldNotGetURIFromData = getString(R.string.ImportCSVFailedCouldNotGetURIFromData);
 
     public static final String RR_LOGFILE_HEADER = "timestamp, rr, since_start ";
 

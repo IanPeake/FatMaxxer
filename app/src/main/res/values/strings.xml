@@ -91,4 +91,6 @@
     <string name="SelectReplayGraphFeatures">Select replay graph features</string>
     <string name="LambdaInteger">Lambda (integer)</string>
     <string name="ValueOfLambdaForSmoothnessPriors">Value of Lambda for smoothness priors pre-DFA detrending</string>
+    <string name="ImportCSVFailedDataIsNull">Import CSV failed: data is null</string>
+    <string name="ImportCSVFailedCouldNotGetURIFromData">Import CSV failed: could not get Uri from data</string>
 </resources>
