@@ -1,0 +1,60 @@
+<resources>
+
+    <!--- requires translation -->
+    <string-array name="notificationDetailEntries">
+        <item>Enkel hoofding met alpha1/%verworpen</item>
+        <item>Hoofding + Hartslag in melding</item>
+        <item>Hoofding + alle details in melding</item>
+    </string-array>
+
+    <string-array name="notificationDetailValues">
+        <item>title</item>
+        <item>titleHR</item>
+        <item>full</item>
+    </string-array>
+
+    <string-array name="artifactThresholdEntries">
+        <item>0.05</item>
+        <item>0.25</item>
+        <item>Auto</item>
+    </string-array>
+
+    <string-array name="artifactThresholdEntryValues">
+        <item>0.05</item>
+        <item>0.25</item>
+        <item>Auto</item>
+    </string-array>
+
+    <!-- requires translation -->
+    <string-array name="graphFeaturesEntries">
+        <item>Hartslag</item>
+        <item>RR /5</item>
+        <item>Alpha1 x100 (2 min)</item>
+        <item>RMSSD x2 (2 min)</item>
+        <item>Hartslag (2 min gem)</item>
+        <item>Artefacten (2 min, %)</item>
+    </string-array>
+
+    <string-array name="graphFeaturesValues">
+        <item>hr</item>
+        <item>rr</item>
+        <item>a1</item>
+        <item>rmssd</item>
+        <item>hrWin</item>
+        <item>artifacts</item>
+    </string-array>
+
+    <string-array name="graphFeaturesDefaultValues">
+        <item>hr</item>
+        <item>rr</item>
+        <item>a1</item>
+        <item>artifacts</item>
+    </string-array>
+
+    <string-array name="graphReplayFeaturesDefaultValues">
+        <item>hrWin</item>
+        <item>a1</item>
+        <item>artifacts</item>
+    </string-array>
+
+</resources>
