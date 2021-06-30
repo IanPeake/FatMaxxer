@@ -53,7 +53,6 @@
 <string name="QuitOrRestartRequiredAfterConnectOrReplay">Afsluiten/herstarten vereist na vebinden/weergeven</string>
 <string name="Alpha1">Alpha1</string>
 <string name="TwoMinutesAbbrev">2min</string>
-<string name="HeartRateAbbrev">HR</string>
 <string name="Artifacts">Artefacten</string>
 <string name="RRIntervalAbbrev">RR</string>
 <string name="Light">Helder</string>
@@ -71,7 +70,6 @@
 <string name="HeartRate_TextToSpeechFull">hartslag</string>
 <string name="ArtifactsSamplesThreshold_UI">artefacten / stalen (%) [drempel]</string>
 <string name="HeartRateAbbrev">HR</string>
-<string name="Light">Helder</string>
 <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
 <string name="EnableAudioUpdates">Audio meldingen inschakelen</string>
 <string name="Alpha1UpdatesViaAudio">⍺1 meldingen via audio</string>
@@ -82,16 +80,14 @@
 <string name="KeepLogs">Bewaar logs</string>
 <string name="PreserveThisActivitysLogsOnExit">Behoud huidige logs bij afsluiten</string>
 <string name="ArtifactRejectionThreshold">Artefact drempel</string>
-<string name="RrsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
+<string name="RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
 <string name="Alpha1InterCalculationPeriodSeconds">⍺1 berekeningsinterval (sec)</string>
 <string name="TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"><![CDATA[⍺1 berekeningsinterval, >= 5 sec]]></string>
-<string name="SelectGraphFeatures">Selecteer grafiek elementen</string>
 <string name="SelectGraphFeatures">Selecteer grafiek elementen</string>
 <string name="PreferredDeviceIDHex">Voorkeursensor ID (hex; herstart vereist)</string>
 <string name="HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice">Hexadecimale string, 8 karakters. Autoamtisch instellen op eerst geconnecteerde apparaat.</string>
 <string name="DeveloperMode">Ontwikkelaarsmodus</string>
 <string name="ExperimentalFeatures">Experimentele functies (weergeven / auto-start uitzetten)</string>
-<string name="SelectReplayGraphFeatures">Selecteer grafiek elementen bij weergeven</string>
 <string name="SelectReplayGraphFeatures">Selecteer grafiek elementen bij weergeven</string>
 <string name="LambdaInteger">Lambda (integer)</string>
 <string name="ValueOfLambdaForSmoothnessPriors">Lambda waarde voor smoothness priors pre-DFA detrending</string>
