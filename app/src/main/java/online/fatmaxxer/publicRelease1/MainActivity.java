@@ -114,10 +114,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
     public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
     public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
-
-    public final String ImportCSVFailedDataIsNull = getString(R.string.ImportCSVFailedDataIsNull);
-    public final String ImportCSVFailedCouldNotGetURIFromData = getString(R.string.ImportCSVFailedCouldNotGetURIFromData);
-
     public static final String RR_LOGFILE_HEADER = "timestamp, rr, since_start ";
 
     final double alpha1HRVvt1 = 0.75;
@@ -1358,13 +1354,13 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode==REQUEST_IMPORT_CSV || requestCode==REQUEST_IMPORT_REPLAY_CSV) {
             if (data == null) {
-                Log.w(TAG, ImportCSVFailedDataIsNull);
-                Toast.makeText(getBaseContext(), ImportCSVFailedDataIsNull, Toast.LENGTH_LONG);
+                Log.w(TAG, getString(R.string.ImportCSVFailedDataIsNull));
+                Toast.makeText(getBaseContext(), getString(R.string.ImportCSVFailedDataIsNull), Toast.LENGTH_LONG);
             } else {
                 Uri uri = data.getData();
                 if (uri == null) {
-                    Log.w(TAG, ImportCSVFailedCouldNotGetURIFromData);
-                    Toast.makeText(getBaseContext(), ImportCSVFailedCouldNotGetURIFromData, Toast.LENGTH_LONG);
+                    Log.w(TAG, getString(R.string.ImportCSVFailedCouldNotGetURIFromData));
+                    Toast.makeText(getBaseContext(), getString(R.string.ImportCSVFailedCouldNotGetURIFromData), Toast.LENGTH_LONG);
                 } else {
                     File importedRR = importRRFile(uri, getExtLogsDir());
 //                    File importedRR = importRRFile(uri, getLogsDir());
