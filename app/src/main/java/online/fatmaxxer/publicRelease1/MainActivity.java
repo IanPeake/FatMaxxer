@@ -1094,7 +1094,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean logOrReplayStarted() {
-        return started; //testDataQueue!=null && !testDataQueue.isEmpty();
+        return started;
     }
 
     public Uri getUri(File f) {
@@ -1493,7 +1493,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             if (!testDataQueue.isEmpty()) {
                 TestDataPacket data = testDataQueue.remove();
-                //Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
+                Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
                 updateTrackedFeatures(data.polarData, data.timestamp, false);
                 timerHandler.postDelayed(this, 1);
             } else {
@@ -1506,6 +1506,14 @@ public class MainActivity extends AppCompatActivity {
     static class TestDataPacket {
         PolarHrData polarData;
         long timestamp;
+
+        @Override
+        public String toString() {
+            return "TestDataPacket{" +
+                    "polarData=" + polarData.rrsMs.toString() +
+                    ", timestamp=" + timestamp +
+                    '}';
+        }
     }
 
     Queue<TestDataPacket> testDataQueue;
@@ -1555,26 +1563,41 @@ public class MainActivity extends AppCompatActivity {
             // field for the provided time in MS; this may lead to a discrepancy of a few seconds
             // in the overall activity(?!)
             long baseTimeStamp = 0;
+            long elapsedMS = 0;
+            long nextUpdateMS = 1000;
+            List<Integer> rrs = new ArrayList<Integer>();
+            int rr;
+            int rrMean;
+            int hr;
             while (line != null) {
                 //Log.d(TAG, "RR file line: " + line);
                 String[] fields = line.split(",");
                 if (fields.length >= 3) {
-                    //Log.d(TAG, "RR file line fields: " + fields[0] + " " + fields[1] + " " + fields[2]);
-                    int rr = Integer.valueOf(fields[1]);
-                    int rrMean = (rr + prevRR) / 2;
-                    prevRR = rr;
-                    int hr = 60000 / rrMean;
+                    // Initialize?
                     if (baseTimeStamp==0)
                         baseTimeStamp = Long.valueOf(fields[0]);
-                    long elapsed = Long.valueOf(fields[2]);
-                    long localTimeStamp = baseTimeStamp + elapsed;
-                    List<Integer> rrs = new ArrayList<Integer>();
+                    // Next RR interval - make rough HR calculation
+                    rr = Integer.valueOf(fields[1]);
+                    rrMean = (rr + prevRR) / 2;
+                    prevRR = rr;
+                    hr = 60000 / rrMean;
+                    elapsedMS += rr; // don't trust the RR file for elapsed time; just sum the RRs individually
+                    // Send updates, advancing time, until most-recent RR fits in current window
+                    while (elapsedMS > nextUpdateMS) {
+                        // Send update
+                        PolarHrData data = new PolarHrData(hr, rrs, true, true, true);
+                        TestDataPacket testData = new TestDataPacket();
+                        testData.polarData = data;
+                        testData.timestamp = baseTimeStamp + nextUpdateMS;
+                        testDataQueue.add(testData);
+                        Log.d(TAG,"RR playback: next update "+testData.toString());
+                        // Reset for next update
+                        rrs = new ArrayList<Integer>();
+                        nextUpdateMS += 1000;
+                    }
+                    // Post: most-recent RR fits in current window; add to update
                     rrs.add(rr);
-                    PolarHrData data = new PolarHrData(hr, rrs, true, true, true);
-                    TestDataPacket testData = new TestDataPacket();
-                    testData.polarData = data;
-                    testData.timestamp = localTimeStamp;
-                    testDataQueue.add(testData);
+                    // finished with this RR entry
                     lineCount++;
                     if (lineCount == 1) {
                         Log.d(TAG, "Started replay timer");
@@ -1583,6 +1606,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 line = reader.readLine();
             }
+            Log.d(TAG,"Finished queueing RR data");
             Toast.makeText(getBaseContext(), getString(R.string.StartedRRFileReplay)+": " + f.getName(), Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             logException("Reading replay data from RR file", e);
@@ -2148,6 +2172,7 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
+        Log.d(TAG, "updateTrackedFeatures RR log");
         // test: use ONLY for RRs
         long timestamp = currentTimeMS;
         long logRRelapsedMS_snapshot = logRRelapsedMS;
@@ -2157,6 +2182,7 @@ public class MainActivity extends AppCompatActivity {
             logRRelapsedMS += rr;
             timestamp += rr;
         }
+        Log.d(TAG, "updateTrackedFeatures RR filtering/tracking "+data.rrsMs);
         //
         // FILTERING / RECORDING RR intervals
         //
@@ -2167,7 +2193,7 @@ public class MainActivity extends AppCompatActivity {
             double newrr = data.rrsMs.get(si);
             double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
             double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-            //Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
+            Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
             if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
                 //Log.d(TAG, "accept RR within threshold" + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
@@ -2188,20 +2214,19 @@ public class MainActivity extends AppCompatActivity {
         }
         String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
         int expired = 0;
-        // expire old samples
-        while (rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSizeSec * 1000) {
-            oldestSample = (oldestSample + 1) % maxrrs;
-            expired++;
+        Log.d(TAG, "updateTrackedFeatures expire old samples");
+        while (oldestSample != newestSample && rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSizeSec * 1000) {
+                oldestSample = (oldestSample + 1) % maxrrs;
+                expired++;
         }
-        //Log.d(TAG, "Expire old artifacts");
+        Log.d(TAG, "updateTrackedFeatures expire old artifacts");
         while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSizeSec * 1000) {
             //Log.d(TAG, "Expire at " + oldestArtifactSample);
             oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
         }
-        //Log.d(TAG, "elapsedMS " + elapsedMS);
-        //timeForHRplot
         long absSeconds = Math.abs(elapsedSecondsTrunc);
         boolean timeForHRplot = timeForHRplot(realTime);
+        Log.d(TAG, "updateTrackedFeatures timeForHRplot");
         if (timeForHRplot) {
             String positive = String.format(
                     "%2d:%02d:%02d",
@@ -2226,14 +2251,14 @@ public class MainActivity extends AppCompatActivity {
         // get sample window (c. 120sec)
         double[] featureWindowSamples;
         double[] samples = allSamples;
-//        if (elapsedSeconds > rrWindowSizeSeconds) {
-//            featureWindowSamples = copySamplesFeatureWindow();
-//            samples = featureWindowSamples;
-//        }
-        //Log.d(TAG, "Samples: " + v_toString(samples));
-//        double[] dRR = v_differential(samples);
-        //Log.d(TAG, "dRR: " + v_toString(dRR));
 
+        if (samples.length==0) {
+            starting = false;
+            wakeLock.release();
+            return;
+        }
+
+        Log.d(TAG, "updateTrackedFeatures windowed features");
         // ******************
         // WINDOWED FEATURES
         // ******************
