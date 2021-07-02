@@ -2068,6 +2068,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    int ecgSegment = 0;
+    int ecgSample = 0;
     // log all recorded ecg data
     private void logAllEcgData() {
         if (experimental) {
@@ -2075,13 +2077,12 @@ public class MainActivity extends AppCompatActivity {
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
             }
-            int i = 0;
             while (!lastPolarEcgData.isEmpty ()) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
                 Log.d(TAG,"logEcgData: logging packet "+ecgPacket.timeStamp);
                 for (Integer microVolts : ecgPacket.samples) {
-                    writeLogFile("" + ecgPacket.timeStamp + ",," + i + "," + microVolts.toString(), "ecg");
-                    i++;
+                    writeLogFile("" + ecgPacket.timeStamp + ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
+                    ecgSample++;
                 }
             }
         }
@@ -2332,18 +2333,21 @@ public class MainActivity extends AppCompatActivity {
         // WINDOWED FEATURES
         // ******************
         if ((haveArtifacts || hrNotificationCount == 10) && hrNotificationCount >= pastECGbufferDurationSec) {
-            Log.d(TAG,"Artifacts: start ECG logging");
-            // New artifact
+            Log.d(TAG,"Artifacts: (re)start ECG logging @"+hrNotificationCount);
+            // New artifact - EVENT: start ECG logging
             lastObservedHRNotificationWithArtifacts = hrNotificationCount;
             ecgLogging = true;
         }
-        if (hrNotificationCount < lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
-            Log.d(TAG,"ECG logging");
+        if (ecgLogging && hrNotificationCount < lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+            Log.d(TAG,"ECG logging @"+hrNotificationCount);
             logAllEcgData();
-        } else if (hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
-            Log.d(TAG,"Stop ECG logging");
-            // Flush artifacts window
+        } else if (ecgLogging && hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+            // EVENT: stop ECG logging
+            Log.d(TAG,"Stop ECG logging @"+hrNotificationCount);
+            //
             ecgLogging = false;
+            ecgSegment++;
+            ecgSample = 0;
         }
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
@@ -2597,7 +2601,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void writeLogFile(String msg, String tag) {
-        android.util.Log.d(TAG,"writeLogFile "+tag);
+        //android.util.Log.d(TAG,"writeLogFile "+tag);
         FileWriter logStream = currentLogFileWriters.get(tag);
         FileWriter extLogStream = externalLogFileWriters.get(tag);
         try {
