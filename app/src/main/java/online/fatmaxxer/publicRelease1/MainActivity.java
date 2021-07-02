@@ -55,6 +55,7 @@ import com.jjoe64.graphview.series.Series;
 
 import org.ejml.simple.SimpleMatrix;
 import org.jetbrains.annotations.NotNull;
+import org.reactivestreams.Publisher;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -88,7 +89,9 @@ import polar.com.sdk.api.PolarBleApiCallback;
 import polar.com.sdk.api.PolarBleApiDefaultImpl;
 import polar.com.sdk.api.errors.PolarInvalidArgument;
 import polar.com.sdk.api.model.PolarDeviceInfo;
+import polar.com.sdk.api.model.PolarEcgData;
 import polar.com.sdk.api.model.PolarHrData;
+import polar.com.sdk.api.model.PolarSensorSetting;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.pow;
@@ -164,8 +167,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void finish() {
-        closeLogs();
         boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
+        closeLogs();
         if (!keepLogs) {
             Log.d(TAG,"finish: delete current log files");
             deleteCurrentLogFiles();
@@ -176,8 +179,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             api.disconnectFromDevice(DEVICE_ID);
         } catch (PolarInvalidArgument polarInvalidArgument) {
-            Log.d(TAG, "Quit: disconnectFromDevice: polarInvalidArgument " +
-                    polarInvalidArgument.getStackTrace());
+            logException("Quit: disconnectFromDevice: polarInvalidArgument ", polarInvalidArgument);
         }
         super.finish();
     }
@@ -201,14 +203,14 @@ public class MainActivity extends AppCompatActivity {
 
     PolarBleApi api;
     Disposable broadcastDisposable;
-    Disposable ecgDisposable;
-    Disposable accDisposable;
-    Disposable gyrDisposable;
-    Disposable magDisposable;
-    Disposable ppgDisposable;
-    Disposable ppiDisposable;
-    Disposable scanDisposable;
-    Disposable autoConnectDisposable;
+    Disposable ecgDisposable = null;
+//    Disposable accDisposable;
+//    Disposable gyrDisposable;
+//    Disposable magDisposable;
+//    Disposable ppgDisposable;
+//    Disposable ppiDisposable;
+//    Disposable scanDisposable;
+//    Disposable autoConnectDisposable;
     // Serial number?? 90E2D72B
     String DEVICE_ID = "";
     SharedPreferences sharedPreferences;
@@ -457,7 +459,7 @@ public class MainActivity extends AppCompatActivity {
                 if (t.apply(x[i])) return true;
             } catch (Throwable throwable) {
                 text_view.setText("Exception " + throwable.toString());
-                throwable.printStackTrace();
+                logException("v_contains ", throwable);
             }
         }
         return false;
@@ -939,27 +941,26 @@ public class MainActivity extends AppCompatActivity {
 
 //    private FileWriter rrLogStreamLegacy;
 //    private FileWriter featureLogStreamLegacy;
-
-    private FileWriter debugLogStream;
+//    private FileWriter debugLogStream;
 
     private class Log {
         public int d(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, "debug");
+            if (currentLogFiles.get("debug")!=null) writeLogFile(msg, "debug");
             return android.util.Log.d(tag, msg);
         }
 
         public int w(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, "debug");
+            if (currentLogFiles.get("debug")!=null) writeLogFile(msg, "debug");
             return android.util.Log.e(tag, msg);
         }
 
         public int e(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, "debug");
+            if (currentLogFiles.get("debug")!=null) writeLogFile(msg, "debug");
             return android.util.Log.e(tag, msg);
         }
 
         public int i(String tag, String msg) {
-            if (debugLogStream != null) writeLogFile(msg, "debug");
+            if (currentLogFiles.get("debug")!=null) writeLogFile(msg, "debug");
             return android.util.Log.i(tag, msg);
         }
     }
@@ -970,15 +971,18 @@ public class MainActivity extends AppCompatActivity {
         try {
             fw.close();
         } catch (IOException e) {
-            Log.d(TAG, "IOException closing " + fw.toString() + ": " + e.toString());
+            logException("IOException closing "+ fw.toString(), e);
         }
     }
 
     private void closeLogs() {
-        closeLog(rrLogStreamNew);
-        //closeLog(rrLogStreamLegacy);
-        closeLog(featureLogStreamNew);
-        //closeLog(featureLogStreamLegacy);
+        for (FileWriter fw : currentLogFileWriters.values()) {
+            closeLog(fw);
+        }
+//        closeLog(rrLogStreamNew);
+//        //closeLog(rrLogStreamLegacy);
+//        closeLog(featureLogStreamNew);
+//        //closeLog(featureLogStreamLegacy);
     }
 
     PowerManager powerManager;
@@ -1482,14 +1486,14 @@ public class MainActivity extends AppCompatActivity {
     }
     //                            logException("Exception opening RR log for replay", e);
 
-    //runs without a timer by reposting handler at the end of the runnable
+    //runs without a timer by reposting handler at the end of the runnabl
     Handler timerHandler = new Handler();
     Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
             if (!testDataQueue.isEmpty()) {
                 TestDataPacket data = testDataQueue.remove();
-                Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
+                //Log.d(TAG, "Timer .run method invoked wtih " + data.toString());
                 updateTrackedFeatures(data.polarData, data.timestamp, false);
                 timerHandler.postDelayed(this, 1);
             } else {
@@ -1725,11 +1729,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void logException(String comment, Throwable e) {
-        Log.e(TAG, comment + " exception " + e.toString() + " " + getStackTraceString(e));
+        android.util.Log.d(TAG, comment + " exception " + e.toString() + " " + getStackTraceString(e));
     }
 
     public void handleUncaughtException(Thread thread, Throwable e) {
-        logException("uncaught ", e);
+        android.util.Log.d(TAG, "Uncaught ", e);
         exportDebug();
         finish();
     }
@@ -1742,8 +1746,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void uncaughtException(Thread thread, Throwable e) {
                 handleUncaughtException(thread, e);
+                System.exit(2);
             }
         });
+        Log.d(TAG,"onCreate: set default uncaught exception handler");
         // Get intent, action and MIME type
         Intent intent = getIntent();
         String action = intent.getAction();
@@ -1774,7 +1780,7 @@ public class MainActivity extends AppCompatActivity {
         // Notice PolarBleApi.ALL_FEATURES are enabled
         //api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
         api = PolarBleApiDefaultImpl.defaultImplementation(this,
-                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO);
+                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO | PolarBleApi.FEATURE_POLAR_SENSOR_STREAMING);
         api.setPolarFilter(false);
 
         text_time = this.findViewById(R.id.timeView);
@@ -1817,12 +1823,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rrLogStreamNew = createLogFile("rr", "csv");
+        // RRs
+        createLogFile("rr");
         writeLogFile(RR_LOGFILE_HEADER, "rr");
         writeLogFile("", "rr");
-        featureLogStreamNew = createLogFile("features", "csv");
+        // Features
+        createLogFile("features");
         writeLogFile("date,timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
-        debugLogStream = createLogFile("debug", "log");
+        // Debug
+        createLogFile("debug");
         
         mp = MediaPlayer.create(this, R.raw.artifact);
         mp.setVolume(100, 100);
@@ -1971,11 +1980,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "DISCONNECTED: " + polarDeviceInfo.deviceId);
                 text_view.setText(getString(R.string.DisconnectedFromHeartRateSensor)+" " + polarDeviceInfo.deviceId);
                 ecgDisposable = null;
-                accDisposable = null;
-                gyrDisposable = null;
-                magDisposable = null;
-                ppgDisposable = null;
-                ppiDisposable = null;
+//                accDisposable = null;
+//                gyrDisposable = null;
+//                magDisposable = null;
+//                ppgDisposable = null;
+//                ppiDisposable = null;
                 searchForPolarDevices();
             }
 
@@ -2033,6 +2042,59 @@ public class MainActivity extends AppCompatActivity {
         // auto-start
         if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
             startAnalysis();
+        }
+    }
+
+    // ecg: approx 100hz
+    int nextEcgSlot = 0;
+    int ecgLogCount = 0;
+    final int maxEcgSlots = 10;
+    PolarEcgData[] lastPolarEcgData = new PolarEcgData[maxEcgSlots];
+
+    private void ecgCallback(PolarEcgData polarEcgData) {
+        if (experimental) {
+            Log.d(TAG, "ECG streaming, received " + polarEcgData.samples.size() + " samples");
+            lastPolarEcgData[nextEcgSlot] = polarEcgData;
+            nextEcgSlot = (nextEcgSlot + 1) % maxEcgSlots;
+        }
+    }
+
+    private void logEcgData() {
+        if (experimental) {
+            Log.d(TAG,"logEcgData");
+            if (currentLogFileWriters.get("ecg") == null) {
+                createLogFile("ecg");
+            }
+            int i = 0;
+            int prevEcgSlot = (nextEcgSlot - 1) % maxEcgSlots;
+            for (int j = nextEcgSlot; j != prevEcgSlot; j = (j + 1) % maxEcgSlots) {
+                Log.d(TAG,"logEcgData "+j);
+                for (Integer microVolts : lastPolarEcgData[j].samples) {
+                    writeLogFile("" + lastPolarEcgData[j].timeStamp + "," + ecgLogCount + "," + i + "," + microVolts.toString(), "ecg");
+                    i++;
+                }
+            }
+            ecgLogCount++;
+            Log.d(TAG,"logEcgData "+ecgLogCount);
+        }
+    }
+
+    private void startECG() {
+        if (ecgDisposable == null) {
+            Log.d(TAG, "startECG create ecgDisposable");
+            ecgDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.ECG)
+                    .toFlowable()
+                    .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
+                        PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
+                        Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
+                        return api.startEcgStreaming(DEVICE_ID, sensorSetting);
+                    }).subscribe(
+                            polarEcgData -> {
+                                ecgCallback(polarEcgData);
+                            },
+                            throwable -> Log.e(TAG, "" + throwable),
+                            () -> Log.d(TAG, "complete")
+                    );
         }
     }
 
@@ -2105,9 +2167,9 @@ public class MainActivity extends AppCompatActivity {
             scrollView.scrollTo(0,0);
         }
         elapsedMS = (currentTimeMS - firstSampleMS);
-        Log.d(TAG, "====================");
+        //Log.d(TAG, "====================");
         elapsedSecondsTrunc = elapsedMS / 1000;
-        Log.d(TAG, "updateTrackedFeatures cur "+currentTimeMS+" elapsed "+elapsedMS+" hr notifications "+hrNotificationCount+" calcElapsed"+10*hrNotificationCount);
+        //Log.d(TAG, "updateTrackedFeatures cur "+currentTimeMS+" elapsed "+elapsedMS+" hr notifications "+hrNotificationCount+" calcElapsed"+10*hrNotificationCount);
         boolean timeForUIupdate = timeForUIupdate(realTime);
         if (timeForUIupdate) {
             String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
@@ -2148,8 +2210,8 @@ public class MainActivity extends AppCompatActivity {
         }
         // preference updates
         if (timeForUIupdate) {
-            Log.d(TAG,"timeForUIupdate");
-            Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
+            //Log.d(TAG,"timeForUIupdate");
+            //Log.d(TAG,"graphFeaturesSelected "+graphFeaturesSelected);
             notificationDetailSetting = sharedPreferences.getString(NOTIFICATION_DETAIL_PREFERENCE_STRING, "full");
             alpha1EvalPeriodSetting = sharedPreferences.getString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "20");
             try {
@@ -2168,7 +2230,7 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
-        Log.d(TAG, "updateTrackedFeatures RR log");
+        //Log.d(TAG, "updateTrackedFeatures RR log");
         // test: use ONLY for RRs
         long timestamp = currentTimeMS;
         long logRRelapsedMS_snapshot = logRRelapsedMS;
@@ -2178,7 +2240,7 @@ public class MainActivity extends AppCompatActivity {
             logRRelapsedMS += rr;
             timestamp += rr;
         }
-        Log.d(TAG, "updateTrackedFeatures RR filtering/tracking "+data.rrsMs);
+        //Log.d(TAG, "updateTrackedFeatures RR filtering/tracking "+data.rrsMs);
         //
         // FILTERING / RECORDING RR intervals
         //
@@ -2186,14 +2248,14 @@ public class MainActivity extends AppCompatActivity {
         boolean haveArtifacts = false;
         List<Integer> rrsMs = data.rrsMs;
         for (int si = 0; si < data.rrsMs.size(); si++) {
-            double newrr = data.rrsMs.get(si);
+            double newRR = data.rrsMs.get(si);
             double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
             double upperBound = prevrr * (1 + artifactCorrectionThreshold);
-            Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
-            if (thisIsFirstSample || lowerBound < newrr && newrr < upperBound) {
+            //Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
+            if (thisIsFirstSample || lowerBound < newRR && newRR < upperBound) {
                 //Log.d(TAG, "accept RR within threshold" + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
-                rrInterval[newestSample] = newrr;
+                rrInterval[newestSample] = newRR;
                 rrIntervalTimestamp[newestSample] = currentTimeMS;
                 newestSample = (newestSample + 1) % maxrrs;
                 thisIsFirstSample = false;
@@ -2202,27 +2264,27 @@ public class MainActivity extends AppCompatActivity {
                 artifactTimestamp[newestArtifactSample] = currentTimeMS;
                 newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
                 //Log.d(TAG, "reject artifact " + newrr);
-                rejected += "" + newrr;
+                rejected += "" + newRR;
                 haveArtifacts = true;
                 totalRejected++;
             }
-            prevrr = newrr;
+            prevrr = newRR;
         }
         String rejMsg = haveArtifacts ? (", Rejected: " + rejected) : "";
         int expired = 0;
-        Log.d(TAG, "updateTrackedFeatures expire old samples");
+        //Log.d(TAG, "updateTrackedFeatures expire old samples");
         while (oldestSample != newestSample && rrIntervalTimestamp[oldestSample] < currentTimeMS - rrWindowSizeSec * 1000) {
                 oldestSample = (oldestSample + 1) % maxrrs;
                 expired++;
         }
-        Log.d(TAG, "updateTrackedFeatures expire old artifacts");
+        //Log.d(TAG, "updateTrackedFeatures expire old artifacts");
         while (oldestArtifactSample != newestArtifactSample && artifactTimestamp[oldestArtifactSample] < currentTimeMS - rrWindowSizeSec * 1000) {
             //Log.d(TAG, "Expire at " + oldestArtifactSample);
             oldestArtifactSample = (oldestArtifactSample + 1) % maxrrs;
         }
         long absSeconds = Math.abs(elapsedSecondsTrunc);
         boolean timeForHRplot = timeForHRplot(realTime);
-        Log.d(TAG, "updateTrackedFeatures timeForHRplot");
+        //Log.d(TAG, "updateTrackedFeatures timeForHRplot");
         if (timeForHRplot) {
             String positive = String.format(
                     "%2d:%02d:%02d",
@@ -2254,10 +2316,13 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Log.d(TAG, "updateTrackedFeatures windowed features");
+        //Log.d(TAG, "updateTrackedFeatures windowed features");
         // ******************
         // WINDOWED FEATURES
         // ******************
+        if ((haveArtifacts || hrNotificationCount==10) && hrNotificationCount>=10) {
+            logEcgData();
+        }
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
         rrMeanWindowed = v_mean(samples);
@@ -2279,7 +2344,7 @@ public class MainActivity extends AppCompatActivity {
         // Logging must not be throttled during replay
         if (hrNotificationCount % alpha1EvalPeriodSec == 0) {
 //            graphEnabled = true;
-            Log.d(TAG,"alpha1...");
+            //Log.d(TAG,"alpha1...");
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1TimestampMS = currentTimeMS;
@@ -2301,7 +2366,7 @@ public class MainActivity extends AppCompatActivity {
             }
             if (timeForUIupdate) {
                 if (sharedPreferences.getBoolean(NOTIFICATIONS_ENABLED_PREFERENCE_STRING, false)) {
-                    Log.d(TAG, "Feature notification...");
+                    //Log.d(TAG, "Feature notification...");
                     // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
                     final Intent notificationIntent = new Intent(this, MainActivity.class);
                     notificationIntent.setAction(Intent.ACTION_MAIN);
@@ -2449,6 +2514,10 @@ public class MainActivity extends AppCompatActivity {
 
         starting = false;
         wakeLock.release();
+
+        if (realTime) {
+            startECG();
+        }
     }
 
     private int getFatMaxxerColor(int p) {
@@ -2506,18 +2575,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void writeLogFile(String msg, String tag) {
+        android.util.Log.d(TAG,"writeLogFile "+tag);
         FileWriter logStream = currentLogFileWriters.get(tag);
         FileWriter extLogStream = externalLogFileWriters.get(tag);
         try {
-            logStream.append(msg+"\n");
-            logStream.flush();
-            extLogStream.append(msg+"\n");
-            extLogStream.flush();
+            if (logStream!=null) {
+                logStream.append(msg + "\n");
+                logStream.flush();
+            } else {
+                android.util.Log.e(TAG, "ERROR: "+tag+" logStream is null");
+            }
+            if (extLogStream!=null) {
+                extLogStream.append(msg + "\n");
+                extLogStream.flush();
+            } else {
+                android.util.Log.e(TAG, "ERROR: "+tag+" extLogStream is null");
+            }
         } catch (IOException e) {
             // avoid infinite loop through the local Log mechanism!
-            android.util.Log.d(TAG,"IOException writing to "+tag+" log");
+            android.util.Log.d(TAG,"IOException writing to "+tag+" log "+getStackTraceString(e));
             text_view.setText("IOException writing to "+tag+" log");
-            e.printStackTrace();
         }
     }
 
@@ -2533,7 +2610,8 @@ public class MainActivity extends AppCompatActivity {
     Map<String,File> externalLogFiles = new HashMap<String,File>();
     Map<String,FileWriter> externalLogFileWriters = new HashMap<String,FileWriter>();
 
-    private FileWriter createLogFile(String tag, String extension) {
+    private FileWriter createLogFile(String tag) {
+        android.util.Log.d(TAG,"createLogFile: "+tag);
         FileWriter logStream = null;
         FileWriter extLogStream = null;
         try {
@@ -2544,20 +2622,19 @@ public class MainActivity extends AppCompatActivity {
             // Get the files/images subdirectory;
             logStream = new FileWriter(file);
             extLogStream = new FileWriter(extFile);
-            Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
+//            Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
             currentLogFiles.put(tag,file);
             currentLogFileWriters.put(tag,logStream);
             externalLogFiles.put(tag,extFile);
             externalLogFileWriters.put(tag,extLogStream);
         } catch (FileNotFoundException e) {
-                text_view.setText("FileNotFoundException");
-                Log.d(TAG,"FileNotFoundException");
-                e.printStackTrace();
+            text_view.setText("FileNotFoundException");
+            logException("File not found ",e);
         } catch (IOException e) {
             text_view.setText("IOException creating log file");
-            Log.d(TAG,"IOException creating log file");
-            e.printStackTrace();
+            logException("createLogFile ",e);
         }
+        Log.d(TAG,"created Logfile: "+tag);
         return logStream;
     }
 
@@ -2694,8 +2771,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG,msg);
                 //openScreenshot(imageFile);
             } catch (Throwable e) {
-                // Several error may come out with file handling or DOM
-                e.printStackTrace();
+                logException("screenShot ",e);
             }
         }
 
@@ -2704,13 +2780,14 @@ public class MainActivity extends AppCompatActivity {
             text_view.setText("Destroyed");
             Toast.makeText(this, R.string.FatMaxxerAppClosed, Toast.LENGTH_SHORT).show();
             super.onDestroy();
-            try {
-                rrLogStreamNew.close();
-            } catch (IOException e) {
-                text_view.setText("IOException "+e.toString());
-                e.printStackTrace();
-            }
-            doUnbindService();
+
+            //            try {
+//                rrLogStreamNew.close();
+//            } catch (IOException e) {
+//                text_view.setText("IOException "+e.toString());
+//                logException("IOException ", e);
+//            }
+//            doUnbindService();
 
             Intent i = new Intent(MainActivity.this, LocalService.class);
             i.setAction("STOP");
