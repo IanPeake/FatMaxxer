@@ -5,7 +5,7 @@ sha512sum app-debug.apk > dev-checksum
 VERSION_CODE=`git log -p | egrep 'release-checksum|dev-checksum' | wc -l`
 echo "VERSION_CODE=${VERSION_CODE}" > version.properties 
 
-dt=$(date '+%Y%m%d_%H%M%S');
+dt=$(date '+%y%m%d_%H%M');
 VERSION_NAME=${dt}'.'`git branch --show-current`'.'`git rev-parse --short HEAD`
 echo "VERSION_NAME=${VERSION_NAME}" >> version.properties 
 
