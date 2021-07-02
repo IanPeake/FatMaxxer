@@ -123,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
     final double alpha1HRVvt2 = 0.5;
     private int a1v2cacheMisses = 0;
     private long lastScrollToEndElapsedSec = 0;
+    private int lastObservedHRNotificationWithArtifacts = 0;
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -2045,40 +2046,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ecg: approx 100hz
-    int nextEcgSlot = 0;
-    int ecgLogCount = 0;
+    // are we currently logging ECG data after observing an artifact?
+    boolean ecgLogging = false;
+    final int ecgPacketSize = 73;
+    final int ecgSampleRate = 130;
+    final int pastECGbufferDurationSec = 5;
+    final int totalECGsamples = pastECGbufferDurationSec * ecgSampleRate;
+    final int totalECGpackets = totalECGsamples / ecgPacketSize;
     // 73 samples per slot at 125hz is very roughly 0.5s
-    final int maxEcgSlots = 20;
-    PolarEcgData[] lastPolarEcgData = new PolarEcgData[maxEcgSlots];
+    Queue<PolarEcgData> lastPolarEcgData = new ConcurrentLinkedQueue<PolarEcgData>();
 
     private void ecgCallback(PolarEcgData polarEcgData) {
         if (experimental) {
             Log.d(TAG, "ECG streaming, received " + polarEcgData.samples.size() + " samples");
-            lastPolarEcgData[nextEcgSlot] = polarEcgData;
-            nextEcgSlot = (nextEcgSlot + 1) % maxEcgSlots;
+            lastPolarEcgData.add(polarEcgData);
+            // throw away ECG logs, oldest-first, but only if not already logging
+            if (!ecgLogging && lastPolarEcgData.size()>totalECGpackets) {
+                PolarEcgData ecgPacket = lastPolarEcgData.remove();
+                Log.d(TAG,"logEcgData: expiring packet "+ecgPacket.timeStamp);
+            }
         }
     }
 
-    private void logEcgData() {
+    // log all recorded ecg data
+    private void logAllEcgData() {
         if (experimental) {
             Log.d(TAG,"logEcgData");
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
             }
             int i = 0;
-            int prevEcgSlot = (nextEcgSlot - 1) % maxEcgSlots;
-            for (int j = nextEcgSlot; j != prevEcgSlot; j = (j + 1) % maxEcgSlots) {
-                Log.d(TAG,"logEcgData "+j);
-                for (Integer microVolts : lastPolarEcgData[j].samples) {
-                    writeLogFile("" + lastPolarEcgData[j].timeStamp + "," + ecgLogCount + "," + i + "," + microVolts.toString(), "ecg");
+            while (!lastPolarEcgData.isEmpty ()) {
+                PolarEcgData ecgPacket = lastPolarEcgData.remove();
+                Log.d(TAG,"logEcgData: logging packet "+ecgPacket.timeStamp);
+                for (Integer microVolts : ecgPacket.samples) {
+                    writeLogFile("" + ecgPacket.timeStamp + ",," + i + "," + microVolts.toString(), "ecg");
                     i++;
                 }
             }
-            ecgLogCount++;
-            Log.d(TAG,"logEcgData "+ecgLogCount);
         }
     }
+
+    boolean ecgAvailable = false;
 
     private void startECG() {
         if (ecgDisposable == null) {
@@ -2088,6 +2097,7 @@ public class MainActivity extends AppCompatActivity {
                     .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
                         PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
                         Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
+                        ecgAvailable = true;
                         return api.startEcgStreaming(DEVICE_ID, sensorSetting);
                     }).subscribe(
                             polarEcgData -> {
@@ -2321,8 +2331,19 @@ public class MainActivity extends AppCompatActivity {
         // ******************
         // WINDOWED FEATURES
         // ******************
-        if ((haveArtifacts || hrNotificationCount==20) && hrNotificationCount>=20) {
-            logEcgData();
+        if ((haveArtifacts || hrNotificationCount == 10) && hrNotificationCount >= pastECGbufferDurationSec) {
+            Log.d(TAG,"Artifacts: start ECG logging");
+            // New artifact
+            lastObservedHRNotificationWithArtifacts = hrNotificationCount;
+            ecgLogging = true;
+        }
+        if (hrNotificationCount < lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+            Log.d(TAG,"ECG logging");
+            logAllEcgData();
+        } else if (hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+            Log.d(TAG,"Stop ECG logging");
+            // Flush artifacts window
+            ecgLogging = false;
         }
         rmssdWindowed = getRMSSD(samples);
         // TODO: CHECK: avg HR == 60 * 1000 / (mean of observed filtered(?!) RRs)
