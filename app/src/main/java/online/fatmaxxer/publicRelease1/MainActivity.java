@@ -2058,12 +2058,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void ecgCallback(PolarEcgData polarEcgData) {
         if (experimental) {
-            Log.d(TAG, "ECG streaming, received " + polarEcgData.samples.size() + " samples");
+//            Log.d(TAG, "ECG streaming, received " + polarEcgData.samples.size() + " samples");
             lastPolarEcgData.add(polarEcgData);
             // throw away ECG logs, oldest-first, but only if not already logging
             if (!ecgLogging && lastPolarEcgData.size()>totalECGpackets) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
-                Log.d(TAG,"logEcgData: expiring packet "+ecgPacket.timeStamp);
+//                Log.d(TAG,"logEcgData: expiring packet "+ecgPacket.timeStamp);
             }
         }
     }
@@ -2076,6 +2076,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG,"logEcgData");
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
+                writeLogFile("timestamp,segmentNr,sampleNr,yV","ecg");
             }
             while (!lastPolarEcgData.isEmpty ()) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
@@ -2101,10 +2102,9 @@ public class MainActivity extends AppCompatActivity {
                         ecgAvailable = true;
                         return api.startEcgStreaming(DEVICE_ID, sensorSetting);
                     }).subscribe(
-                            polarEcgData -> {
-                                ecgCallback(polarEcgData);
-                            },
-                            throwable -> Log.e(TAG, "" + throwable),
+                            polarEcgData -> ecgCallback(polarEcgData),
+                            //throwable -> Log.e(TAG, "ECG throwable " + throwable),
+                            throwable -> Log.e(TAG, "ECG throwable " + throwable.getClass()),
                             () -> Log.d(TAG, "complete")
                     );
         }
