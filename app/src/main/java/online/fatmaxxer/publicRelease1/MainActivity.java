@@ -2048,7 +2048,8 @@ public class MainActivity extends AppCompatActivity {
     // ecg: approx 100hz
     int nextEcgSlot = 0;
     int ecgLogCount = 0;
-    final int maxEcgSlots = 10;
+    // 73 samples per slot at 125hz is very roughly 0.5s
+    final int maxEcgSlots = 20;
     PolarEcgData[] lastPolarEcgData = new PolarEcgData[maxEcgSlots];
 
     private void ecgCallback(PolarEcgData polarEcgData) {
@@ -2320,7 +2321,7 @@ public class MainActivity extends AppCompatActivity {
         // ******************
         // WINDOWED FEATURES
         // ******************
-        if ((haveArtifacts || hrNotificationCount==10) && hrNotificationCount>=10) {
+        if ((haveArtifacts || hrNotificationCount==20) && hrNotificationCount>=20) {
             logEcgData();
         }
         rmssdWindowed = getRMSSD(samples);
