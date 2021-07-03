@@ -1207,14 +1207,15 @@ public class MainActivity extends AppCompatActivity {
         File newRR = new File(logsDir,makeLogfileName(value,"rr"));
         File newFeatures = new File(logsDir,makeLogfileName(value,"features"));
         File newDebug = new File(logsDir,makeLogfileName(value,"debug"));
+        File newECG = new File(logsDir,makeLogfileName(value,"ecg"));
         if (logFiles.get("rr").renameTo(newRR))
             logFiles.put("rr",newRR);
         if (logFiles.get("features").renameTo(newFeatures))
             logFiles.put("features",newFeatures);
         if (logFiles.get("debug").renameTo(newDebug))
             logFiles.put("debug",newDebug);
-        if (logFiles.get("ecg").renameTo(newDebug))
-            logFiles.put("ecg",newDebug);
+        if (logFiles.get("ecg").renameTo(newECG))
+            logFiles.put("ecg",newECG);
     }
 
     // all but current logs
