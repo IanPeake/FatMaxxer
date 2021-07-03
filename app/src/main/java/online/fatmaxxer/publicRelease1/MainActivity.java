@@ -82,6 +82,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Function;
 import polar.com.sdk.api.PolarBleApi;
@@ -1781,7 +1782,7 @@ public class MainActivity extends AppCompatActivity {
         // Notice PolarBleApi.ALL_FEATURES are enabled
         //api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
         api = PolarBleApiDefaultImpl.defaultImplementation(this,
-                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO | PolarBleApi.FEATURE_POLAR_SENSOR_STREAMING);
+                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO | PolarBleApi.FEATURE_DEVICE_INFO | PolarBleApi.FEATURE_POLAR_SENSOR_STREAMING);
         api.setPolarFilter(false);
 
         text_time = this.findViewById(R.id.timeView);
@@ -2101,7 +2102,9 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
                         ecgAvailable = true;
                         return api.startEcgStreaming(DEVICE_ID, sensorSetting);
-                    }).subscribe(
+                    })
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
                             polarEcgData -> ecgCallback(polarEcgData),
                             //throwable -> Log.e(TAG, "ECG throwable " + throwable),
                             throwable -> Log.e(TAG, "ECG throwable " + throwable.getClass()),
