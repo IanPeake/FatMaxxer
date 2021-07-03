@@ -1928,37 +1928,43 @@ public class MainActivity extends AppCompatActivity {
         a1V2Series.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.Alpha1)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " + (dataPoint.getY() / 100.0)+" ]";
+                Toast.makeText(thisContext, getString(R.string.Alpha1)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+text, Toast.LENGTH_LONG).show();
             }
         });
         rmssdSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.RootMeanSquareSuccessiveDifferencesAbbreviation)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +(dataPoint.getY() / 2.0)+" ]";
+                Toast.makeText(thisContext, getString(R.string.RootMeanSquareSuccessiveDifferencesAbbreviation)+"("+getString(R.string.TwoMinutesAbbrev)+"): "+text, Toast.LENGTH_LONG).show();
             }
         });
         hrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +dataPoint.getY()+"] ";
+                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+": "+text, Toast.LENGTH_LONG).show();
             }
         });
         hrWinSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+"("+getString(R.string.TwoMinutesAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +dataPoint.getY()+" ]";
+                Toast.makeText(thisContext, getString(R.string.HeartRateAbbrev)+"("+getString(R.string.TwoMinutesAbbrev)+": "+text, Toast.LENGTH_LONG).show();
             }
         });
         artifactSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.Artifacts)+": "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +dataPoint.getY()+"% ]";
+                Toast.makeText(thisContext, getString(R.string.Artifacts)+": "+text, Toast.LENGTH_LONG).show();
             }
         });
         rrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
             public void onTap(Series series, DataPointInterface dataPoint) {
-                Toast.makeText(thisContext, getString(R.string.RRIntervalAbbrev)+": "+dataPoint, Toast.LENGTH_LONG).show();
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +(dataPoint.getY()*5)+" ]";
+                Toast.makeText(thisContext, getString(R.string.RRIntervalAbbrev)+": "+text, Toast.LENGTH_LONG).show();
             }
         });
 
@@ -2338,11 +2344,7 @@ public class MainActivity extends AppCompatActivity {
         boolean timeForHRplot = timeForHRplot(realTime);
         //Log.d(TAG, "updateTrackedFeatures timeForHRplot");
         if (timeForHRplot) {
-            String positive = String.format(
-                    "%2d:%02d:%02d",
-                    absSeconds / 3600,
-                    (absSeconds % 3600) / 60,
-                    absSeconds % 60);
+            String positive = formatSecAsTime(absSeconds);
             text_mode.setText(exerciseMode);
             text_time.setText(positive);
             text_batt.setText("\uD83D\uDD0B" + batteryLevel);
@@ -2586,6 +2588,26 @@ public class MainActivity extends AppCompatActivity {
         if (realTime) {
             startECG();
         }
+    }
+
+    private String formatSecAsTime(long absSeconds) {
+        return String.format(
+                "%2d:%02d:%02d",
+                absSeconds / 3600,
+                (absSeconds % 3600) / 60,
+                absSeconds % 60);
+    }
+
+    private String formatMinAsTime(double elapsedMins) {
+        int hours = ((int)elapsedMins) / 60;
+        int mins = ((int)elapsedMins) % 60;
+        double fracMins = elapsedMins - ((long)elapsedMins);
+        int secs =  (int)(fracMins * 60);
+        return String.format(
+                "%2d:%02d:%02d",
+                hours,
+                (mins % 60),
+                secs % 60);
     }
 
     private int getFatMaxxerColor(int p) {
