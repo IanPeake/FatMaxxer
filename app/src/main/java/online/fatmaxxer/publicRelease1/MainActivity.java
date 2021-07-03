@@ -649,7 +649,7 @@ public class MainActivity extends AppCompatActivity {
         double[] ybox = null;
         if (smoothN) {
             //Log.d(TAG,"rms smoothn");
-            ybox = smoothnDetrending(xbox);
+            ybox = smoothnessPriorsDetrending(xbox);
         } else {
             ybox = xbox;
         }
@@ -762,7 +762,7 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    public double[] smoothnDetrending(double[] dRR) {
+    public double[] smoothnessPriorsDetrending(double[] dRR) {
         //Log.d(TAG,"smoothnDetrending dRR "+v_toString(dRR));
         // convert dRRs to vector (SimpleMatrix)
         SimpleMatrix dRRvec = new SimpleMatrix(dRR.length, 1);
@@ -790,7 +790,7 @@ public class MainActivity extends AppCompatActivity {
         double[] x;
 
         if (smoothN) {
-            x = smoothnDetrending(xUnsmoothed);
+            x = smoothnessPriorsDetrending(xUnsmoothed);
         } else {
             x = xUnsmoothed;
         }
