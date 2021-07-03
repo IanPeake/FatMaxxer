@@ -104,7 +104,7 @@ import static online.fatmaxxer.publicRelease1.MainActivity.FMMenuItem.*;
 public class MainActivity extends AppCompatActivity {
     public static final boolean requestLegacyExternalStorage = true;
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String API_LOGGER_TAG = "FatMaxxer";
+    private static final String API_LOGGER_TAG = "Polar API";
     public static final String AUDIO_OUTPUT_ENABLED = "audioOutputEnabled";
     private static final int NOTIFICATION_ID = 1;
     private static final String NOTIFICATION_TAG = "alpha1update";
@@ -232,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onDestroy() {
-            Log.d(TAG, "LocalService: onDestroy");
+            android.util.Log.d(TAG, "LocalService: onDestroy");
             super.onDestroy();
         }
 
@@ -254,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
         //https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
         @Override
         public void onCreate() {
-            Log.d(TAG, "FatMaxxer service onCreate");
+            //Log.d(TAG, "FatMaxxer service onCreate");
             super.onCreate();
             createNotificationChannel();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -287,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            Log.d("FatMaxxerLocalService", "Received start id " + startId + ": " + intent);
+            android.util.Log.d("FatMaxxerLocalService", "Received start id " + startId + ": " + intent);
             return START_NOT_STICKY;
         }
 
@@ -1069,13 +1069,13 @@ public class MainActivity extends AppCompatActivity {
 //            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
             menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen+getString(R.string.ReplayRRIntervalsLog)+startedClose);
             menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+getString(R.string.ImportAndReplayRRIntervalsLog)+startedClose);
+            menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, R.string.RenameCurrentLogFiles);
         }
-        menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
-        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, R.string.DeleteSelectedLogs);
-        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, R.string.DeleteAllOldLogs);
-        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, R.string.DeleteAllDebugLogs);
-        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, R.string.DeleteAllLogs);
+//        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, R.string.DeleteSelectedLogs);
+//        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, R.string.DeleteAllOldLogs);
+//        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, R.string.DeleteAllDebugLogs);
+//        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, R.string.DeleteAllLogs);
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
         if (tmpDeviceId.length() > 0) {
             menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, startedOpen+getString(R.string.ConnectedPreferredDevice)+" " + tmpDeviceId+startedClose);
@@ -1140,17 +1140,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public List<File> rrLogFiles() {
-        Log.d(TAG, "logFiles...");
+        Log.d(TAG, "rrLogFiles...");
         File dir = getLogsDir();
         File[] allFiles = dir.listFiles();
         List<File> rrLogFiles = new ArrayList<File>();
         for (File f : allFiles) {
             String name = f.getName();
             if (isRRfileName(name)) {
-                Log.d(TAG, "Found RR log file: " + getUri(f));
+                Log.d(TAG, "Found RR log file: " + f.getName());
                 rrLogFiles.add(f);
             } else {
-                Log.d(TAG, "Not RR log file: " + getUri(f));
+                Log.d(TAG, "Not RR log file: " + f.getName());
             }
         }
         return rrLogFiles;
@@ -1167,12 +1167,11 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Uri> allUris = new ArrayList<Uri>();
         Arrays.sort(allFiles, new Comparator<File>() {
             public int compare(File f1, File f2) {
-//                return f2.getName().compareTo(f1.getName());
                 return -Long.compare(f1.lastModified(),f2.lastModified());
             }
         });
         for (File f : allFiles) {
-            Log.d(TAG, "Found log file: " + getUri(f));
+            Log.d(TAG, "Found log file: " + f.getName());
             allUris.add(getUri(f));
         }
         return allUris;
@@ -1261,12 +1260,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void expireLogFiles() {
+        Log.d(TAG, "expireLogFiles...");
         ArrayList<Uri> allUris = new ArrayList<Uri>();
         File logsDir = getLogsDir();
         File[] allFiles = logsDir.listFiles();
         StringBuilder filenames = new StringBuilder();
+        long curTimeMS = System.currentTimeMillis();
         for (File f : allFiles) {
-            if (durationMStoWholeHours(currentTimeMS - f.lastModified())>=1) {
+            long ageMS = curTimeMS - f.lastModified();
+            Log.d(TAG, "expire? "+f.getName()+" age in sec "+(ageMS / 1000));
+            if (durationMStoWholeDays(ageMS)>=1) {
                 Log.d(TAG, "deleting log file " + f);
                 f.delete();
                 filenames.append(f.getName() + " ");
@@ -1446,6 +1449,7 @@ public class MainActivity extends AppCompatActivity {
         boolean[] checkItems = new boolean[nrLogFiles];
         int i = 0;
         for (Uri uri : logFiles) {
+            Log.d(TAG,"exportSelectedLogFiles "+uri);
             uris[i] = uri;
             items[i] = uri.getLastPathSegment();
             i++;
@@ -1682,14 +1686,14 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_REPLAY)) if (!quitRequired()) selectReplayRRfile();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
-//        if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
-//        if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
+        if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
+        if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
         if (itemID == menuItem(MENU_IMPORT)) importLogFile();
         if (itemID == menuItem(MENU_IMPORT_REPLAY)) if (!quitRequired()) importReplayLogFile();
-//        if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
-//        if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
+        if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
+        if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
         if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnectToPreferredDevice();
-//        if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
+        if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
             if (!quitRequired())
@@ -1754,7 +1758,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void handleUncaughtException(Thread thread, Throwable e) {
         android.util.Log.d(TAG, "Uncaught ", e);
-        exportDebug();
+        //exportDebug();
         finish();
     }
 
@@ -1830,7 +1834,16 @@ public class MainActivity extends AppCompatActivity {
         /////
         /////
 
-        api.setApiLogger(s -> Log.d(API_LOGGER_TAG, s));
+        api.setApiLogger(
+                s -> {
+                    int maxch = 63;
+                    if (s.length()>64) {
+                        Log.d(API_LOGGER_TAG, s.substring(0, 63)+"...");
+                    } else {
+                        Log.d(API_LOGGER_TAG, s);
+                    }
+                }
+        );
 
         Log.d(TAG, "version: " + PolarBleApiDefaultImpl.versionInfo());
 
