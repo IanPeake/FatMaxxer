@@ -10,7 +10,7 @@
     <string name="KeepingCurrentLogFiles">Retaining current log files at user request</string>
     <string name="UseMenuQuitToExit"><![CDATA[Use Menu > Quit to exit]]></string>
     <string name="FatMaxxerBoundToService">FatMaxxer bound to service</string>
-    <string name="RenameTo">\"Rename to\"</string>
+    <string name="RenameTo">Rename to</string>
     <string name="Deleted">Deleted</string>
     <string name="DeletingOnExit">Deleting (on exit)</string>
     <string name="NotRRLogNotImporting">Not RR log, not importing</string>
