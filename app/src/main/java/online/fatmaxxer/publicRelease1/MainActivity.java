@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
     public void startAnalysis() {
         searchForPolarDevices();
         // TODO: CHECK: is this safe or do we have to wait for some other setup tasks to finish...?
-        tryPolarConnect();
+        tryPolarConnectToPreferredDevice();
     }
 
     public void confirmQuit() {
@@ -1670,7 +1670,7 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_IMPORT_REPLAY)) if (!quitRequired()) importReplayLogFile();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
-        if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnect();
+        if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnectToPreferredDevice();
         if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
@@ -1965,8 +1965,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 quitSearchForPolarDevices();
+                DEVICE_ID = polarDeviceInfo.deviceId;
                 Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
-                Toast.makeText(getBaseContext(), getString(R.string.ConnectedToDevice)+" " + polarDeviceInfo.deviceId, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), getString(R.string.ConnectedToDevice)+" " + DEVICE_ID, Toast.LENGTH_SHORT).show();
                 ensurePreferenceSet(POLAR_DEVICE_ID_PREFERENCE_STRING,polarDeviceInfo.deviceId);
             }
 
@@ -2106,7 +2107,10 @@ public class MainActivity extends AppCompatActivity {
                     .subscribe(
                             polarEcgData -> ecgCallback(polarEcgData),
                             //throwable -> Log.e(TAG, "ECG throwable " + throwable),
-                            throwable -> Log.e(TAG, "ECG throwable " + throwable.getClass()),
+                            throwable -> {
+                                Log.d(TAG, "ECG throwable " + throwable.getClass());
+                                ecgLogging = false;
+                            },
                             () -> Log.d(TAG, "complete")
                     );
         }
@@ -2431,10 +2435,12 @@ public class MainActivity extends AppCompatActivity {
                 mp.start();
             }
             StringBuilder logmsg = new StringBuilder();
-            logmsg.append(elapsedSecondsTrunc + "s");
-            logmsg.append(", rrsMs: " + data.rrsMs);
+            if (!lastPolarEcgData.isEmpty()) {
+                logmsg.append("ECG ");
+            }
+            logmsg.append("RRs: " + data.rrsMs+" ");
             logmsg.append(rejMsg);
-            logmsg.append(", total rejected: " + totalRejected);
+            logmsg.append("Total rejected: " + totalRejected+" ");
             String logstring = logmsg.toString();
 
             artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
@@ -2592,11 +2598,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void tryPolarConnect() {
+    private void tryPolarConnectToPreferredDevice() {
         Log.d(TAG,"tryPolarConnect to preferred device...");
-        DEVICE_ID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
-        if (DEVICE_ID.length()>0) {
-            tryPolarConnect(DEVICE_ID);
+        String tmpDeviceID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
+        if (tmpDeviceID.length()>0) {
+            tryPolarConnect(tmpDeviceID);
         } else {
             text_view.setText("No device ID set");
         }
