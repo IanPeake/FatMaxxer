@@ -981,10 +981,9 @@ public class MainActivity extends AppCompatActivity {
         for (FileWriter fw : currentLogFileWriters.values()) {
             closeLog(fw);
         }
-//        closeLog(rrLogStreamNew);
-//        //closeLog(rrLogStreamLegacy);
-//        closeLog(featureLogStreamNew);
-//        //closeLog(featureLogStreamLegacy);
+        for (FileWriter fw : externalLogFileWriters.values()) {
+            closeLog(fw);
+        }
     }
 
     PowerManager powerManager;
