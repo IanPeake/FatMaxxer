@@ -1781,9 +1781,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Notice PolarBleApi.ALL_FEATURES are enabled
         //api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.ALL_FEATURES);
-        api = PolarBleApiDefaultImpl.defaultImplementation(this,
-                PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO | PolarBleApi.FEATURE_DEVICE_INFO | PolarBleApi.FEATURE_POLAR_SENSOR_STREAMING);
-        api.setPolarFilter(false);
+        api = PolarBleApiDefaultImpl.defaultImplementation(this, PolarBleApi.FEATURE_HR | PolarBleApi.FEATURE_BATTERY_INFO | PolarBleApi.FEATURE_DEVICE_INFO | PolarBleApi.FEATURE_POLAR_SENSOR_STREAMING);
+        //api.setPolarFilter(false);
 
         text_time = this.findViewById(R.id.timeView);
         text_batt = this.findViewById(R.id.battView);
@@ -2075,7 +2074,7 @@ public class MainActivity extends AppCompatActivity {
     private void logAllEcgData() {
         if (experimental) {
             Log.d(TAG,"logEcgData");
-            if (currentLogFileWriters.get("ecg") == null) {
+            if (currentLogFileWriters.get("ecg") == null && externalLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
                 writeLogFile("timestamp,segmentNr,sampleNr,yV","ecg");
             }
