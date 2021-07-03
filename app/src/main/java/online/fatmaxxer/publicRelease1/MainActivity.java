@@ -125,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
     private int a1v2cacheMisses = 0;
     private long lastScrollToEndElapsedSec = 0;
     private int lastObservedHRNotificationWithArtifacts = 0;
+    private File logsDir;
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -981,9 +982,6 @@ public class MainActivity extends AppCompatActivity {
         for (FileWriter fw : currentLogFileWriters.values()) {
             closeLog(fw);
         }
-        for (FileWriter fw : externalLogFileWriters.values()) {
-            closeLog(fw);
-        }
     }
 
     PowerManager powerManager;
@@ -1143,12 +1141,8 @@ public class MainActivity extends AppCompatActivity {
 
     public List<File> rrLogFiles() {
         Log.d(TAG, "logFiles...");
-//        File privateRootDir = getFilesDir();
-//        privateRootDir.mkdir();
-//        File logsDir = new File(privateRootDir, "logs");
-//        logsDir.mkdir();
-        File logsDir = getExtLogsDir();
-        File[] allFiles = logsDir.listFiles();
+        File dir = getLogsDir();
+        File[] allFiles = dir.listFiles();
         List<File> rrLogFiles = new ArrayList<File>();
         for (File f : allFiles) {
             String name = f.getName();
@@ -1168,8 +1162,8 @@ public class MainActivity extends AppCompatActivity {
 
     public List<Uri> logFiles() {
         Log.d(TAG, "logFiles...");
-        File logsDir = getLogsDir();
-        File[] allFiles = logsDir.listFiles();
+        File dir = getLogsDir();
+        File[] allFiles = dir.listFiles();
         ArrayList<Uri> allUris = new ArrayList<Uri>();
         Arrays.sort(allFiles, new Comparator<File>() {
             public int compare(File f1, File f2) {
@@ -1199,8 +1193,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, msg);
                 File logsDir = getLogsDir();
                 renameLogs(value, currentLogFiles, logsDir);
-                File extLogsDir = getExtLogsDir();
-                renameLogs(value, externalLogFiles, extLogsDir);
             }
         });
         alert.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
@@ -1222,6 +1214,8 @@ public class MainActivity extends AppCompatActivity {
             logFiles.put("features",newFeatures);
         if (logFiles.get("debug").renameTo(newDebug))
             logFiles.put("debug",newDebug);
+        if (logFiles.get("ecg").renameTo(newDebug))
+            logFiles.put("ecg",newDebug);
     }
 
     // all but current logs
@@ -1256,6 +1250,32 @@ public class MainActivity extends AppCompatActivity {
         deleteFile(currentLogFiles.get("rr"));
         deleteFile(currentLogFiles.get("features"));
         deleteFile(currentLogFiles.get("debug"));
+    }
+
+    public long durationMStoWholeDays(long durationMS) {
+        return durationMS / (1000 * 3600 * 24);
+    }
+
+    public long durationMStoWholeHours(long durationMS) {
+        return durationMS / (1000 * 3600);
+    }
+
+    public void expireLogFiles() {
+        ArrayList<Uri> allUris = new ArrayList<Uri>();
+        File logsDir = getLogsDir();
+        File[] allFiles = logsDir.listFiles();
+        StringBuilder filenames = new StringBuilder();
+        for (File f : allFiles) {
+            if (durationMStoWholeHours(currentTimeMS - f.lastModified())>=1) {
+                Log.d(TAG, "deleting log file " + f);
+                f.delete();
+                filenames.append(f.getName() + " ");
+            }
+        }
+        String deletedFiles = filenames.toString();
+        if (deletedFiles.length() > 0) {
+            Log.i(TAG, getString(R.string.Deleted)+ " " + filenames.toString());
+        }
     }
 
     public void deleteOldLogFiles() {
@@ -1367,8 +1387,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, getString(R.string.ImportCSVFailedCouldNotGetURIFromData));
                     Toast.makeText(getBaseContext(), getString(R.string.ImportCSVFailedCouldNotGetURIFromData), Toast.LENGTH_LONG);
                 } else {
-                    File importedRR = importRRFile(uri, getExtLogsDir());
-//                    File importedRR = importRRFile(uri, getLogsDir());
+                    File importedRR = importRRFile(uri, getLogsDir());
                     if (requestCode ==REQUEST_IMPORT_REPLAY_CSV) {
                         if (importedRR!=null) {
                             replayRRfile(importedRR);
@@ -1663,14 +1682,14 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_REPLAY)) if (!quitRequired()) selectReplayRRfile();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
-        if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
-        if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
+//        if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
+//        if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
         if (itemID == menuItem(MENU_IMPORT)) importLogFile();
         if (itemID == menuItem(MENU_IMPORT_REPLAY)) if (!quitRequired()) importReplayLogFile();
-        if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
-        if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
+//        if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
+//        if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
         if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnectToPreferredDevice();
-        if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
+//        if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
         if (discoveredDevicesMenu.containsKey(item.getItemId())) {
             if (!quitRequired())
@@ -2034,6 +2053,8 @@ public class MainActivity extends AppCompatActivity {
             this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
+        expireLogFiles();
+
         scrollView.post(new Runnable() {
             public void run() {
                 scrollView.scrollTo(0, 0);
@@ -2074,7 +2095,7 @@ public class MainActivity extends AppCompatActivity {
     private void logAllEcgData() {
         if (experimental) {
             Log.d(TAG,"logEcgData");
-            if (currentLogFileWriters.get("ecg") == null && externalLogFileWriters.get("ecg") == null) {
+            if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
                 writeLogFile("timestamp,segmentNr,sampleNr,yV","ecg");
             }
@@ -2610,19 +2631,12 @@ public class MainActivity extends AppCompatActivity {
     private void writeLogFile(String msg, String tag) {
         //android.util.Log.d(TAG,"writeLogFile "+tag);
         FileWriter logStream = currentLogFileWriters.get(tag);
-        FileWriter extLogStream = externalLogFileWriters.get(tag);
         try {
             if (logStream!=null) {
                 logStream.append(msg + "\n");
                 logStream.flush();
             } else {
                 android.util.Log.e(TAG, "ERROR: "+tag+" logStream is null");
-            }
-            if (extLogStream!=null) {
-                extLogStream.append(msg + "\n");
-                extLogStream.flush();
-            } else {
-                android.util.Log.e(TAG, "ERROR: "+tag+" extLogStream is null");
             }
         } catch (IOException e) {
             // avoid infinite loop through the local Log mechanism!
@@ -2640,43 +2654,44 @@ public class MainActivity extends AppCompatActivity {
 
     Map<String,File> currentLogFiles = new HashMap<String,File>();
     Map<String,FileWriter> currentLogFileWriters = new HashMap<String,FileWriter>();
-    Map<String,File> externalLogFiles = new HashMap<String,File>();
-    Map<String,FileWriter> externalLogFileWriters = new HashMap<String,FileWriter>();
 
-    private FileWriter createLogFile(String tag) {
-        android.util.Log.d(TAG,"createLogFile: "+tag);
-        FileWriter logStream = null;
-        FileWriter extLogStream = null;
+    private boolean createLogFile(File dir, String tag) {
         try {
-            File logsDir = getLogsDir();
-            File extLogsDir = getExtLogsDir();
-            File file = new File(logsDir, makeLogfileName("", tag));
-            File extFile = new File(extLogsDir, makeLogfileName("",tag));
-            // Get the files/images subdirectory;
-            logStream = new FileWriter(file);
-            extLogStream = new FileWriter(extFile);
-//            Log.d(TAG,"Logging "+tag+" to "+file.getAbsolutePath());
-            currentLogFiles.put(tag,file);
+            File logFile = new File(dir, makeLogfileName("",tag));
+            FileWriter logStream = new FileWriter(logFile);
+            Log.d(TAG,"Logging "+tag+" to "+logFile.getAbsolutePath());
+            currentLogFiles.put(tag,logFile);
             currentLogFileWriters.put(tag,logStream);
-            externalLogFiles.put(tag,extFile);
-            externalLogFileWriters.put(tag,extLogStream);
+            Log.d(TAG,"created Logfile: "+tag+" "+logFile.getAbsolutePath());
+            logsDir = dir;
+            return true;
         } catch (FileNotFoundException e) {
-            text_view.setText("FileNotFoundException");
             logException("File not found ",e);
         } catch (IOException e) {
-            text_view.setText("IOException creating log file");
             logException("createLogFile ",e);
         }
-        Log.d(TAG,"created Logfile: "+tag);
-        return logStream;
+        return false;
+    }
+
+    private void createLogFile(String tag) {
+        android.util.Log.d(TAG,"createLogFile: "+tag);
+        // try external first
+        if (!createLogFile(getExtLogsDir(), tag))
+            // fall back to internal
+            createLogFile(getIntLogsDir(), tag);
     }
 
     @NotNull
-    private File getLogsDir() {
+    private File getIntLogsDir() {
         File privateRootDir = getFilesDir();
         privateRootDir.mkdir();
         File logsDir = new File(privateRootDir, "logs");
         logsDir.mkdir();
+        return logsDir;
+    }
+
+    @NotNull
+    private File getLogsDir() {
         return logsDir;
     }
 
