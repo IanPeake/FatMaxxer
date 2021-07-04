@@ -18,7 +18,7 @@ See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatma
 
 
 ## Overview ##
-FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time using a Polar H10.
+FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time.
 
 There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to the first ventilatory threshold "VT1" or roughly FatMax
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
