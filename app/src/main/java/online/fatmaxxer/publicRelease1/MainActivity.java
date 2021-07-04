@@ -1214,7 +1214,7 @@ public class MainActivity extends AppCompatActivity {
             logFiles.put("features",newFeatures);
         if (logFiles.get("debug").renameTo(newDebug))
             logFiles.put("debug",newDebug);
-        if (logFiles.get("ecg").renameTo(newECG))
+        if (ecgLogging && logFiles.get("ecg").renameTo(newECG))
             logFiles.put("ecg",newECG);
     }
 
