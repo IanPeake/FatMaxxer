@@ -2100,12 +2100,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void ecgCallback(PolarEcgData polarEcgData) {
         if (experimental) {
-//            Log.d(TAG, "ECG streaming, received " + polarEcgData.samples.size() + " samples");
             lastPolarEcgData.add(polarEcgData);
             // throw away ECG logs, oldest-first, but only if not already logging
             if (!ecgLogging && lastPolarEcgData.size()>totalECGpackets) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
-//                Log.d(TAG,"logEcgData: expiring packet "+ecgPacket.timeStamp);
             }
         }
     }
@@ -2118,13 +2116,14 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG,"logEcgData");
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
-                writeLogFile("timestamp,segmentNr,sampleNr,yV","ecg");
+                writeLogFile("timestamp,elapsed,segmentNr,sampleNr,yV","ecg");
             }
             while (!lastPolarEcgData.isEmpty ()) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
+                String elapsedStr = formatSecAsTime((ecgPacket.timeStamp - firstSampleMS) / 1000);
                 Log.d(TAG,"logEcgData: logging packet "+ecgPacket.timeStamp);
                 for (Integer microVolts : ecgPacket.samples) {
-                    writeLogFile("" + ecgPacket.timeStamp + ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
+                    writeLogFile("" + ecgPacket.timeStamp +"," +elapsedStr+ ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
                     ecgSample++;
                 }
             }
