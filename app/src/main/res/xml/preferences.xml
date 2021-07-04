@@ -26,10 +26,12 @@
         app:title="@string/KeepScreenOn"
         app:summary=""/>
 
+    <!--
     <SwitchPreferenceCompat
         app:key="keepLogs"
         app:title="@string/KeepLogs"
         app:summary="@string/PreserveThisActivitysLogsOnExit"/>
+        -->
 
     <ListPreference
         app:key="artifactThreshold"

@@ -170,14 +170,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void finish() {
-        boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
         closeLogs();
-        if (!keepLogs) {
-            Log.d(TAG,"finish: delete current log files");
-            deleteCurrentLogFiles();
-        } else {
-            Toast.makeText(getBaseContext(), R.string.KeepingCurrentLogFiles, Toast.LENGTH_LONG).show();
-        }
+//        boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
+//        if (!keepLogs) {
+//            Log.d(TAG,"finish: delete current log files");
+//            deleteCurrentLogFiles();
+//        } else {
+//            Toast.makeText(getBaseContext(), R.string.KeepingCurrentLogFiles, Toast.LENGTH_LONG).show();
+//        }
         uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
             api.disconnectFromDevice(DEVICE_ID);
@@ -1214,7 +1214,7 @@ public class MainActivity extends AppCompatActivity {
             logFiles.put("features",newFeatures);
         if (logFiles.get("debug").renameTo(newDebug))
             logFiles.put("debug",newDebug);
-        if (ecgLogging && logFiles.get("ecg").renameTo(newECG))
+        if (logFiles.containsKey("ecg") && logFiles.get("ecg").renameTo(newECG))
             logFiles.put("ecg",newECG);
     }
 
@@ -1250,6 +1250,7 @@ public class MainActivity extends AppCompatActivity {
         deleteFile(currentLogFiles.get("rr"));
         deleteFile(currentLogFiles.get("features"));
         deleteFile(currentLogFiles.get("debug"));
+        deleteFile(currentLogFiles.get("ecg"));
     }
 
     public long durationMStoWholeDays(long durationMS) {
@@ -2130,7 +2131,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    boolean ecgAvailable = false;
+    boolean ecgMonitoring = false;
 
     private void startECG() {
         if (ecgDisposable == null) {
@@ -2140,7 +2141,7 @@ public class MainActivity extends AppCompatActivity {
                     .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
                         PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
                         Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
-                        ecgAvailable = true;
+                        ecgMonitoring = true;
                         return api.startEcgStreaming(DEVICE_ID, sensorSetting);
                     })
                     .observeOn(AndroidSchedulers.mainThread())
@@ -2149,7 +2150,7 @@ public class MainActivity extends AppCompatActivity {
                             //throwable -> Log.e(TAG, "ECG throwable " + throwable),
                             throwable -> {
                                 Log.d(TAG, "ECG throwable " + throwable.getClass());
-                                ecgLogging = false;
+                                ecgMonitoring = false;
                             },
                             () -> Log.d(TAG, "complete")
                     );
@@ -2374,16 +2375,16 @@ public class MainActivity extends AppCompatActivity {
         // ******************
         // WINDOWED FEATURES
         // ******************
-        if ((haveArtifacts || hrNotificationCount == 10) && hrNotificationCount >= pastECGbufferDurationSec) {
+        if (ecgMonitoring && (haveArtifacts || hrNotificationCount == 10) && hrNotificationCount >= pastECGbufferDurationSec) {
             Log.d(TAG,"Artifacts: (re)start ECG logging @"+hrNotificationCount);
             // New artifact - EVENT: start ECG logging
             lastObservedHRNotificationWithArtifacts = hrNotificationCount;
             ecgLogging = true;
         }
-        if (ecgLogging && hrNotificationCount < lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+        if (ecgMonitoring && ecgLogging && hrNotificationCount < lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
             Log.d(TAG,"ECG logging @"+hrNotificationCount);
             logAllEcgData();
-        } else if (ecgLogging && hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
+        } else if (ecgMonitoring && ecgLogging && hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
             // EVENT: stop ECG logging
             Log.d(TAG,"Stop ECG logging @"+hrNotificationCount);
             //
@@ -2585,7 +2586,7 @@ public class MainActivity extends AppCompatActivity {
         starting = false;
         wakeLock.release();
 
-        if (realTime) {
+        if (realTime && experimental) {
             startECG();
         }
     }
