@@ -8,7 +8,7 @@ Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.p
 The Google Play version may lag significantly behind the open source project hosted on Github and early test builds
 (https://github.com/IanPeake/FatMaxxer#testers-wanted).
 
-See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
+See Bruce Rogers' FAQ (http://www.muscleoxygentraining.com/2021/01/dfa-a1-and-exercise-intensity-faq.html) and review (http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html).
 
 <img src="https://github.com/IanPeake/FatMaxxer/blob/main/screenshots/Screenshot_20210623-102602_FatMaxxer.jpg" height="240" alt="Screenshot"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/> |
