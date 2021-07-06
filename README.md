@@ -8,7 +8,7 @@ Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.p
 The Google Play version may lag significantly behind the open source project hosted on Github and early test builds
 (https://github.com/IanPeake/FatMaxxer#testers-wanted).
 
-See Bruce Rogers' review here: http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html.
+See Bruce Rogers' FAQ (http://www.muscleoxygentraining.com/2021/01/dfa-a1-and-exercise-intensity-faq.html) and review (http://www.muscleoxygentraining.com/2021/06/fatmaxxer-new-app-for-real-time-dfa-a1.html).
 
 <img src="https://github.com/IanPeake/FatMaxxer/blob/main/screenshots/Screenshot_20210623-102602_FatMaxxer.jpg" height="240" alt="Screenshot"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/garmin_alpha1_notification.jpg" height="240" alt="Garmin notification"/> |
@@ -33,6 +33,8 @@ with ⍺1 calculated every 20 seconds (configurable).
 The RR stream is subject to artifact filtering, where adjacent RR intervals change by more than +/- threshold (%).
 Threshold settings are 5%, 25% and "Auto".
 The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
+
+FatMaxxer now provides experimental 10s ECG snapshot around all detected artifacts with Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
 
 ## Testers Wanted ##
 FatMaxxer is in a very early stage of development.
@@ -68,10 +70,18 @@ Graph plots:
 - secondary Y axis (0-10):
   - blue: artifacts (%)
 
+Plots are user-configurable separately for real time and replay mode.
+
 ## Frequently Asked Questions ##
-- *Will it work with my device?* Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK used by FatMaxxer.
-- *Is there any plan for an iOS app?* Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
-- *FatMaxxer crashes on my device* The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
+- *Will it work with my device?*: Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK used by FatMaxxer.
+- *Is there any plan for an iOS app?*: Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
+- *FatMaxxer crashes on my device*: The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
+
+## Replay ##
+Enable Developer mode, Import a previously recorded RR.csv, then Replay and select the RR.csv file from your logs directory.
+FatMaxxer will replay the previous session (for review / screen shot).
+The graph will be slightly quantized for most plots except RRs.
+Replay is at up to 60x real time.
 
 ## Audio / notification (wearable) updates ##
 Reports ⍺1 and other features via audio and/or notifications (configurable), adjusting to work rate:
