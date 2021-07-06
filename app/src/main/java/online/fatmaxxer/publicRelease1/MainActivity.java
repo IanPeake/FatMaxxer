@@ -2561,11 +2561,14 @@ public class MainActivity extends AppCompatActivity {
         boolean pre2 = elapsedSecondsTrunc > lastScrollToEndElapsedSec + 20;
         boolean scrollToEnd = (realTime && pre1 && pre2) || (!realTime && pre1);
         if (scrollToEnd) lastScrollToEndElapsedSec = elapsedSecondsTrunc;
+        double elapsedMinRoundForRRs = elapsedMinRound;
         if (graphFeaturesSelected.contains("rr")) {
             for (int rr : data.rrsMs) {
                 logRRelapsedMS_snapshot += rr;
+                elapsedMinRoundForRRs += rr / 60000;
                 double tmpRRMins = round(logRRelapsedMS_snapshot / 60.0) / 1000.0;
-                rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
+                //rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
+                rrSeries.appendData(new DataPoint(elapsedMinRoundForRRs, rr / 5.0), scrollToEnd, maxDataPoints);
             }
         }
 //        Log.d(TAG, "realTime "+realTime);
