@@ -17,7 +17,7 @@
 <string name="ImportedRRFile">Geïmporteerd RR bestand</string>
 <string name="FinishedReplay">Weergeven beeindigd</string>
 <string name="WarningExpectedHeader">waarschuwing, vereist header</string>
-<string name="ipv.">ipv.</string>
+<string name="Got">ipv.</string>
 <string name="WarningExpectedEmptyLineGot">waarschuwing, vereist lege lijn ipv.</string>
 <string name="StartedRRFileReplay">Weergeven RR bestand gestart</string>
 <string name="ConnectedToDevice">Sensor verbonden</string>
@@ -53,10 +53,10 @@
 <string name="QuitOrRestartRequiredAfterConnectOrReplay">Afsluiten/herstarten vereist na vebinden/weergeven</string>
 <string name="Alpha1">Alpha1</string>
 <string name="TwoMinutesAbbrev">2min</string>
+<string name="HeartRateAbbrev">HR</string>
 <string name="Artifacts">Artefacten</string>
 <string name="RRIntervalAbbrev">RR</string>
-<string name="Light">Helder</string>
-<string name="Workout">Workout</string>
+<string name="Workout">Inspanning</string>
 <string name="Drop">verworpen</string>
 <string name="BatteryAbbrev">batt</string>
 <string name="RootMeanSquareSuccessiveDifferencesAbbrevLowerCase">rmssd</string>
@@ -69,7 +69,7 @@
 <string name="HeartRateVariabilityAbbrev_TextToSpeech">HRV</string>
 <string name="HeartRate_TextToSpeechFull">hartslag</string>
 <string name="ArtifactsSamplesThreshold_UI">artefacten / stalen (%) [drempel]</string>
-<string name="HeartRateAbbrev">HR</string>
+<string name="Light">Licht</string>
 <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
 <string name="EnableAudioUpdates">Audio meldingen inschakelen</string>
 <string name="Alpha1UpdatesViaAudio">⍺1 meldingen via audio</string>
@@ -80,7 +80,7 @@
 <string name="KeepLogs">Bewaar logs</string>
 <string name="PreserveThisActivitysLogsOnExit">Behoud huidige logs bij afsluiten</string>
 <string name="ArtifactRejectionThreshold">Artefact drempel</string>
-<string name="RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
+<string name="RrsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
 <string name="Alpha1InterCalculationPeriodSeconds">⍺1 berekeningsinterval (sec)</string>
 <string name="TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"><![CDATA[⍺1 berekeningsinterval, >= 5 sec]]></string>
 <string name="SelectGraphFeatures">Selecteer grafiek elementen</string>
@@ -91,4 +91,6 @@
 <string name="SelectReplayGraphFeatures">Selecteer grafiek elementen bij weergeven</string>
 <string name="LambdaInteger">Lambda (integer)</string>
 <string name="ValueOfLambdaForSmoothnessPriors">Lambda waarde voor smoothness priors pre-DFA detrending</string>
+<string name="ImportCSVFailedDataIsNull">CSV import mislukt: geen data</string>
+<string name="ImportCSVFailedCouldNotGetURIFromData">CSV Import mislukt: Uri niet te bekomen uit de data</string>
 </resources>

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+./apkinstall
+cp ./app/release/app-release.aab .
+
+./versionreport
+
+git commit -m 'build' -a
+git push
