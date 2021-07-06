@@ -1,2 +1,6 @@
+cp ./app/build/outputs/apk/debug/app-debug.apk .
+adb install -r app-debug.apk
+
 cp ./app/release/app-release.aab .
+
 ./versionreport
