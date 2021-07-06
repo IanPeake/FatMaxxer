@@ -4,3 +4,5 @@ adb install -r app-debug.apk
 cp ./app/release/app-release.aab .
 
 ./versionreport
+git commit -m 'build' -a
+git push
