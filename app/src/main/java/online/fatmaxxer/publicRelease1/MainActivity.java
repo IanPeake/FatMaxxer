@@ -16,6 +16,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.icu.text.DateFormat;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
@@ -67,6 +68,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -126,6 +129,10 @@ public class MainActivity extends AppCompatActivity {
     private long lastScrollToEndElapsedSec = 0;
     private int lastObservedHRNotificationWithArtifacts = 0;
     private File logsDir;
+    // system time of first observed ecg sample
+    private long ecgStartTSmillis;
+    // timestamp of first observed ecg sample
+    private long ecgStartInternalTSnanos;
 
     public MainActivity() {
         //super(R.layout.activity_fragment_container);
@@ -898,7 +905,7 @@ public class MainActivity extends AppCompatActivity {
     public int oldestArtifactSample = 0;
     public int newestArtifactSample = 0;
     // time first sample received in MS since epoch
-    public long firstSampleMS;
+    public long firstSampleTimestampMS;
     // have we started sampling?
     public boolean started = false;
     double rmssdWindowed = 0;
@@ -1863,7 +1870,7 @@ public class MainActivity extends AppCompatActivity {
         writeLogFile("", "rr");
         // Features
         createLogFile("features");
-        writeLogFile("date,timestamp,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
+        writeLogFile("date,timestamp,elapsedSec,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
         // Debug
         createLogFile("debug");
         
@@ -2088,6 +2095,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
     // are we currently logging ECG data after observing an artifact?
     boolean ecgLogging = false;
     final int ecgPacketSize = 73;
@@ -2099,13 +2108,17 @@ public class MainActivity extends AppCompatActivity {
     Queue<PolarEcgData> lastPolarEcgData = new ConcurrentLinkedQueue<PolarEcgData>();
 
     private void ecgCallback(PolarEcgData polarEcgData) {
-        if (experimental) {
+            // startup: record relative timestamps
+            if (!ecgMonitoring) {
+                ecgStartTSmillis = System.currentTimeMillis();
+                ecgStartInternalTSnanos = polarEcgData.timeStamp;
+                ecgMonitoring = true;
+            }
             lastPolarEcgData.add(polarEcgData);
             // throw away ECG logs, oldest-first, but only if not already logging
             if (!ecgLogging && lastPolarEcgData.size()>totalECGpackets) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
             }
-        }
     }
 
     int ecgSegment = 0;
@@ -2116,14 +2129,21 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG,"logEcgData");
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
-                writeLogFile("timestamp,elapsed,segmentNr,sampleNr,yV","ecg");
+                writeLogFile("date,timestamp,elapsed,segmentNr,sampleNr,yV","ecg");
             }
             while (!lastPolarEcgData.isEmpty ()) {
                 PolarEcgData ecgPacket = lastPolarEcgData.remove();
-                String elapsedStr = formatSecAsTime((ecgPacket.timeStamp - firstSampleMS) / 1000);
-                Log.d(TAG,"logEcgData: logging packet "+ecgPacket.timeStamp);
+                // elapsed time since ecg start (nanosecs)
+                long ecgElapsedNanos = ecgPacket.timeStamp - ecgStartInternalTSnanos;
+                // elapsed time since logging started (millisecs)
+                long ecgElapsedMS = (ecgElapsedNanos / 1000000) + (ecgStartTSmillis - firstSampleTimestampMS);
+                String elapsedStr = formatSecAsTime((long)(ecgElapsedMS / 1000.0));
+                // nanoseconds since(?)
+                Log.d(TAG,"logEcgData: logging packet "+ecgElapsedMS);
+                Date d = new Date(firstSampleTimestampMS + ecgElapsedMS);
+                String dateStr = sdf.format(d);
                 for (Integer microVolts : ecgPacket.samples) {
-                    writeLogFile("" + ecgPacket.timeStamp +"," +elapsedStr+ ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
+                    writeLogFile(dateStr + "," + ecgPacket.timeStamp +"," +elapsedStr+ ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
                     ecgSample++;
                 }
             }
@@ -2140,7 +2160,6 @@ public class MainActivity extends AppCompatActivity {
                     .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
                         PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
                         Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
-                        ecgMonitoring = true;
                         return api.startEcgStreaming(DEVICE_ID, sensorSetting);
                     })
                     .observeOn(AndroidSchedulers.mainThread())
@@ -2151,7 +2170,10 @@ public class MainActivity extends AppCompatActivity {
                                 Log.d(TAG, "ECG throwable " + throwable.getClass());
                                 ecgMonitoring = false;
                             },
-                            () -> Log.d(TAG, "complete")
+                            () -> {
+                                Log.d(TAG, "complete");
+                                ecgMonitoring = false;
+                            }
                     );
         }
     }
@@ -2220,11 +2242,11 @@ public class MainActivity extends AppCompatActivity {
             started = true;
             starting = true;
             thisIsFirstSample = true;
-            firstSampleMS = currentTimeMS;
+            firstSampleTimestampMS = currentTimeMS;
             // FIXME: why does the scroller not start with the top visible?
             scrollView.scrollTo(0,0);
         }
-        elapsedMS = (currentTimeMS - firstSampleMS);
+        elapsedMS = (currentTimeMS - firstSampleTimestampMS);
         //Log.d(TAG, "====================");
         elapsedSecondsTrunc = elapsedMS / 1000;
         //Log.d(TAG, "updateTrackedFeatures cur "+currentTimeMS+" elapsed "+elapsedMS+" hr notifications "+hrNotificationCount+" calcElapsed"+10*hrNotificationCount);
@@ -2417,8 +2439,11 @@ public class MainActivity extends AppCompatActivity {
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
             prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
+                String dateStr = sdf.format(new Date(currentTimeMS));
+                //         date,timestamp,elapsedSec,heartrate,rmssd,sdnn,alpha1v1,filtered,samples,droppedPercent,artifactThreshold,alpha1v2", "features");
                 writeLogFile(
-                                "" +currentTimeMS
+                                dateStr
+                                + "," + currentTimeMS
                                 + "," + hrNotificationCount
                                 + "," + hrMeanWindowed
                                 + "," + rmssdWindowed
@@ -2471,6 +2496,9 @@ public class MainActivity extends AppCompatActivity {
                 mp.start();
             }
             StringBuilder logmsg = new StringBuilder();
+            if (ecgLogging) {
+                logmsg.append("*");
+            }
             if (!lastPolarEcgData.isEmpty()) {
                 logmsg.append("ECG ");
             }
