@@ -16,7 +16,6 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.icu.text.DateFormat;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
@@ -68,8 +67,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -178,16 +175,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         closeLogs();
-//        boolean keepLogs = sharedPreferences.getBoolean(KEEP_LOGS_PREFERENCE_STRING, false);
-//        if (!keepLogs) {
-//            Log.d(TAG,"finish: delete current log files");
-//            deleteCurrentLogFiles();
-//        } else {
-//            Toast.makeText(getBaseContext(), R.string.KeepingCurrentLogFiles, Toast.LENGTH_LONG).show();
-//        }
         uiNotificationManager.cancel(NOTIFICATION_TAG, NOTIFICATION_ID);
         try {
-            api.disconnectFromDevice(DEVICE_ID);
+            api.disconnectFromDevice(SENSOR_ID);
         } catch (PolarInvalidArgument polarInvalidArgument) {
             logException("Quit: disconnectFromDevice: polarInvalidArgument ", polarInvalidArgument);
         }
@@ -221,8 +211,7 @@ public class MainActivity extends AppCompatActivity {
 //    Disposable ppiDisposable;
 //    Disposable scanDisposable;
 //    Disposable autoConnectDisposable;
-    // Serial number?? 90E2D72B
-    String DEVICE_ID = "";
+    String SENSOR_ID = "";
     SharedPreferences sharedPreferences;
 
     Context thisContext = this;
@@ -2011,9 +2000,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void deviceConnected(@NonNull PolarDeviceInfo polarDeviceInfo) {
                 quitSearchForPolarDevices();
-                DEVICE_ID = polarDeviceInfo.deviceId;
+                SENSOR_ID = polarDeviceInfo.deviceId;
                 Log.d(TAG, "Polar device CONNECTED: " + polarDeviceInfo.deviceId);
-                Toast.makeText(getBaseContext(), getString(R.string.ConnectedToDevice)+" " + DEVICE_ID, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), getString(R.string.ConnectedToDevice)+" " + SENSOR_ID, Toast.LENGTH_SHORT).show();
                 ensurePreferenceSet(POLAR_DEVICE_ID_PREFERENCE_STRING,polarDeviceInfo.deviceId);
             }
 
@@ -2155,12 +2144,12 @@ public class MainActivity extends AppCompatActivity {
     private void startECG() {
         if (ecgDisposable == null) {
             Log.d(TAG, "startECG create ecgDisposable");
-            ecgDisposable = api.requestStreamSettings(DEVICE_ID, PolarBleApi.DeviceStreamingFeature.ECG)
+            ecgDisposable = api.requestStreamSettings(SENSOR_ID, PolarBleApi.DeviceStreamingFeature.ECG)
                     .toFlowable()
                     .flatMap((Function<PolarSensorSetting, Publisher<PolarEcgData>>) polarEcgSettings -> {
                         PolarSensorSetting sensorSetting = polarEcgSettings.maxSettings();
                         Log.d(TAG, "api.startEcgStreaming "+sensorSetting.toString());
-                        return api.startEcgStreaming(DEVICE_ID, sensorSetting);
+                        return api.startEcgStreaming(SENSOR_ID, sensorSetting);
                     })
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
