@@ -2263,11 +2263,11 @@ public class MainActivity extends AppCompatActivity {
         }
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
-        Set<String> graphFeaturesSelected = emptyStringSet;
+        Set<String> graphFeatures = emptyStringSet;
         if (realTime) {
-            graphFeaturesSelected = sharedPreferences.getStringSet("graphFeaturesSelectorKey", emptyStringSet);
+            graphFeatures = sharedPreferences.getStringSet("graphFeaturesSelectorKey", emptyStringSet);
         } else {
-            graphFeaturesSelected = sharedPreferences.getStringSet("graphReplayFeaturesSelectorKey", emptyStringSet);
+            graphFeatures = sharedPreferences.getStringSet("graphReplayFeaturesSelectorKey", emptyStringSet);
         }
         // preference updates
         if (timeForUIupdate) {
@@ -2291,17 +2291,14 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putString(ALPHA_1_CALC_PERIOD_PREFERENCE_STRING, "5").apply();
             }
         }
-        //Log.d(TAG, "updateTrackedFeatures RR log");
         // test: use ONLY for RRs
         long timestamp = currentTimeMS;
-        long logRRelapsedMS_snapshot = logRRelapsedMS;
         for (int rr : data.rrsMs) {
             String msg = "" + timestamp + "," + rr + "," + logRRelapsedMS;
             writeLogFile(msg, "rr");
             logRRelapsedMS += rr;
             timestamp += rr;
         }
-        //Log.d(TAG, "updateTrackedFeatures RR filtering/tracking "+data.rrsMs);
         //
         // FILTERING / RECORDING RR intervals
         //
@@ -2537,49 +2534,31 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,"elapsedMin: "+elapsedMin);
         double tenSecAsMin = 1.0 / 6.0;
         boolean pre1 = elapsedMin > (graphViewPortWidth - tenSecAsMin);
-        // 20 sec delay before next scroll
-        //Log.d(TAG,"lastScrollToEndElapsedSed "+lastScrollToEndElapsedSec);
         boolean pre2 = elapsedSecondsTrunc > lastScrollToEndElapsedSec + 20;
         boolean scrollToEnd = (realTime && pre1 && pre2) || (!realTime && pre1);
         if (scrollToEnd) lastScrollToEndElapsedSec = elapsedSecondsTrunc;
         double elapsedMinRoundForRRs = elapsedMinRound;
-        if (graphFeaturesSelected.contains("rr")) {
+        if (graphFeatures.contains("rr")) {
             for (int rr : data.rrsMs) {
-                logRRelapsedMS_snapshot += rr;
                 elapsedMinRoundForRRs += rr / 60000;
-                double tmpRRMins = round(logRRelapsedMS_snapshot / 60.0) / 1000.0;
-                //rrSeries.appendData(new DataPoint(tmpRRMins, rr / 5.0), scrollToEnd, maxDataPoints);
                 rrSeries.appendData(new DataPoint(elapsedMinRoundForRRs, rr / 5.0), scrollToEnd, maxDataPoints);
             }
         }
-//        Log.d(TAG, "realTime "+realTime);
-//        Log.d(TAG, "scrollToEnd antecedents "+pre1+" "+pre2);
-//        Log.d(TAG, "tenSecAsMin "+tenSecAsMin);
-//        Log.d(TAG, "elapsedMin "+elapsedMin);
-//        Log.d(TAG, "scrollToEnd "+scrollToEnd);
-//        Log.d(TAG, "graphViewPortWidth "+graphViewPortWidth);
-//        Log.d(TAG, "graphEnabled "+graphEnabled);
         DataPoint hrDataPoint = new DataPoint(elapsedMinRound, data.hr);
-        //Log.d(TAG,"hrDataPoint "+hrDataPoint);
-        if (timeForHRplot && graphFeaturesSelected.contains("hr")) {
+        if (timeForHRplot && graphFeatures.contains("hr")) {
             hrSeries.appendData(hrDataPoint, scrollToEnd, maxDataPoints);
         }
         if (timeForUIupdate) {
-                //Log.d(TAG,"plot...");
-                if (graphFeaturesSelected.contains("a1")) {
-                    //Log.d(TAG,"plot a1");
+                if (graphFeatures.contains("a1")) {
                     a1V2Series.appendData(new DataPoint(elapsedMinRound, alpha1V2RoundedWindowed * 100.0), scrollToEnd, maxDataPoints);
                 }
-                if (graphFeaturesSelected.contains("artifacts")) {
-                    //Log.d(TAG,"plot artifacts");
+                if (graphFeatures.contains("artifacts")) {
                     artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
                 }
-                if (graphFeaturesSelected.contains("rmssd")) {
-                    //Log.d(TAG,"plot rmssd");
+                if (graphFeatures.contains("rmssd")) {
                     rmssdSeries.appendData(new DataPoint(elapsedMinRound, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
                 }
-                if (graphFeaturesSelected.contains("hrWin")) {
-                    //Log.d(TAG,"plot hrWin");
+                if (graphFeatures.contains("hrWin")) {
                     hrWinSeries.appendData(new DataPoint(elapsedMinRound, hrMeanWindowed), scrollToEnd, maxDataPoints);
                 }
                 if (scrollToEnd) {
