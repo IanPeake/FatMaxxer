@@ -41,6 +41,24 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
             </intent-filter>
+            <intent-filter android:label="FatMaxxerReplayURI">
+                <action android:name="android.intent.action.REPLAY" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "http://www.example.com/gizmos” -->
+                <data android:scheme="http"
+                    android:host="online.fatmaxxer"
+                    android:pathPrefix="/replay" />
+                <!-- note that the leading "/" is required for pathPrefix-->
+            </intent-filter>
+            <intent-filter android:label="FatMaxxerReplayCustomURI">
+                <action android:name="android.intent.action.REPLAY" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "example://gizmos” -->
+                <data android:scheme="fatmaxxer"
+                    android:host="replay" />
+            </intent-filter>
         </activity>
         <service android:name="online.fatmaxxer.publicRelease1.MainActivity$LocalService"/>
         <provider
