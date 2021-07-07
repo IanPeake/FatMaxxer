@@ -1821,16 +1821,8 @@ public class MainActivity extends AppCompatActivity {
         scrollView = this.findViewById(R.id.application_container);
         // FIXME: Why does the scrollable not start with top visible?
 
-        /////
-        /////
-        /////
-        /////
-        //testDFA_alpha1();
+        testDFA_alpha1();
         //testRMSSD_1();
-        /////
-        /////
-        /////
-        /////
 
         api.setApiLogger(
                 s -> {
