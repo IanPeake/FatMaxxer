@@ -3,5 +3,5 @@
 ./apkinstall                            && \
 cp ./app/release/app-release.aab .      && \
 ./versionreport                         && \
-git commit -m 'build' -a                && \
+git commit -m 'build/s' -a              && \
 git push
