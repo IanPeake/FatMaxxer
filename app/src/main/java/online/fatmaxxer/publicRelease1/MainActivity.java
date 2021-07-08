@@ -1036,6 +1036,8 @@ public class MainActivity extends AppCompatActivity {
         MENU_IMPORT,
         MENU_IMPORT_REPLAY,
         MENU_RENAME_LOGS,
+        MENU_BLE_AD_START,
+        MENU_BLE_AD_END,
         MENU_CONNECT_DISCOVERED // MUST BE LAST in enum as extra connection options are based off it
     }
 
@@ -1067,6 +1069,8 @@ public class MainActivity extends AppCompatActivity {
             menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+getString(R.string.ImportAndReplayRRIntervalsLog)+startedClose);
             menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
             menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, R.string.RenameCurrentLogFiles);
+            menu.add(0, menuItem(MENU_BLE_AD_START), Menu.NONE, "BLE Ad start");
+            menu.add(0, menuItem(MENU_BLE_AD_END), Menu.NONE, "BLE Ad end");
         }
 //        menu.add(0, menuItem(MENU_DELETE_SELECTED_LOG_FILES), Menu.NONE, R.string.DeleteSelectedLogs);
 //        menu.add(0, menuItem(MENU_OLD_LOG_FILES), Menu.NONE, R.string.DeleteAllOldLogs);
@@ -1268,7 +1272,7 @@ public class MainActivity extends AppCompatActivity {
             long ageMS = curTimeMS - f.lastModified();
             Log.d(TAG, "expire? "+f.getName()+" age in sec "+(ageMS / 1000));
             if (durationMStoWholeDays(ageMS)>=1) {
-                Log.d(TAG, "deleting log file " + f);
+                Log.d(TAG, "- deleting log file " + f);
                 f.delete();
                 filenames.append(f.getName() + " ");
             }
@@ -1683,6 +1687,8 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_QUIT)) confirmQuit();
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_REPLAY)) if (!quitRequired()) selectReplayRRfile();
+        if (itemID == menuItem(MENU_BLE_AD_START)) mService.startAdvertising();
+        if (itemID == menuItem(MENU_BLE_AD_END)) mService.stopAdvertising();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
@@ -1786,6 +1792,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "intent to start local service " + i);
         ComponentName serviceComponentName = MainActivity.this.startService(i);
         Log.d(TAG, "start result " + serviceComponentName);
+
+        startBLESensorEmulatorService();
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
@@ -2073,6 +2081,44 @@ public class MainActivity extends AppCompatActivity {
         // auto-start
         if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
             startAnalysis();
+        }
+    }
+
+    boolean bleServiceStarted = false;
+    boolean mBound = false;
+    CSCService mService = null;
+
+    private ServiceConnection bleServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,  IBinder service) {
+            Log.d(TAG,"bleServiceConnection.onServiceConnected");
+            CSCService.LocalBinder binder = (CSCService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            Log.d(TAG,"bleServiceConnection.onServiceDisconnected");
+            mBound = false;
+        }
+    };
+
+    private void startBLESensorEmulatorService() {
+        Log.d(TAG,"startBLESensorEmulatorService");
+        Intent mServiceIntent = new Intent(getApplicationContext(), CSCService.class);
+        if (!bleServiceStarted) {
+            Log.d(TAG, "Starting BLESensorEmulatorService Service");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                MainActivity.this.startForegroundService(mServiceIntent);
+            else
+                MainActivity.this.startService(mServiceIntent);
+
+            // Bind to the service so we can interact with it
+            if (!bindService(mServiceIntent, bleServiceConnection, Context.BIND_AUTO_CREATE)) {
+                Log.d(TAG, "Failed to bind to service");
+            } else {
+                mBound = true;
+            }
         }
     }
 

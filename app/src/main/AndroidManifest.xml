@@ -61,6 +61,7 @@
             </intent-filter>
         </activity>
         <service android:name="online.fatmaxxer.publicRelease1.MainActivity$LocalService"/>
+        <service android:name="online.fatmaxxer.publicRelease1.CSCService"/>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="online.fatmaxxer.publicRelease1.fileprovider"
