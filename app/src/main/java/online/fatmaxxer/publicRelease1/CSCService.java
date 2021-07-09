@@ -58,20 +58,14 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.util.Log;
-import android.util.Pair;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 
 public class CSCService extends Service {
     private static final String TAG = CSCService.class.getSimpleName();
@@ -279,7 +273,7 @@ public class CSCService extends Service {
                 .setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
 
         AdvertiseData data = (new AdvertiseData.Builder())
-                .addServiceData(new ParcelUuid(CSCProfile.CSC_SERVICE),"FatMaxxer".getBytes())
+                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
 
@@ -322,7 +316,7 @@ public class CSCService extends Service {
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
                 //.setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
                 .build();
 
         advertiser.startAdvertisingSet(parameters.build(), data, advScanResponse, null, null, callback);
@@ -358,15 +352,14 @@ public class CSCService extends Service {
 
         AdvertiseData advData = new AdvertiseData.Builder()
                 .setIncludeTxPowerLevel(true)
-//                .addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
-                .addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
-//                .addServiceUuid(new ParcelUuid(CSCProfile.RSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
                 .build();
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
-                //.setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
                 .build();
 
         mBluetoothLeAdvertiser
@@ -396,7 +389,7 @@ public class CSCService extends Service {
 
         btServiceInitialized = false;
         // TODO: enable either 1 of them or both of them according to user selection
-        if (mBluetoothGattServer.addService(CSCProfile.createCSCService((byte)(CSCProfile.CSC_FEATURE_WHEEL_REV | CSCProfile.CSC_FEATURE_CRANK_REV)))) {
+        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createCSCService((byte)(FatMaxxerBLEProfiles.CSC_FEATURE_WHEEL_REV | FatMaxxerBLEProfiles.CSC_FEATURE_CRANK_REV)))) {
             Log.d(TAG, "CSCP enabled!");
         } else {
             Log.d(TAG, "Failed to add csc service to bluetooth layer!");
@@ -405,7 +398,7 @@ public class CSCService extends Service {
         while (!btServiceInitialized);
 
         btServiceInitialized = false;
-        if (mBluetoothGattServer.addService(CSCProfile.createHRService())) {
+        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createHRService())) {
             Log.d(TAG, "HR enabled!");
         } else {
             Log.d(TAG, "Failed to add hr service to bluetooth layer!");
@@ -414,7 +407,7 @@ public class CSCService extends Service {
         while (!btServiceInitialized);
 
         btServiceInitialized = false;
-        if (mBluetoothGattServer.addService(CSCProfile.createRscService())) {
+        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createRscService())) {
             Log.d(TAG, "RSC enabled!");
         } else {
             Log.d(TAG, "Failed to add rsc service to bluetooth layer");
@@ -506,7 +499,7 @@ public class CSCService extends Service {
 //            return;
         }
 
-        byte[] data = CSCProfile.getMeasurement(cumulativeWheelRevolution, lastWheelEventTime,
+        byte[] data = FatMaxxerBLEProfiles.getMeasurement(cumulativeWheelRevolution, lastWheelEventTime,
                 cumulativeCrankRevolution, lastCrankEventTime);
         cumulativeCrankRevolution++;
         lastWheelEventTime++;
@@ -515,52 +508,52 @@ public class CSCService extends Service {
 
         Log.v(TAG, "Sending update to " + mRegisteredDevices.size() + " subscribers");
         for (BluetoothDevice device : mRegisteredDevices) {
-            BluetoothGattService service = mBluetoothGattServer.getService(CSCProfile.CSC_SERVICE);
+            BluetoothGattService service = mBluetoothGattServer.getService(FatMaxxerBLEProfiles.CSC_SERVICE);
             if (service != null) {
                 BluetoothGattCharacteristic measurementCharacteristic = mBluetoothGattServer
-                        .getService(CSCProfile.CSC_SERVICE)
-                        .getCharacteristic(CSCProfile.CSC_MEASUREMENT);
+                        .getService(FatMaxxerBLEProfiles.CSC_SERVICE)
+                        .getCharacteristic(FatMaxxerBLEProfiles.CSC_MEASUREMENT);
                 if (!measurementCharacteristic.setValue(data)) {
                     Log.w(TAG, "CSC Measurement data isn't set properly!");
                 }
                 // false is used to send a notification
                 mBluetoothGattServer.notifyCharacteristicChanged(device, measurementCharacteristic, false);
             } else {
-                Log.v(TAG, "Service " + CSCProfile.CSC_SERVICE + " was not found as an installed service");
+                Log.v(TAG, "Service " + FatMaxxerBLEProfiles.CSC_SERVICE + " was not found as an installed service");
             }
 
-            service = mBluetoothGattServer.getService(CSCProfile.HR_SERVICE);
+            service = mBluetoothGattServer.getService(FatMaxxerBLEProfiles.HR_SERVICE);
             if (service != null) {
                 Log.v(TAG, "Processing Heart Rate");
 
                 BluetoothGattCharacteristic measurementCharacteristic = mBluetoothGattServer
-                        .getService(CSCProfile.HR_SERVICE)
-                        .getCharacteristic(CSCProfile.HR_MEASUREMENT);
+                        .getService(FatMaxxerBLEProfiles.HR_SERVICE)
+                        .getCharacteristic(FatMaxxerBLEProfiles.HR_MEASUREMENT);
 
-                byte[] hrData = CSCProfile.getHR(lastHR, lastHRTimestamp);
+                byte[] hrData = FatMaxxerBLEProfiles.getHR(lastHR, lastHRTimestamp);
                 if (!measurementCharacteristic.setValue(hrData)) {
                     Log.w(TAG, "HR  Measurement data isn't set properly!");
                 }
                 mBluetoothGattServer.notifyCharacteristicChanged(device, measurementCharacteristic, false);
             } else {
-                Log.v(TAG, "Service " + CSCProfile.HR_SERVICE + " was not found as an installed service");
+                Log.v(TAG, "Service " + FatMaxxerBLEProfiles.HR_SERVICE + " was not found as an installed service");
             }
 
-            service = mBluetoothGattServer.getService(CSCProfile.RSC_SERVICE);
+            service = mBluetoothGattServer.getService(FatMaxxerBLEProfiles.RSC_SERVICE);
             if (service != null) {
                 Log.v(TAG, "Processing Running Speed and Cadence sensor");
 
                 BluetoothGattCharacteristic measurementCharacteristic = mBluetoothGattServer
-                        .getService(CSCProfile.RSC_SERVICE)
-                        .getCharacteristic(CSCProfile.RSC_MEASUREMENT);
+                        .getService(FatMaxxerBLEProfiles.RSC_SERVICE)
+                        .getCharacteristic(FatMaxxerBLEProfiles.RSC_MEASUREMENT);
 
-                byte[] rscData = CSCProfile.getRsc(lastSSDistance, lastSSSpeed, lastStridePerMinute);
+                byte[] rscData = FatMaxxerBLEProfiles.getRsc(lastSSDistance, lastSSSpeed, lastStridePerMinute);
                 if (!measurementCharacteristic.setValue(rscData)) {
                     Log.w(TAG, "RSC Measurement data isn't set properly!");
                 }
                 mBluetoothGattServer.notifyCharacteristicChanged(device, measurementCharacteristic, false);
             } else {
-                Log.v(TAG, "Service " + CSCProfile.RSC_SERVICE + " was not found as an installed service");
+                Log.v(TAG, "Service " + FatMaxxerBLEProfiles.RSC_SERVICE + " was not found as an installed service");
             }
         }
     }
@@ -609,7 +602,7 @@ public class CSCService extends Service {
         public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
                                                 BluetoothGattCharacteristic characteristic) {
             Log.d(TAG,"onCharacteristicReadRequest");
-            if (CSCProfile.CSC_MEASUREMENT.equals(characteristic.getUuid())) {
+            if (FatMaxxerBLEProfiles.CSC_MEASUREMENT.equals(characteristic.getUuid())) {
                 Log.i(TAG, "Read CSC Measurement");
                 //TODO: this should never happen since this characteristic doesn't support read
                 mBluetoothGattServer.sendResponse(device,
@@ -617,27 +610,27 @@ public class CSCService extends Service {
                         BluetoothGatt.GATT_SUCCESS,
                         0,
                         null);
-            } else if (CSCProfile.CSC_FEATURE.equals(characteristic.getUuid())) {
+            } else if (FatMaxxerBLEProfiles.CSC_FEATURE.equals(characteristic.getUuid())) {
                 Log.i(TAG, "Read CSC Feature");
                 mBluetoothGattServer.sendResponse(device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        CSCProfile.getFeature());
-            } else if (CSCProfile.RSC_MEASUREMENT.equals(characteristic.getUuid())) {
+                        FatMaxxerBLEProfiles.getFeature());
+            } else if (FatMaxxerBLEProfiles.RSC_MEASUREMENT.equals(characteristic.getUuid())) {
                 Log.i(TAG, "READ RSC Measurement");
                 mBluetoothGattServer.sendResponse(device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
                         null);
-            } else if (CSCProfile.RSC_FEATURE.equals(characteristic.getUuid())) {
+            } else if (FatMaxxerBLEProfiles.RSC_FEATURE.equals(characteristic.getUuid())) {
                 Log.i(TAG, "READ RSC Feature");
                 mBluetoothGattServer.sendResponse(device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        CSCProfile.getRscFeature());
+                        FatMaxxerBLEProfiles.getRscFeature());
             } else {
                 // Invalid characteristic
                 Log.w(TAG, "Invalid Characteristic Read: " + characteristic.getUuid());
@@ -653,7 +646,7 @@ public class CSCService extends Service {
         public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
                                             BluetoothGattDescriptor descriptor) {
             Log.d(TAG,"omDescriptorReadRequest");
-            if (CSCProfile.CLIENT_CONFIG.equals(descriptor.getUuid())) {
+            if (FatMaxxerBLEProfiles.CLIENT_CONFIG.equals(descriptor.getUuid())) {
                 Log.d(TAG, "Config descriptor read");
                 byte[] returnValue;
                 if (mRegisteredDevices.contains(device)) {
@@ -682,7 +675,7 @@ public class CSCService extends Service {
                                              boolean preparedWrite, boolean responseNeeded,
                                              int offset, byte[] value) {
             Log.d(TAG,"onDescriptorWriteRequest");
-            if (CSCProfile.CLIENT_CONFIG.equals(descriptor.getUuid())) {
+            if (FatMaxxerBLEProfiles.CLIENT_CONFIG.equals(descriptor.getUuid())) {
                 Log.d(TAG,"onDescriptorWriteRequest: match uuid");
                 if (Arrays.equals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, value)) {
                     Log.d(TAG, "Subscribe device to notifications: " + device);

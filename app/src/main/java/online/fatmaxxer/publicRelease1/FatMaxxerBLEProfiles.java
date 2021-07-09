@@ -3,10 +3,8 @@ package online.fatmaxxer.publicRelease1;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.util.Base64;
 import android.util.Log;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,8 +35,8 @@ import java.util.UUID;
  * Implementation of the Bluetooth GATT Cycling Speed and Cadence Profile
  * https://www.bluetooth.com/specifications/gatt/
  */
-public class CSCProfile {
-    private static final String TAG = CSCProfile.class.getSimpleName();
+public class FatMaxxerBLEProfiles {
+    private static final String TAG = FatMaxxerBLEProfiles.class.getSimpleName();
 
     // https://www.bluetooth.com/specifications/gatt/services/
     /** Cycling Speed and Cadence */
@@ -77,6 +75,20 @@ public class CSCProfile {
     private static byte currentFeature = CSC_FEATURE_WHEEL_REV | CSC_FEATURE_CRANK_REV;
 
     private static byte rscFeature = RSC_NO_FEATURES;
+
+
+    // 2 service ids are advertised (by EW-EN100)
+    public static UUID emtbAdvertised1ServiceUuid = UUID.fromString("000018ff-5348-494d-414e-4f5f424c4500");
+    //public static UUID advertised2ServiceUuid = UUID.fromString("000018ef-5348-494d-414e-4f5f424c4500");
+
+    public static UUID emtbBatteryServiceUuid = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb");
+    public static UUID emtbBatteryCharacteristicUuid = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb");
+
+    public static UUID emtbModeServiceUuid = UUID.fromString("000018ef-5348-494d-414e-4f5f424c4500");
+    public static UUID emtbModeCharacteristicUuid = UUID.fromString("00002ac1-5348-494d-414e-4f5f424c4500");
+
+    public static UUID emtbMACServiceUuid = UUID.fromString("000018fe-1212-efde-1523-785feabcd123");
+    public static UUID emtbMACCharacteristicUuid = UUID.fromString("00002ae3-1212-efde-1523-785feabcd123");
 
     /**
      * Return a configured {@link BluetoothGattService} instance for the
