@@ -105,7 +105,7 @@ public class CSCService extends Service {
     private long lastSSStrideCountTimestamp = 0;
     private float lastSpeed = 0;
     private int lastCadence = 0;
-    private int lastHR = 0;
+    public int lastHR = 0;
     private long lastSSDistance = 0;
     private float lastSSSpeed = 0;
     private long lastStridePerMinute = 0;
@@ -263,8 +263,11 @@ public class CSCService extends Service {
         }
     }
 
-
     public void startAdvertising() {
+        startAdvertisingOld();
+    }
+
+    public void startAdvertisingNew() {
         BluetoothLeAdvertiser advertiser =
                 BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
 
@@ -355,8 +358,8 @@ public class CSCService extends Service {
 
         AdvertiseData advData = new AdvertiseData.Builder()
                 .setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
-                //.addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
+                //.addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
                 //.addServiceUuid(new ParcelUuid(CSCProfile.RSC_SERVICE))
                 .build();
 
@@ -574,6 +577,13 @@ public class CSCService extends Service {
         @Override
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             Log.d(TAG,"onConnectionStateChange "+device+" "+status+" "+newState+" "+device.getName()+" "+device.getBluetoothClass()+" "+device.getAddress());
+            if (newState == BluetoothProfile.STATE_CONNECTING) {
+                Log.d(TAG, "BluetoothDevice CONNECTING: " + device.getName() + " [" + device.getAddress() + "]");
+            }
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d(TAG, "BluetoothDevice CONNECTED: " + device.getName() + " [" + device.getAddress() + "]");
+                mRegisteredDevices.add(device);
+            }
             if (mRegisteredDevices.contains(device)) {
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Log.i(TAG, "BluetoothDevice DISCONNECTED: " + device.getName() + " [" + device.getAddress() + "]");
@@ -642,6 +652,7 @@ public class CSCService extends Service {
         @Override
         public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
                                             BluetoothGattDescriptor descriptor) {
+            Log.d(TAG,"omDescriptorReadRequest");
             if (CSCProfile.CLIENT_CONFIG.equals(descriptor.getUuid())) {
                 Log.d(TAG, "Config descriptor read");
                 byte[] returnValue;

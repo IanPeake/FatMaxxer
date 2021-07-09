@@ -2460,7 +2460,10 @@ public class MainActivity extends AppCompatActivity {
 //            graphEnabled = true;
             //Log.d(TAG,"alpha1...");
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
+            float a1v2x100 = (int)(100.0 * alpha1V2Windowed);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
+            mService.lastHR = (int)a1v2x100;
+            Log.d(TAG,"a1v2windowed "+alpha1V2Windowed+" a1v2x100 "+a1v2x100);
             prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
                 String dateStr = sdf.format(new Date(currentTimeMS));
