@@ -358,15 +358,15 @@ public class CSCService extends Service {
 
         AdvertiseData advData = new AdvertiseData.Builder()
                 .setIncludeTxPowerLevel(true)
-                //.addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
                 .addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
-                //.addServiceUuid(new ParcelUuid(CSCProfile.RSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(CSCProfile.RSC_SERVICE))
                 .build();
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
                 //.setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(CSCProfile.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(CSCProfile.HR_SERVICE))
                 .build();
 
         mBluetoothLeAdvertiser
@@ -582,7 +582,7 @@ public class CSCService extends Service {
             }
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.d(TAG, "BluetoothDevice CONNECTED: " + device.getName() + " [" + device.getAddress() + "]");
-                mRegisteredDevices.add(device);
+//                mRegisteredDevices.add(device);
             }
             if (mRegisteredDevices.contains(device)) {
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
