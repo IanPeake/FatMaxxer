@@ -1793,10 +1793,6 @@ public class MainActivity extends AppCompatActivity {
         ComponentName serviceComponentName = MainActivity.this.startService(i);
         Log.d(TAG, "start result " + serviceComponentName);
 
-        if (experimental) {
-            startBLESensorEmulatorService();
-        }
-
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
         actionBar.setIcon(R.mipmap.ic_launcher_foreground);
@@ -2083,18 +2079,20 @@ public class MainActivity extends AppCompatActivity {
         // auto-start
         if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
             startAnalysis();
+        } else {
+            startBLESensorEmulatorService();
         }
     }
 
     boolean bleServiceStarted = false;
     boolean mBound = false;
-    CSCService bleService = null;
+    BLEEmulator bleService = null;
 
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className,  IBinder service) {
             Log.d(TAG,"bleServiceConnection.onServiceConnected");
-            CSCService.LocalBinder binder = (CSCService.LocalBinder) service;
+            BLEEmulator.LocalBinder binder = (BLEEmulator.LocalBinder) service;
             bleService = binder.getService();
             mBound = true;
         }
@@ -2107,7 +2105,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startBLESensorEmulatorService() {
         Log.d(TAG,"startBLESensorEmulatorService");
-        Intent mServiceIntent = new Intent(getApplicationContext(), CSCService.class);
+        Intent mServiceIntent = new Intent(getApplicationContext(), BLEEmulator.class);
         if (!bleServiceStarted) {
             Log.d(TAG, "Starting BLESensorEmulatorService Service");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)

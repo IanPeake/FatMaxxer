@@ -63,15 +63,16 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CSCService extends Service {
-    private static final String TAG = CSCService.class.getSimpleName();
+public class BLEEmulator extends Service {
+    private static final String TAG = BLEEmulator.class.getSimpleName();
     private static final int ONGOING_NOTIFICATION_ID = 9999;
     private static final String CHANNEL_DEFAULT_IMPORTANCE = "csc_ble_channel";
-    private static final String MAIN_CHANNEL_NAME = "CscService";
+    private static final String MAIN_CHANNEL_NAME = "BLEEmu";
 
     // Checks that the callback that is done after a BluetoothGattServer.addService() has been complete.
     // More services cannot be added until the callback has completed successfully
@@ -258,7 +259,7 @@ public class CSCService extends Service {
     }
 
     public void startAdvertising() {
-        startAdvertisingNew();
+        startAdvertisingOld();
     }
 
     public void startAdvertisingNew() {
@@ -275,7 +276,12 @@ public class CSCService extends Service {
                 .setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
 
         AdvertiseData data = (new AdvertiseData.Builder())
-                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE),"FatMaxxer".getBytes())
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
+                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
         AdvertisingSetCallback callback = new AdvertisingSetCallback() {
@@ -348,20 +354,22 @@ public class CSCService extends Service {
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setConnectable(true)
                 .setTimeout(0)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
                 .build();
 
-        AdvertiseData advData = new AdvertiseData.Builder()
-                .setIncludeTxPowerLevel(true)
-//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+        AdvertiseData advData = (new AdvertiseData.Builder())
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE),"FatMaxxer".getBytes())
+                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
                 .build();
 
@@ -456,6 +464,17 @@ public class CSCService extends Service {
         @Override
         public void run() {
             Log.d(TAG,"periodicUpdate.run");
+//
+//            try {
+//                // BluetoothGatt gatt
+//                final Method refresh = mBluetoothGattServer.getClass().getMethod("refresh");
+//                if (refresh != null) {
+//                    refresh.invoke(mBluetoothGattServer);
+//                }
+//            } catch (Exception e) {
+//                // Log it
+//            }
+
             // scheduled next run in 1 sec
             handler.postDelayed(periodicUpdate, 1000);
 
@@ -574,10 +593,10 @@ public class CSCService extends Service {
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             Log.d(TAG,"onConnectionStateChange "+device+" "+status+" "+newState+" "+device.getName()+" "+device.getBluetoothClass()+" "+device.getAddress());
             if (newState == BluetoothProfile.STATE_CONNECTING) {
-                Log.d(TAG, "BluetoothDevice CONNECTING: " + device.getName() + " [" + device.getAddress() + "]");
+                Log.d(TAG, "onConnectionStatusChange connected: " + device.getName() + " [" + device.getAddress() + "]");
             }
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.d(TAG, "BluetoothDevice CONNECTED: " + device.getName() + " [" + device.getAddress() + "]");
+                Log.d(TAG, "onConnectionStatusChange connected: " + device.getName() + " [" + device.getAddress() + "]");
 //                mRegisteredDevices.add(device);
             }
             if (mRegisteredDevices.contains(device)) {
@@ -681,7 +700,7 @@ public class CSCService extends Service {
             if (FatMaxxerBLEProfiles.CLIENT_CONFIG.equals(descriptor.getUuid())) {
                 Log.d(TAG,"onDescriptorWriteRequest: match uuid");
                 if (Arrays.equals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, value)) {
-                    Log.d(TAG, "Subscribe device to notifications: " + device);
+                    Log.d(TAG, "CONNECTED: " + device);
                     mRegisteredDevices.add(device);
                 } else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value)) {
                     Log.d(TAG, "Unsubscribe device from notifications: " + device);
@@ -718,8 +737,8 @@ public class CSCService extends Service {
      * Get the services for communicating with it
      */
     public class LocalBinder extends Binder {
-        CSCService getService() {
-            return CSCService.this;
+        BLEEmulator getService() {
+            return BLEEmulator.this;
         }
     }
 
