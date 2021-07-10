@@ -143,7 +143,7 @@ public class CSCService extends Service {
                     .setContentTitle(getString(R.string.app_name)+".BLESensorEmulatorService")
                     .setContentText("Active")
                     .setSmallIcon(R.drawable.ic_launcher_background)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
                     .build();
             startForeground(ONGOING_NOTIFICATION_ID, notification);
@@ -258,7 +258,7 @@ public class CSCService extends Service {
     }
 
     public void startAdvertising() {
-        startAdvertisingOld();
+        startAdvertisingNew();
     }
 
     public void startAdvertisingNew() {
@@ -266,16 +266,17 @@ public class CSCService extends Service {
                 BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
 
         AdvertisingSetParameters.Builder parameters = (new AdvertisingSetParameters.Builder())
-                .setLegacyMode(false)
-                .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
-                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_HIGH)
+                .setLegacyMode(true)
+                .setConnectable(true)
+                .setScannable(true)
+                .setInterval(AdvertisingSetParameters.INTERVAL_MIN)
+                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MAX)
                 .setPrimaryPhy(BluetoothDevice.PHY_LE_1M)
                 .setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
 
         AdvertiseData data = (new AdvertiseData.Builder())
                 .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
-
 
         AdvertisingSetCallback callback = new AdvertisingSetCallback() {
             @Override
@@ -316,7 +317,7 @@ public class CSCService extends Service {
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
                 //.setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+                //.addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
                 .build();
 
         advertiser.startAdvertisingSet(parameters.build(), data, advScanResponse, null, null, callback);
@@ -347,7 +348,7 @@ public class CSCService extends Service {
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setConnectable(true)
                 .setTimeout(0)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
                 .build();
 
         AdvertiseData advData = new AdvertiseData.Builder()
@@ -359,7 +360,9 @@ public class CSCService extends Service {
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
                 .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
                 .build();
 
         mBluetoothLeAdvertiser

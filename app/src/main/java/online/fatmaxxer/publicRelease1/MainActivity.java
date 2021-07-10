@@ -1687,8 +1687,8 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_QUIT)) confirmQuit();
         if (itemID == menuItem(MENU_RENAME_LOGS)) renameLogs();
         if (itemID == menuItem(MENU_REPLAY)) if (!quitRequired()) selectReplayRRfile();
-        if (itemID == menuItem(MENU_BLE_AD_START)) mService.startAdvertising();
-        if (itemID == menuItem(MENU_BLE_AD_END)) mService.stopAdvertising();
+        if (itemID == menuItem(MENU_BLE_AD_START)) bleService.startAdvertising();
+        if (itemID == menuItem(MENU_BLE_AD_END)) bleService.stopAdvertising();
         if (itemID == menuItem(MENU_EXPORT_SELECTED_LOG_FILES)) exportSelectedLogFiles();
         if (itemID == menuItem(MENU_DELETE_SELECTED_LOG_FILES)) deleteSelectedLogFiles();
         if (itemID == menuItem(MENU_EXPORT)) exportLogFiles();
@@ -1793,7 +1793,9 @@ public class MainActivity extends AppCompatActivity {
         ComponentName serviceComponentName = MainActivity.this.startService(i);
         Log.d(TAG, "start result " + serviceComponentName);
 
-        startBLESensorEmulatorService();
+        if (experimental) {
+            startBLESensorEmulatorService();
+        }
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
@@ -2067,7 +2069,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
-            this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, "android.permission.BLUETOOTH_ADVERTISE"}, 1);
         }
 
         expireLogFiles();
@@ -2086,14 +2088,14 @@ public class MainActivity extends AppCompatActivity {
 
     boolean bleServiceStarted = false;
     boolean mBound = false;
-    CSCService mService = null;
+    CSCService bleService = null;
 
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className,  IBinder service) {
             Log.d(TAG,"bleServiceConnection.onServiceConnected");
             CSCService.LocalBinder binder = (CSCService.LocalBinder) service;
-            mService = binder.getService();
+            bleService = binder.getService();
             mBound = true;
         }
         @Override
@@ -2462,7 +2464,9 @@ public class MainActivity extends AppCompatActivity {
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             float a1v2x100 = (int)(100.0 * alpha1V2Windowed);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
-            mService.lastHR = (int)a1v2x100;
+            if (experimental && bleService != null) {
+                bleService.lastHR = (int) a1v2x100;
+            }
             Log.d(TAG,"a1v2windowed "+alpha1V2Windowed+" a1v2x100 "+a1v2x100);
             prevA1TimestampMS = currentTimeMS;
             if (elapsedSecondsTrunc > 120) {
