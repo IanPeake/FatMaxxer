@@ -321,7 +321,7 @@ public class BLEEmulator extends Service {
         };
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
+                .setIncludeDeviceName(false)
                 //.setIncludeTxPowerLevel(true)
                 //.addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
                 .build();
@@ -383,7 +383,7 @@ public class BLEEmulator extends Service {
      */
     public void stopAdvertising() {
         if (mBluetoothLeAdvertiser == null) return;
-
+        Log.d(TAG,"stopAdvertising");
         mBluetoothLeAdvertiser.stopAdvertising(mAdvertiseCallback);
     }
 
