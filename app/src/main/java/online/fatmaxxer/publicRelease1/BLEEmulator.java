@@ -362,7 +362,7 @@ public class BLEEmulator extends Service {
                 .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
 //                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE),"FatMaxxer".getBytes())
-                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
 //                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
