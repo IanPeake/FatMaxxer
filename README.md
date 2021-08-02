@@ -112,7 +112,7 @@ Output to "external" storage; may not work on Android versions later than 9-ish.
 - Marco Altini's Python colab
   (https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
   FatMaxxer's ⍺1 has been developed to approximately correspond to this code. The so-called smoothness priors method used by Kubios and Runalyzer is also now
-  incorporated (https://ieeexplore.ieee.org/document/979357). Detailed testing stil to come. 
+  incorporated (https://ieeexplore.ieee.org/document/979357). Bruce Rogers has done some side by side testing to demonstrate close correspondence to Kubios. 
 - Manas Sharma's polynomial fitting implementation (https://www.bragitoff.com/2017/04/polynomial-fitting-java-codeprogram-works-android-well/)
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
 - The Efficient Java Matrix Library (http://ejml.org/)
