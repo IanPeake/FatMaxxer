@@ -16,7 +16,7 @@ See Bruce Rogers' FAQ (http://www.muscleoxygentraining.com/2021/01/dfa-a1-and-ex
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102644_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102608_FatMaxxer.jpg" height="240" alt="Garmin notification"/> 
 
-https://www.youtube.com/watch?v=Br2O0e7XoJ8
+<img src="https://www.youtube.com/embed/Br2O0e7XoJ8">
 
 ## Overview ##
 FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time.
