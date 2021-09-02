@@ -57,7 +57,7 @@
     <string name="Artifacts">Artifacts</string>
     <string name="RRIntervalAbbrev">RR</string>
     <string name="Workout">Workout</string>
-    <string name="Drop">drop</string>
+    <string name="Drop">dr</string>
     <string name="BatteryAbbrev">batt</string>
     <string name="RootMeanSquareSuccessiveDifferencesAbbrevLowerCase">rmssd</string>
     <string name="Alpha1AbbrevNonUnicode">a1</string>
