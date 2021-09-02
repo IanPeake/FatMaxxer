@@ -1846,8 +1846,14 @@ public class MainActivity extends AppCompatActivity {
         ttobj = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
-                ttobj.setLanguage(Locale.UK);
-                nonScreenUpdate("Voice output ready");
+                Log.d(TAG, "TextToSpeech status " + status);
+                if (status==TextToSpeech.SUCCESS) {
+                    ttobj.setLanguage(Locale.UK);
+                    nonScreenUpdate("Voice output ready");
+                } else {
+                    Log.d(TAG, "TextToSpeech: unable to initialise");
+                }
+
             }
         });
 
