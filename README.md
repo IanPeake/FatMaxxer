@@ -16,6 +16,8 @@ See Bruce Rogers' FAQ (http://www.muscleoxygentraining.com/2021/01/dfa-a1-and-ex
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102644_FatMaxxer.jpg" height="240" alt="Garmin notification"/> |
 <img src="https://raw.githubusercontent.com/IanPeake/FatMaxxer/main/screenshots/Screenshot_20210623-102608_FatMaxxer.jpg" height="240" alt="Garmin notification"/> 
 
+In action:
+<img src="http://img.youtube.com/vi/Br2O0e7XoJ8/0.jpg">
 
 ## Overview ##
 FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time.
@@ -37,7 +39,7 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 FatMaxxer now provides experimental 10s ECG snapshot around all detected artifacts when Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
 
 ## Testers Wanted ##
-FatMaxxer is in a very early stage of development.
+FatMaxxer is in an early stage of development.
 Sideload a recent test version from the APK downloadable from the Github repository.
 Join the https://groups.google.com/g/fatmaxxer-closed-testing for access to Google Play closed test versions.
 
@@ -73,7 +75,11 @@ Graph plots:
 Plots are user-configurable separately for real time and replay mode.
 
 ## Frequently Asked Questions ##
-- *Will it work with my device?*: Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. And the H7 is not a BLE device, so it's not supported by the Polar BLE SDK used by FatMaxxer.
+- *I cannot find FatMaxxer in the Play Store in my Country*: Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
+- *FatMaxxer hangs / crashes*: Can you connect your H10 as a BLE device? Can you see your H10 with Polar Beat / Polar Flow? Have you enabled dual channel mode using Polar Beat / Polar Flow? Have you checked carefully that no other apps/devices are connected via BLE to the H10? By default only one BLE connection can be made to the H10. If you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.
+- *FatMaxxer still hangs / crashes*: If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
+- *Will it work with my device?*: Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
+- *(Why) does it have to be the H10/H9?*: It doesn't *have* to be the H9/H10, but they are widely regarded as the least-worst consumer sensors in terms of accuracy/precision, and the experimental research is based on them. I used the H10 for those reasons, and chose the Polar SDK for Android because I am an Android user. The Polar SDK doesn't support other non-Polar sensors unfortunately.
 - *Is there any plan for an iOS app?*: Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device*: The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
@@ -108,7 +114,7 @@ Output to "external" storage; may not work on Android versions later than 9-ish.
 - Marco Altini's Python colab
   (https://colab.research.google.com/drive/1GUZVjZGhc2_JqV-J5m1mgbvbiTBV9WzZ?usp=sharing#scrollTo=AXWvsa6MMqSv).
   FatMaxxer's ⍺1 has been developed to approximately correspond to this code. The so-called smoothness priors method used by Kubios and Runalyzer is also now
-  incorporated (https://ieeexplore.ieee.org/document/979357). Detailed testing stil to come. 
+  incorporated (https://ieeexplore.ieee.org/document/979357). Bruce Rogers has done some side by side testing to demonstrate close correspondence to Kubios. 
 - Manas Sharma's polynomial fitting implementation (https://www.bragitoff.com/2017/04/polynomial-fitting-java-codeprogram-works-android-well/)
 - Polar API and example (https://github.com/polarofficial/polar-ble-sdk)
 - The Efficient Java Matrix Library (http://ejml.org/)
