@@ -63,7 +63,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -170,10 +169,10 @@ public class BLEEmulator extends Service {
         boolean periodic = bluetoothAdapter.isLePeriodicAdvertisingSupported();
         boolean le2mphy = bluetoothAdapter.isLe2MPhySupported();
         boolean other = bluetoothAdapter.isLeCodedPhySupported();
-        //bluetoothAdapter.setName("fakeSensor");
+        bluetoothAdapter.setName("FatMaxxer Alpha1");
         Log.d(TAG,"Bluetooth adapter name "+bluetoothAdapter.getName()+" address "+bluetoothAdapter.getAddress());
         Log.d(TAG,"Bluetooth adapter max advertising data length "+bluetoothAdapter.getLeMaximumAdvertisingDataLength());
-        Log.d(TAG, "checkBluetoothSupport "+le2mphy+" "+other);
+        Log.d(TAG,  "checkBluetoothSupport "+le2mphy+" "+other);
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Log.w(TAG, "Bluetooth LE is not supported");
             return false;
@@ -240,10 +239,27 @@ public class BLEEmulator extends Service {
         stopSelf();
     }
 
+
+
     @Override
     public void onDestroy() {
         Log.d(TAG, "BLESensorEmulator Service destroyed");
         super.onDestroy();
+        deInit();
+    }
+
+    private void restartAdv() {
+        if (initialised) {
+            // stop BLE
+            BluetoothAdapter bluetoothAdapter = mBluetoothManager.getAdapter();
+            if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+                stopAdvertising();
+                startAdvertising();
+            }
+        }
+    }
+
+    private void deInit() {
         if (initialised) {
             // stop BLE
             BluetoothAdapter bluetoothAdapter = mBluetoothManager.getAdapter();
@@ -251,9 +267,7 @@ public class BLEEmulator extends Service {
                 stopServer();
                 stopAdvertising();
             }
-
             unregisterReceiver(mBluetoothReceiver);
-
             combinedSensorConnected = false;
         }
     }
@@ -273,15 +287,16 @@ public class BLEEmulator extends Service {
                 .setInterval(AdvertisingSetParameters.INTERVAL_MIN)
                 .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MAX)
                 .setPrimaryPhy(BluetoothDevice.PHY_LE_1M)
-                .setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
+//                .setSecondaryPhy(BluetoothDevice.PHY_LE_2M)
+                ;
 
         AdvertiseData data = (new AdvertiseData.Builder())
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
 //                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE),"FatMaxxer".getBytes())
 //                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
-                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
+//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
         AdvertisingSetCallback callback = new AdvertisingSetCallback() {
@@ -351,26 +366,29 @@ public class BLEEmulator extends Service {
         }
 
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                 .setConnectable(true)
                 .setTimeout(0)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
                 .build();
 
+        byte[] manufacturerSpecificData = {0x23, 0x05, 0x4a, 0x4b};
         AdvertiseData advData = (new AdvertiseData.Builder())
+                .setIncludeDeviceName(true)
+//                .addManufacturerData(0x006b, manufacturerSpecificData)
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.emtbModeServiceUuid))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.emtbBatteryServiceUuid))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.emtbMACServiceUuid))
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
-                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
 //                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
-//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE),"FatMaxxer".getBytes())
-//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE),"FatMaxxer".getBytes())
-//                .addServiceData(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE),"FatMaxxer".getBytes())
                 .build();
 
         AdvertiseData advScanResponse = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
-//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
-//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
-//                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
+//                .setIncludeDeviceName(true)
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.CSC_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.HR_SERVICE))
+                .addServiceUuid(new ParcelUuid(FatMaxxerBLEProfiles.RSC_SERVICE))
                 .build();
 
         mBluetoothLeAdvertiser
@@ -400,29 +418,44 @@ public class BLEEmulator extends Service {
 
         btServiceInitialized = false;
         // TODO: enable either 1 of them or both of them according to user selection
-        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createCSCService((byte)(FatMaxxerBLEProfiles.CSC_FEATURE_WHEEL_REV | FatMaxxerBLEProfiles.CSC_FEATURE_CRANK_REV)))) {
-            Log.d(TAG, "CSCP enabled!");
+        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createCSCService(
+                (byte)(FatMaxxerBLEProfiles.CSC_FEATURE_WHEEL_REV | FatMaxxerBLEProfiles.CSC_FEATURE_CRANK_REV)))) {
+            Log.d(TAG, "CSC service enabled");
         } else {
-            Log.d(TAG, "Failed to add csc service to bluetooth layer!");
+            Log.d(TAG, "Failed to add CSCP to bluetooth layer");
         }
         // We cannot add another service until the callback for the previous service has completed
         while (!btServiceInitialized);
 
+//        btServiceInitialized = false;
+//        // TODO: enable either 1 of them or both of them according to user selection
+//        if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createCSCService(
+//                (byte)(FatMaxxerBLEProfiles.CSC_FEATURE_WHEEL_REV | FatMaxxerBLEProfiles.CSC_FEATURE_CRANK_REV)))) {
+//            Log.d(TAG, "CSC service enabled");
+//        } else {
+//            Log.d(TAG, "Failed to add CSCP to bluetooth layer");
+//        }
+//        // We cannot add another service until the callback for the previous service has completed
+//        while (!btServiceInitialized);
+
         btServiceInitialized = false;
+        // TODO: enable either 1 of them or both of them according to user selection
         if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createHRService())) {
-            Log.d(TAG, "HR enabled!");
+            Log.d(TAG, "HR service enabled");
         } else {
-            Log.d(TAG, "Failed to add hr service to bluetooth layer!");
+            Log.d(TAG, "Failed to add HR service to bluetooth layer");
         }
         // We cannot add another service until the callback for the previous service has completed
         while (!btServiceInitialized);
 
         btServiceInitialized = false;
+        // TODO: enable either 1 of them or both of them according to user selection
         if (mBluetoothGattServer.addService(FatMaxxerBLEProfiles.createRscService())) {
-            Log.d(TAG, "RSC enabled!");
+            Log.d(TAG, "Rsc service enabled");
         } else {
-            Log.d(TAG, "Failed to add rsc service to bluetooth layer");
+            Log.d(TAG, "Failed to add Rsc service to bluetooth layer");
         }
+        // We cannot add another service until the callback for the previous service has completed
         while (!btServiceInitialized);
 
         Log.d(TAG, "Enumerating (" +  mBluetoothGattServer.getServices().size() + ") BT services");
@@ -432,6 +465,18 @@ public class BLEEmulator extends Service {
 
         // start periodicUpdate, sending notification to subscribed device and UI
         handler.post(periodicUpdate);
+    }
+
+    private void registerService(BluetoothGattService service) {
+        btServiceInitialized = false;
+        // TODO: enable either 1 of them or both of them according to user selection
+        if (service != null) {
+            Log.d(TAG, service.getClass().toString()+" enabled");
+        } else {
+            Log.d(TAG, "Failed to add "+service.getClass().toString()+" to bluetooth layer");
+        }
+        // We cannot add another service until the callback for the previous service has completed
+        while (!btServiceInitialized);
     }
 
     /**
@@ -456,6 +501,14 @@ public class BLEEmulator extends Service {
         @Override
         public void onStartFailure(int errorCode) {
             Log.w(TAG, "LE Advertise Failed: "+errorCode);
+            String err = "unknown error";
+            if (errorCode==AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR) err = "internal error";
+            if (errorCode==AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED) err = "already started";
+            if (errorCode==AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE) err = "data too large";
+            if (errorCode==AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED) err = "feature unsupported";
+            if (errorCode==AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS) err = "too many advertisers";
+            Log.w(TAG, "LE Advertise Failed: "+err);
+            onDestroy();
         }
     };
 
@@ -547,16 +600,22 @@ public class BLEEmulator extends Service {
             service = mBluetoothGattServer.getService(FatMaxxerBLEProfiles.HR_SERVICE);
             if (service != null) {
                 Log.v(TAG, "Processing Heart Rate");
-
                 BluetoothGattCharacteristic measurementCharacteristic = mBluetoothGattServer
                         .getService(FatMaxxerBLEProfiles.HR_SERVICE)
                         .getCharacteristic(FatMaxxerBLEProfiles.HR_MEASUREMENT);
-
                 byte[] hrData = FatMaxxerBLEProfiles.getHR(lastHR, lastHRTimestamp);
                 if (!measurementCharacteristic.setValue(hrData)) {
                     Log.w(TAG, "HR  Measurement data isn't set properly!");
                 }
+                BluetoothGattCharacteristic bodyLocationCharacteristic = mBluetoothGattServer
+                        .getService(FatMaxxerBLEProfiles.HR_SERVICE)
+                        .getCharacteristic(FatMaxxerBLEProfiles.BODY_SENSOR_LOCATION);
+                byte[] bodyLocation = {0b00000000,0b00000010};
+                if (!bodyLocationCharacteristic.setValue(bodyLocation)) {
+                    Log.w(TAG, "body location data isn't set properly!");
+                }
                 mBluetoothGattServer.notifyCharacteristicChanged(device, measurementCharacteristic, false);
+                mBluetoothGattServer.notifyCharacteristicChanged(device, bodyLocationCharacteristic, false);
             } else {
                 Log.v(TAG, "Service " + FatMaxxerBLEProfiles.HR_SERVICE + " was not found as an installed service");
             }

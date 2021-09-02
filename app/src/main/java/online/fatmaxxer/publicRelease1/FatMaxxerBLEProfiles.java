@@ -53,6 +53,13 @@ public class FatMaxxerBLEProfiles {
     /** Mandatory Characteristic: CSC Feature */
     public static UUID CSC_FEATURE = UUID.fromString("00002a5c-0000-1000-8000-00805f9b34fb");
 
+    // generic access service
+    public static UUID GENERIC_ACCESS_SERVICE = UUID.fromString("00001800-0000-1000-8000-00805f9b34fb");
+    // device information service
+    public static UUID DEVICE_INFORMATION_SERVICE = UUID.fromString("0000180A-0000-1000-8000-00805f9b34fb");
+    // body location - (Polar H10 == "0002")
+    public static UUID BODY_SENSOR_LOCATION = UUID.fromString("00002A38-0000-1000-8000-00805f9b34fb");
+
     /** Heart Rate */
     public static UUID HR_SERVICE = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
     public static UUID HR_MEASUREMENT = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
@@ -89,6 +96,40 @@ public class FatMaxxerBLEProfiles {
 
     public static UUID emtbMACServiceUuid = UUID.fromString("000018fe-1212-efde-1523-785feabcd123");
     public static UUID emtbMACCharacteristicUuid = UUID.fromString("00002ae3-1212-efde-1523-785feabcd123");
+
+    /**
+     * Return a configured {@link BluetoothGattService} instance for the
+     * Cycling Speed and Cadence Service
+     */
+    public static BluetoothGattService createEmtbModeService() {
+        // Set supported feature: speed and/or cadence
+//        currentFeature = feature;
+
+        BluetoothGattService service = new BluetoothGattService(CSC_SERVICE,
+                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+
+        // CSC Measurement characteristic
+        BluetoothGattCharacteristic cscMeasurement = new BluetoothGattCharacteristic(CSC_MEASUREMENT,
+                //Read-only characteristic, supports notifications
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                BluetoothGattCharacteristic.PERMISSION_READ);
+        BluetoothGattDescriptor configDescriptor = new BluetoothGattDescriptor(CLIENT_CONFIG,
+                //Read/write descriptor
+                BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
+        cscMeasurement.addDescriptor(configDescriptor);
+
+        // CSC Feature characteristic
+        BluetoothGattCharacteristic cscFeature = new BluetoothGattCharacteristic(CSC_FEATURE,
+                //Read-only characteristic
+                BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PERMISSION_READ);
+
+        service.addCharacteristic(cscMeasurement);
+        service.addCharacteristic(cscFeature);
+
+        return service;
+    }
+
 
     /**
      * Return a configured {@link BluetoothGattService} instance for the
@@ -131,7 +172,6 @@ public class FatMaxxerBLEProfiles {
         BluetoothGattService service = new BluetoothGattService(HR_SERVICE,
                 BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-        // CSC Measurement characteristic
         BluetoothGattCharacteristic hrMeasurement = new BluetoothGattCharacteristic(HR_MEASUREMENT,
                 //Read-only characteristic, supports notifications
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY,
@@ -140,8 +180,13 @@ public class FatMaxxerBLEProfiles {
                 //Read/write descriptor
                 BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
         hrMeasurement.addDescriptor(configDescriptor);
-
         service.addCharacteristic(hrMeasurement);
+
+        BluetoothGattCharacteristic bodyLocation = new BluetoothGattCharacteristic(BODY_SENSOR_LOCATION,
+                //Read-only characteristic, supports notifications
+                BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PERMISSION_READ);
+        service.addCharacteristic(bodyLocation);
 
         return service;
     }
