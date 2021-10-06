@@ -67,10 +67,28 @@
         app:useSimpleSummaryProvider="true"
         app:summary="@string/HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice"/>
 
+    <!--
     <SwitchPreferenceCompat
         app:key="experimental"
         app:title="@string/DeveloperMode"
         app:summary="@string/ExperimentalFeatures"/>
+        -->
+
+    <SwitchPreferenceCompat
+        app:key="enableECG"
+        app:title="Enable ECG artifact logging"
+        android:defaultValue="true"
+        app:summary="Enable ECG logging for artifacts"/>
+
+    <SwitchPreferenceCompat
+        app:key="enableReplay"
+        app:title="Enable Log Replay"
+        app:summary="Enable log replay (disable auto-start)"/>
+
+    <SwitchPreferenceCompat
+        app:key="enableSensorEmulation"
+        app:title="Enable BLE Sensor Emulation"
+        app:summary="Try to emulate a BLE sensor transmitting a1 (requires restart)"/>
 
     <MultiSelectListPreference
         android:dialogTitle="@string/SelectReplayGraphFeatures"

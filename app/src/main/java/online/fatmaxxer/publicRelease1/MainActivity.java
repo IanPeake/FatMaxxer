@@ -115,10 +115,13 @@ public class MainActivity extends AppCompatActivity {
     public static final String NOTIFICATIONS_ENABLED_PREFERENCE_STRING = "notificationsEnabled";
     public static final String POLAR_DEVICE_ID_PREFERENCE_STRING = "polarDeviceID";
     public static final String KEEP_LOGS_PREFERENCE_STRING = "keepLogs";
-    public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
+    //public static final String EXPERIMENTAL_PREFERENCE_STRING = "experimental";
     public static final String KEEP_SCREEN_ON_PREFERENCE_STRING = "keepScreenOn";
     public static final String NOTIFICATION_DETAIL_PREFERENCE_STRING = "notificationDetail";
     public static final String RR_LOGFILE_HEADER = "timestamp, rr, since_start ";
+    public static final String ENABLE_SENSOR_EMULATION = "enableSensorEmulation";
+    public static final String ENABLE_REPLAY = "enableReplay";
+    public static final String ENABLE_ECG = "enableECG";
 
     final double alpha1HRVvt1 = 0.75;
     final double alpha1HRVvt2 = 0.5;
@@ -866,7 +869,7 @@ public class MainActivity extends AppCompatActivity {
     TextView text_a1_label;
     TextView text_artifacts;
 
-    public boolean experimental = false;
+    //public boolean experimental = false;
     // 120s ring buffer for dfa alpha1
     public final int featureWindowSizeSec = 120;
     // buffer to allow at least 45 beats forward/backward per Kubios
@@ -1063,12 +1066,14 @@ public class MainActivity extends AppCompatActivity {
         }
         if (logOrReplayStarted()) startedStatus=" ("+getString(R.string.BeforeNewConnectOrReplay)+")";
         menu.add(0, FMMenuItem.MENU_QUIT.ordinal(), Menu.NONE, getString(R.string.Quit)+" "+startedStatus);
-        if (sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false)) {
+        if (sharedPreferences.getBoolean(ENABLE_REPLAY, false)) {
 //            menu.add(0, menuItem(MENU_IMPORT), Menu.NONE, "Import RR Log");
-            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen+getString(R.string.ReplayRRIntervalsLog)+startedClose);
-            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen+getString(R.string.ImportAndReplayRRIntervalsLog)+startedClose);
-            menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
-            menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, R.string.RenameCurrentLogFiles);
+            menu.add(0, menuItem(MENU_REPLAY), Menu.NONE, startedOpen + getString(R.string.ReplayRRIntervalsLog) + startedClose);
+            menu.add(0, menuItem(MENU_IMPORT_REPLAY), Menu.NONE, startedOpen + getString(R.string.ImportAndReplayRRIntervalsLog) + startedClose);
+        }
+        menu.add(0, menuItem(MENU_EXPORT_SELECTED_LOG_FILES), Menu.NONE, R.string.ExportSelectedLogs);
+        menu.add(0, menuItem(MENU_RENAME_LOGS), Menu.NONE, R.string.RenameCurrentLogFiles);
+        if (sharedPreferences.getBoolean(ENABLE_SENSOR_EMULATION, false)) {
             menu.add(0, menuItem(MENU_BLE_AD_START), Menu.NONE, "BLE Ad start");
             menu.add(0, menuItem(MENU_BLE_AD_END), Menu.NONE, "BLE Ad end");
         }
@@ -1218,6 +1223,7 @@ public class MainActivity extends AppCompatActivity {
             logFiles.put("ecg",newECG);
     }
 
+    /*
     // all but current logs
     public ArrayList<Uri> oldLogFiles() {
         Log.d(TAG, "oldLogFiles...");
@@ -1234,6 +1240,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return allUris;
     }
+     */
 
     public void exportFiles(ArrayList<Uri> allUris) {
         Intent shareIntent = new Intent();
@@ -2083,9 +2090,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // auto-start
-        if(!sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING,false)) {
+        if (!sharedPreferences.getBoolean(ENABLE_REPLAY,false)) {
             startAnalysis();
-        } else {
+        }
+        // start BLE sensor emulator service
+        if (sharedPreferences.getBoolean(ENABLE_SENSOR_EMULATION, false)) {
             startBLESensorEmulatorService();
         }
     }
@@ -2118,7 +2127,6 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.startForegroundService(mServiceIntent);
             else
                 MainActivity.this.startService(mServiceIntent);
-
             // Bind to the service so we can interact with it
             if (!bindService(mServiceIntent, bleServiceConnection, Context.BIND_AUTO_CREATE)) {
                 Log.d(TAG, "Failed to bind to service");
@@ -2158,7 +2166,7 @@ public class MainActivity extends AppCompatActivity {
     int ecgSample = 0;
     // log all recorded ecg data
     private void logAllEcgData() {
-        if (experimental) {
+        if (sharedPreferences.getBoolean(ENABLE_ECG, true)) {
             Log.d(TAG,"logEcgData");
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
@@ -2287,7 +2295,7 @@ public class MainActivity extends AppCompatActivity {
         if (timeForUIupdate) {
             String lambdaPref = sharedPreferences.getString(LAMBDA_PREFERENCE_STRING, "500");
             lambdaSetting = Integer.valueOf(lambdaPref);
-            experimental = sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false);
+            //experimental = sharedPreferences.getBoolean(EXPERIMENTAL_PREFERENCE_STRING, false);
             if (sharedPreferences.getBoolean(KEEP_SCREEN_ON_PREFERENCE_STRING, false)) {
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             } else {
@@ -2468,7 +2476,7 @@ public class MainActivity extends AppCompatActivity {
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             float a1v2x100 = (int)(100.0 * alpha1V2Windowed);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
-            if (experimental && bleService != null) {
+            if (sharedPreferences.getBoolean(ENABLE_SENSOR_EMULATION, false) && bleService != null) {
                 bleService.lastHR = (int) a1v2x100;
             }
             Log.d(TAG,"a1v2windowed "+alpha1V2Windowed+" a1v2x100 "+a1v2x100);
@@ -2542,7 +2550,7 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append("Total rejected: " + totalRejected+" ");
             String logstring = logmsg.toString();
 
-            artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) nrSamples);
+            artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) (nrArtifacts + nrSamples));
             text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%) [" + artifactCorrectionThreshold + "]");
             if (haveArtifacts) {
                 text_artifacts.setBackgroundResource(R.color.colorHighlight);
@@ -2633,7 +2641,7 @@ public class MainActivity extends AppCompatActivity {
         starting = false;
         wakeLock.release();
 
-        if (realTime && experimental) {
+        if (realTime && sharedPreferences.getBoolean(ENABLE_ECG, true)) {
             startECG();
         }
     }
