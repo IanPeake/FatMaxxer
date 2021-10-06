@@ -94,7 +94,7 @@ Reports ⍺1 and other features via audio and/or notifications (configurable), a
 
 *Audio updates* report ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise. Reports artifacts above a hardcoded threshold, or at higher intensity. Audio updates are more frequent at higher work rates. Audible warning (click) is played on dropped artifact.
 
-*Notifications:* A notification update is sent whenever ⍺1 is recalculated. Notification title provides ⍺1 and artifacts dropped (%). This provides as a basic way to view output on a wearable (see photo above). Some Garmin devices show notification titles during activities (see photo above).
+*Notifications:* A notification update is sent whenever ⍺1 is recalculated. Notification title provides ⍺1 and artifacts dropped (%). This provides a basic way to view output on a wearable (see photo above). Some Garmin devices show notification titles during activities (see photo above).
 
 ## Logs ##
 Log files are recorded to external storage and available for export via the Androd ShareSheet.
