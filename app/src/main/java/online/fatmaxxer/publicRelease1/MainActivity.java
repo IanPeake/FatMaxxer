@@ -2138,7 +2138,7 @@ public class MainActivity extends AppCompatActivity {
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
-    // are we currently logging ECG data after observing an artifact?
+    // currently logging ECG data after observing an artifact
     boolean ecgLogging = false;
     final int ecgPacketSize = 73;
     final int ecgSampleRate = 130;
@@ -2167,7 +2167,8 @@ public class MainActivity extends AppCompatActivity {
     // log all recorded ecg data
     private void logAllEcgData() {
         if (sharedPreferences.getBoolean(ENABLE_ECG, true)) {
-            Log.d(TAG,"logEcgData");
+            Log.d(TAG,"logAllEcgData");
+            // FIXME: Copied code
             if (currentLogFileWriters.get("ecg") == null) {
                 createLogFile("ecg");
                 writeLogFile("date,timestamp,elapsed,segmentNr,sampleNr,yV","ecg");
@@ -2187,6 +2188,20 @@ public class MainActivity extends AppCompatActivity {
                     writeLogFile(dateStr + "," + ecgPacket.timeStamp +"," +elapsedStr+ ","+ecgSegment+"," + ecgSample + "," + microVolts.toString(), "ecg");
                     ecgSample++;
                 }
+            }
+        }
+    }
+    private void logEcgSegmentEnd() {
+        if (sharedPreferences.getBoolean(ENABLE_ECG, true)) {
+            Log.d(TAG,"logEcgSegmentEnd");
+            // FIXME: Copied code
+            if (currentLogFileWriters.get("ecg") == null) {
+                createLogFile("ecg");
+                writeLogFile("date,timestamp,elapsed,segmentNr,sampleNr,yV","ecg");
+            }
+            for (int i=0;i<10;i++) {
+                writeLogFile("" + "," + "" + "," + "" + "," + ecgSegment + "," + ecgSample + "," + "1000.0", "ecg");
+                writeLogFile("" + "," + "" + "," + "" + "," + ecgSegment + "," + ecgSample + "," + "-1000.0", "ecg");
             }
         }
     }
@@ -2446,6 +2461,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (ecgMonitoring && ecgLogging && hrNotificationCount == lastObservedHRNotificationWithArtifacts + pastECGbufferDurationSec) {
             // EVENT: stop ECG logging
             Log.d(TAG,"Stop ECG logging @"+hrNotificationCount);
+            logEcgSegmentEnd();
             //
             ecgLogging = false;
             ecgSegment++;
