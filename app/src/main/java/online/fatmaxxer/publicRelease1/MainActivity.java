@@ -2551,7 +2551,7 @@ public class MainActivity extends AppCompatActivity {
             String logstring = logmsg.toString();
 
             artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) (nrArtifacts + nrSamples));
-            text_artifacts.setText("" + nrArtifacts + "/" + nrSamples + " (" + artifactsPercentWindowed + "%) [" + artifactCorrectionThreshold + "]");
+            text_artifacts.setText("" + nrArtifacts + "/" + (nrArtifacts+nrSamples) + " (" + artifactsPercentWindowed + "%) [" + artifactCorrectionThreshold + "]");
             if (haveArtifacts) {
                 text_artifacts.setBackgroundResource(R.color.colorHighlight);
             } else {
