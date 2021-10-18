@@ -83,12 +83,6 @@ Plots are user-configurable separately for real time and replay mode.
 - *Is there any plan for an iOS app?*: Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
 - *FatMaxxer crashes on my device*: The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
-## Replay ##
-Enable Developer mode, Import a previously recorded RR.csv, then Replay and select the RR.csv file from your logs directory.
-FatMaxxer will replay the previous session (for review / screen shot).
-The graph will be slightly quantized for most plots except RRs.
-Replay is at up to 60x real time.
-
 ## Audio / notification (wearable) updates ##
 Reports ⍺1 and other features via audio and/or notifications (configurable), adjusting to work rate:
 
@@ -101,6 +95,12 @@ Log files are recorded to external storage and available for export via the Andr
   - rr.log as per HRV Logger format
   - artifacts.log - timestamp for artifacts*.log is corresponds to the last processed sample of the window (watch this space)
 Output to "external" storage; may not work on Android versions later than 9-ish.
+
+## Replay ##
+Enable Developer mode, Import a previously recorded RR.csv, then Replay and select the RR.csv file from your logs directory.
+FatMaxxer will replay the previous session (for review / screen shot).
+The graph will be slightly quantized for most plots except RRs.
+Replay is at up to 60x real time.
 
 ## Known issues / limitations ##
 - _Needless to say, I will not be held responsible for any app malfunction which causes you to overtrain!_
