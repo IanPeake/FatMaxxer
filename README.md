@@ -76,15 +76,34 @@ Plots are user-configurable separately for real time and replay mode.
 
 ## Frequently Asked Questions ##
 
-### I cannot find FatMaxxer in the Play Store in my Country ### Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
-- *FatMaxxer hangs / crashes on startup*: Can you connect your H10 as a BLE device? Can you see your H10 with Polar Beat / Polar Flow? Have you enabled dual channel mode using Polar Beat / Polar Flow? Have you checked carefully that no other apps/devices are connected via BLE to the H10? By default only one BLE connection can be made to the H10. If you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.
-- *FatMaxxer still hangs / crashes*: If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
-- *Will it work with my device?*: Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
-- *(Why) does it have to be the H10/H9?*: It doesn't *have* to be the H9/H10, but they are widely regarded as the least-worst consumer sensors in terms of accuracy/precision, and the experimental research is based on them. I used the H10 for those reasons, and chose the Polar SDK for Android because I am an Android user. The Polar SDK doesn't support other non-Polar sensors unfortunately.
-- *Is there any plan for an iOS app?*: Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
-- *FatMaxxer crashes on my device*: The app is in a very early stage of development. Please do feel free to open a new issue with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
+### I cannot find FatMaxxer in the Play Store in my Country ###
+Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
+### FatMaxxer hangs / crashes on startup ###
+Check carefully the following:
+- Can you connect your sensor as a BLE device?
+- Can you see your H10 with Polar Beat / Polar Flow?
+- Have you enabled dual channel mode on your H10 using Polar Beat / Polar Flow?
+- Have you checked carefully that no other apps/devices are connected via BLE to the sensor? (By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.)
+### FatMaxxer still hangs / crashes ###
+If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
+### Will it work with my device? ###
+
+Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
+
+### (Why) does it have to be the H10/H9? ###
+
+It doesn't *have* to be the H9/H10, but I chose to develop for those using the Polar SDK because they are widely regarded as the least-worst consumer sensors in terms of accuracy/precision, and the experimental research is based on them. I used the H10 for those reasons, and chose the Polar SDK for Android because I am an Android user. The Polar SDK doesn't support other non-Polar sensors unfortunately.
+
+### Is there any plan for an iOS app? ###
+
+Not at this stage, sorry. I wrote this app for Android because that's what I currently use. However the project is more or less entirely open source. It would be great if there was an iOS developer prepared to do a port to iOS.
+
+### FatMaxxer crashes on my device ###
+
+Please do feel free to open a new issue on https://github.com/IanPeake/FatMaxxer/ with as much detail as possible about the fault. I am still working on aligning with Android development best practice for several aspects, including Notifications.
 
 ## Audio / notification (wearable) updates ##
+
 Reports ⍺1 and other features via audio and/or notifications (configurable), adjusting to work rate:
 
 *Audio updates* report ⍺1 at HR above a hardcoded threshold, and RMSSD otherwise. Reports artifacts above a hardcoded threshold, or at higher intensity. Audio updates are more frequent at higher work rates. Audible warning (click) is played on dropped artifact.
