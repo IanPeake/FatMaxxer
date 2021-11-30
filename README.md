@@ -38,20 +38,18 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 
 FatMaxxer now provides experimental 10s ECG snapshot around all detected artifacts when Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
 
-## Testers Wanted ##
-FatMaxxer is in an early stage of development.
+## Testing ##
+
 Sideload a recent test version from the APK downloadable from the Github repository.
 Join the https://groups.google.com/g/fatmaxxer-closed-testing for access to Google Play closed test versions.
-
-The app may crash or not work properly.
 *To help me fix your issue efficiently* use the Github issue tracker above to report bugs.
 
-## License
-Apache 2.0 for any code that was authored by me.
+## License ##
+Apache 2.0 for any code that was authored by me. See also credits/acknowledgments below.
 
 ## Getting started ##
 - Read and thoroughly understand how to use DFA ⍺1 (https://the5krunner.com/2021/02/25/important-training-news-dfa-alpha-1-new-threshold-discovery-method-with-hrv/) for training
-- Put on your Polar H10
+- Put on your sensor
 - On first launch, select your device in the menu from those discovered.
   Alternatively set preferred Device ID manually under settings, quit and restart.
   Device ID is an 8 digit hexadecimal string.
@@ -81,10 +79,9 @@ Release is currently limited to a small set of countries due to lack of translat
 
 ### FatMaxxer hangs / crashes / does not connect to my sensor on startup ###
 Check carefully the following:
-- Can you connect to your sensor as a BLE device?
-- Can you connect to your H10 with Polar Beat / Polar Flow?
+- Can you connect to your sensor with Polar Beat / Polar Flow as a BLE device?
 - Have you enabled dual channel mode on your H10 using Polar Beat / Polar Flow?
-- Have you checked carefully that no other apps/devices are connected via BLE to the sensor? By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.
+- Have you checked carefully that no other apps/devices are connected via BLE to the sensor? By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two separate BLE connections can be made to the H10, one of which must be FatMaxxer.
 
 ### FatMaxxer still hangs / crashes ###
 If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
@@ -94,7 +91,7 @@ Only the Polar H10 (and maybe H9) are supported. The research only validated the
 
 ### (Why) does it have to be the H10/H9? ###
 
-It doesn't *have* to be the H9/H10, but I chose to develop for those using the Polar SDK because they are widely regarded as the least-worst consumer sensors in terms of accuracy/precision, and the experimental research is based on them. I used the H10 for those reasons, and chose the Polar SDK for Android because I am an Android user. The Polar SDK doesn't support other non-Polar sensors unfortunately.
+It doesn't *have* to be the H9/H10, but I chose to develop for those, and therefore use the Polar SDK, because they are regarded as the least-worst consumer sensors for accuracy/precision, and the HRV experimental research is based on them. I use the H10 for those reasons, and chose the Polar SDK for Android because I am an Android user. The Polar SDK doesn't support other non-Polar sensors unfortunately.
 
 ### Is there any plan for an iOS app? ###
 
