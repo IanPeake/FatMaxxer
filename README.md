@@ -78,12 +78,14 @@ Plots are user-configurable separately for real time and replay mode.
 
 ### I cannot find FatMaxxer in the Play Store in my Country ###
 Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
+
 ### FatMaxxer hangs / crashes / does not connect to my sensor on startup ###
 Check carefully the following:
-- Can you connect your sensor as a BLE device?
-- Can you see your H10 with Polar Beat / Polar Flow?
+- Can you connect to your sensor as a BLE device?
+- Can you connect to your H10 with Polar Beat / Polar Flow?
 - Have you enabled dual channel mode on your H10 using Polar Beat / Polar Flow?
-- Have you checked carefully that no other apps/devices are connected via BLE to the sensor? (By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.)
+- Have you checked carefully that no other apps/devices are connected via BLE to the sensor? By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two BLE connections can be made to the H10, one of which must be FatMaxxer.
+
 ### FatMaxxer still hangs / crashes ###
 If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
 ### Will it work with my device? ###
