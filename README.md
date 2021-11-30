@@ -78,7 +78,7 @@ Plots are user-configurable separately for real time and replay mode.
 
 ### I cannot find FatMaxxer in the Play Store in my Country ###
 Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
-### FatMaxxer hangs / crashes on startup ###
+### FatMaxxer hangs / crashes / does not connect to my sensor on startup ###
 Check carefully the following:
 - Can you connect your sensor as a BLE device?
 - Can you see your H10 with Polar Beat / Polar Flow?
