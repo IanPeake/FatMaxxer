@@ -57,6 +57,7 @@ Apache 2.0 for any code that was authored by me. See also credits/acknowledgment
   On startup, app will try to connect to your preferred device.
 
 ## User Interface ##
+
 Shows ⍺1, plus detected artifacts, number of samples and therefore artifact rate (%) over the window; elapsed time; instantaneous heart rate and heart rate variablility (RMSSD).
 Android UI screenshot above shows output after walk/run intervals on an earlier version.
 
@@ -82,6 +83,7 @@ Release is currently limited to a specific set of countries due to lack of trans
 
 - Can you connect to your sensor with Polar Beat / Polar Flow as a BLE device?
 - Have you enabled dual channel mode on your H10 using Polar Beat / Polar Flow?
+- Is your H10 running the latest firmware (3.1.1 at the time of writing). You may have to install Polar Flow in order to update.
 - Have you checked carefully that no other apps/devices are connected via BLE to the sensor? By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two separate BLE connections can be made to the H10, one of which must be FatMaxxer.
 
 ### FatMaxxer does not produce an ECG log file ###
