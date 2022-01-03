@@ -75,16 +75,25 @@ Plots are user-configurable separately for real time and replay mode.
 ## Frequently Asked Questions ##
 
 ### I cannot find FatMaxxer in the Play Store in my Country ###
-Release is currently limited to a small set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
+
+Release is currently limited to a specific set of countries due to lack of translations. If your country is not enabled let me know. Only English and Dutch are supported. Additional translations welcome.
 
 ### FatMaxxer hangs / crashes / does not connect to my sensor on startup ###
-Check carefully the following:
+
 - Can you connect to your sensor with Polar Beat / Polar Flow as a BLE device?
 - Have you enabled dual channel mode on your H10 using Polar Beat / Polar Flow?
 - Have you checked carefully that no other apps/devices are connected via BLE to the sensor? By default only one BLE connection can be made to the sensor. If you have an H10, and you enable dual channel mode in Polar Beat / Polar Flow, then a maximum of two separate BLE connections can be made to the H10, one of which must be FatMaxxer.
 
+### FatMaxxer does not produce an ECG log file ###
+
+- Have you enabled Developer mode (or "Enable ECG Logging" in most recent versions)?
+- Check that your H10 has recent firmware (3.1.1 recommended at time of writing). You may have to install Polar Flow in order to update.
+- When working, ECG logging should always emit an ECG log if it reaches 10s elapsed time (A fake test artifact / ECG logging event is triggered at 10s.)
+
 ### FatMaxxer still hangs / crashes ###
+
 If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Search for the folder online.fatmaxxer.alpha1 on your phone, or enable Developer Mode and Export the debug.log file.
+
 ### Will it work with my device? ###
 
 Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
