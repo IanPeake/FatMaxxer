@@ -26,7 +26,7 @@ There are promising signs that running or cycling at ⍺1 = 0.75 corresponds to 
 (https://www.frontiersin.org/articles/10.3389/fphys.2020.596567/full).
 Measuring VT1 reliably normally requires a lab test.
 DFA requires only a heart rate strap that can measure inter-heartbeat intervals accurately and reliably.
-FatMaxxer works just for Polar H10 which is the consumer HR strap validated in research.
+FatMaxxer works just for H10 which is a consumer HR strap validated for use in several research studies.
 
 FatMaxxer reports ⍺1 for the past two minutes in "near real time" via the GUI,
 speech (speaker/headphones, configurable) and notifications (configurable).
@@ -98,7 +98,7 @@ If possible, locate the debug.log file and send it to fatmaxxer@gmail.com. Searc
 
 ### Will it work with my device? ###
 
-Only the Polar H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
+Only the H10 (and maybe H9) are supported. The research only validated the H10. It's believed that other sensors are not reliable enough. The Polar BLE API used by FatMaxxer does not support the H7.
 
 ### (Why) does it have to be the H10/H9? ###
 
