@@ -36,7 +36,7 @@ The RR stream is subject to artifact filtering, where adjacent RR intervals chan
 Threshold settings are 5%, 25% and "Auto".
 The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 BPM.
 
-FatMaxxer now provides experimental 10s ECG snapshot around all detected artifacts when Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
+FatMaxxer now provides a 10 second ECG snapshot (H10 only, TBC) around all detected artifacts when Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
 
 ## Testing ##
 
