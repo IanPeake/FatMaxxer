@@ -89,6 +89,7 @@ Release is currently limited to a specific set of countries due to lack of trans
 ### FatMaxxer does not produce an ECG log file ###
 
 - Have you enabled Developer mode (or "Enable ECG Logging" in most recent versions)?
+- Are you using the H10? (It appears the H9 does not support ECG sampling.)
 - Check that your H10 has recent firmware (3.1.1 recommended at time of writing). You may have to install Polar Flow in order to update.
 - When working, ECG logging should always emit an ECG log if it reaches 10s elapsed time (A fake test artifact / ECG logging event is triggered at 10s.)
 
