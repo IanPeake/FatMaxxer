@@ -26,10 +26,12 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.OpenableColumns;
 import android.speech.tts.TextToSpeech;
+import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -37,6 +39,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
@@ -251,6 +254,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onCreate() {
             //Log.d(TAG, "FatMaxxer service onCreate");
@@ -300,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
         private final IBinder mBinder = new LocalBinder();
 
         //@RequiresApi(Build.VERSION_CODES.O)
+        @RequiresApi(api = Build.VERSION_CODES.O)
         private String createNotificationChannel() {
             NotificationChannel chan = new NotificationChannel(SERVICE_CHANNEL_ID,
                     SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
@@ -965,6 +970,11 @@ public class MainActivity extends AppCompatActivity {
             if (currentLogFiles.get("debug")!=null) writeLogFile(msg, "debug");
             return android.util.Log.i(tag, msg);
         }
+
+        public int v(String tag, String s) {
+            if (currentLogFiles.get("debug")!=null) writeLogFile(s, "debug");
+            return android.util.Log.v(tag,s);
+        }
     }
 
     private static Log Log;
@@ -1027,6 +1037,7 @@ public class MainActivity extends AppCompatActivity {
     static enum FMMenuItem {
         MENU_QUIT,
         MENU_SEARCH,
+        MENU_SET_DEFAULT,
         MENU_CONNECT_DEFAULT,
         MENU_EXPORT,
         MENU_DELETE_ALL,
@@ -1082,6 +1093,9 @@ public class MainActivity extends AppCompatActivity {
 //        menu.add(0, menuItem(MENU_DELETE_DEBUG), Menu.NONE, R.string.DeleteAllDebugLogs);
 //        menu.add(0, menuItem(MENU_DELETE_ALL), Menu.NONE, R.string.DeleteAllLogs);
         String tmpDeviceId = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING, "");
+        if (logOrReplayStarted()) {
+            menu.add(0, menuItem(MENU_SET_DEFAULT), Menu.NONE, "Set connected device as preferred");
+        }
         if (tmpDeviceId.length() > 0) {
             menu.add(0, menuItem(MENU_CONNECT_DEFAULT), Menu.NONE, startedOpen+getString(R.string.ConnectedPreferredDevice)+" " + tmpDeviceId+startedClose);
         }
@@ -1703,6 +1717,7 @@ public class MainActivity extends AppCompatActivity {
         if (itemID == menuItem(MENU_IMPORT_REPLAY)) if (!quitRequired()) importReplayLogFile();
         if (itemID == menuItem(MENU_DELETE_ALL)) deleteAllLogFiles();
         if (itemID == menuItem(MENU_DELETE_DEBUG)) deleteAllDebugFiles();
+        if (itemID == menuItem(MENU_SET_DEFAULT))  setConnectedDeviceAsPreferred();
         if (itemID == menuItem(MENU_CONNECT_DEFAULT)) if (!quitRequired()) tryPolarConnectToPreferredDevice();
         if (itemID == menuItem(MENU_OLD_LOG_FILES)) deleteOldLogFiles();
         if (itemID == menuItem(MENU_SEARCH)) searchForPolarDevices();
@@ -1746,6 +1761,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //@RequiresApi(Build.VERSION_CODES.O)
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private String createUINotificationChannel() {
         NotificationChannel chan = new NotificationChannel(UI_CHANNEL_ID,
                 UI_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
@@ -1773,6 +1789,7 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -2726,6 +2743,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setConnectedDeviceAsPreferred() {
+        Log.d(TAG,"Set connected device as preferred...");
+        sharedPreferences.edit().putString(POLAR_DEVICE_ID_PREFERENCE_STRING, SENSOR_ID).apply();
+    }
+
     private void tryPolarConnectToPreferredDevice() {
         Log.d(TAG,"tryPolarConnect to preferred device...");
         String tmpDeviceID = sharedPreferences.getString(POLAR_DEVICE_ID_PREFERENCE_STRING,"");
@@ -2871,38 +2893,38 @@ public class MainActivity extends AppCompatActivity {
                     nonScreenUpdate(featuresUpdate + ", " + artifactsUpdate);
                 }
             }
-        }
+    }
 
-        // Update the user via audio / notification, if enabled
-        private void nonScreenUpdate(String update) {
+    // Update the user via audio / notification, if enabled
+    private void nonScreenUpdate(String update) {
             if (sharedPreferences.getBoolean(AUDIO_OUTPUT_ENABLED, false)) {
                 ttobj.speak(update, TextToSpeech.QUEUE_FLUSH, null);
             }
-        }
+    }
 
-        @Override
-        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
             text_view.setText("Permission update: "+requestCode);
             if (requestCode == 1) {
                 Log.d(TAG, "bt ready");
             }
-        }
+    }
 
-        @Override
-        public void onPause() {
+    @Override
+    public void onPause() {
             text_view.setText("Paused");
             super.onPause();
             api.backgroundEntered();
-        }
+    }
 
-        @Override
-        public void onResume() {
+    @Override
+    public void onResume() {
             text_view.setText("Resumed");
             super.onResume();
             api.foregroundEntered();
-        }
+    }
 
-        private void takeScreenshot() {
+    private void takeScreenshot() {
             Date now = new Date();
             android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
             try {
@@ -2929,27 +2951,18 @@ public class MainActivity extends AppCompatActivity {
             } catch (Throwable e) {
                 logException("screenShot ",e);
             }
-        }
+    }
 
-        @Override
-        public void onDestroy() {
+    @Override
+    public void onDestroy() {
             text_view.setText("Destroyed");
             Toast.makeText(this, R.string.FatMaxxerAppClosed, Toast.LENGTH_SHORT).show();
             super.onDestroy();
-
-            //            try {
-//                rrLogStreamNew.close();
-//            } catch (IOException e) {
-//                text_view.setText("IOException "+e.toString());
-//                logException("IOException ", e);
-//            }
-//            doUnbindService();
-
             Intent i = new Intent(MainActivity.this, LocalService.class);
             i.setAction("STOP");
             Log.d(TAG,"intent to stop local service "+i);
             MainActivity.this.stopService(i);
-
             api.shutDown();
-        }
+    }
+
 }
