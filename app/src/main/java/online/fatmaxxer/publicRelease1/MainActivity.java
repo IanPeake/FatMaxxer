@@ -26,12 +26,10 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.OpenableColumns;
 import android.speech.tts.TextToSpeech;
-import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -98,6 +96,7 @@ import polar.com.sdk.api.model.PolarHrData;
 import polar.com.sdk.api.model.PolarSensorSetting;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.max;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
@@ -2165,12 +2164,16 @@ public class MainActivity extends AppCompatActivity {
     // 73 samples per slot at 125hz is very roughly 0.5s
     Queue<PolarEcgData> lastPolarEcgData = new ConcurrentLinkedQueue<PolarEcgData>();
 
+    Integer maxAbsVolts = 0;
     private void ecgCallback(PolarEcgData polarEcgData) {
             // startup: record relative timestamps
             if (!ecgMonitoring) {
                 ecgStartTSmillis = System.currentTimeMillis();
                 ecgStartInternalTSnanos = polarEcgData.timeStamp;
                 ecgMonitoring = true;
+            }
+            for (Integer microVolts : polarEcgData.samples) {
+                maxAbsVolts = max(abs(microVolts), maxAbsVolts);
             }
             lastPolarEcgData.add(polarEcgData);
             // throw away ECG logs, oldest-first, but only if not already logging
@@ -2581,6 +2584,8 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append("RRs: " + data.rrsMs+" ");
             logmsg.append(rejMsg);
             logmsg.append("Total rejected: " + totalRejected+" ");
+            logmsg.append("uVolt: "+ maxAbsVolts +" ");
+            maxAbsVolts = 0;
             String logstring = logmsg.toString();
 
             artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) (nrArtifacts + nrSamples));
