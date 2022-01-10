@@ -14,14 +14,12 @@
     </string-array>
 
     <string-array name="artifactThresholdEntries">
-        <item>Disable</item>
         <item>0.05</item>
         <item>0.25</item>
         <item>Auto</item>
     </string-array>
 
     <string-array name="artifactThresholdEntryValues">
-        <item>Disable</item>
         <item>0.05</item>
         <item>0.25</item>
         <item>Auto</item>

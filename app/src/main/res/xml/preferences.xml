@@ -33,6 +33,12 @@
         app:summary="@string/PreserveThisActivitysLogsOnExit"/>
         -->
 
+    <SwitchPreferenceCompat
+        app:key="removeArtifacts"
+        app:title="Remove Artifacts"
+        app:defaultValue="true"
+        app:summary="RR intervals deemed to be artifacts will be ignored"/>
+
     <ListPreference
         app:key="artifactThreshold"
         app:title="@string/ArtifactRejectionThreshold"

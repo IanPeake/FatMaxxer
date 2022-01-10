@@ -2356,10 +2356,10 @@ public class MainActivity extends AppCompatActivity {
                 exerciseMode = getString(R.string.Workout);
                 artifactCorrectionThreshold = 0.05;
             } else {
-                exerciseMode = "Workout (Unc)";
-                artifactCorrectionThreshold = 0.05;
-                disableArtifactCorrection = true;
+                // ASSERTION FAIL
             }
+            boolean removeArtifactsSetting = sharedPreferences.getBoolean("removeArtifacts", true);
+            disableArtifactCorrection = !removeArtifactsSetting;
         }
         String notificationDetailSetting = "";
         String alpha1EvalPeriodSetting = "";
