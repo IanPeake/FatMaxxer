@@ -917,6 +917,7 @@ public class MainActivity extends AppCompatActivity {
     double rrMeanWindowed = 0;
     // maximum tolerable variance of adjacent RR intervals
     double artifactCorrectionThreshold = 0.05;
+    boolean disableArtifactCorrection = false;
     final Set<String> emptyStringSet = new HashSet<String>();
     // elapsed time in terms of cumulative sum of all seen RRs (as for HRVLogger)
     long logRRelapsedMS = 0;
@@ -2342,8 +2343,8 @@ public class MainActivity extends AppCompatActivity {
             String artifactCorrectionThresholdSetting = sharedPreferences.getString(ARTIFACT_REJECTION_THRESHOLD_PREFERENCE_STRING, "Auto");
             if (artifactCorrectionThresholdSetting.equals("Auto")) {
                 if (data.hr > 95) {
-                    exerciseMode = getString(R.string.Workout);
-                    artifactCorrectionThreshold = 0.05;
+                exerciseMode = getString(R.string.Workout);
+                artifactCorrectionThreshold = 0.05;
                 } else if (data.hr < 80) {
                     exerciseMode = getString(R.string.Light);
                     artifactCorrectionThreshold = 0.25;
@@ -2351,9 +2352,13 @@ public class MainActivity extends AppCompatActivity {
             } else if (artifactCorrectionThresholdSetting.equals("0.25")) {
                 exerciseMode = getString(R.string.Light);
                 artifactCorrectionThreshold = 0.25;
-            } else {
+            } else if (artifactCorrectionThresholdSetting.equals("0.25")) {
                 exerciseMode = getString(R.string.Workout);
                 artifactCorrectionThreshold = 0.05;
+            } else {
+                exerciseMode = "Workout (Unc)";
+                artifactCorrectionThreshold = 0.05;
+                disableArtifactCorrection = true;
             }
         }
         String notificationDetailSetting = "";
@@ -2405,14 +2410,18 @@ public class MainActivity extends AppCompatActivity {
             double lowerBound = prevrr * (1 - artifactCorrectionThreshold);
             double upperBound = prevrr * (1 + artifactCorrectionThreshold);
             //Log.d(TAG, "prevrr " + prevrr + " lowerBound " + lowerBound + " upperBound " + upperBound);
-            if (thisIsFirstSample || lowerBound < newRR && newRR < upperBound) {
+            boolean artifactFound = lowerBound >= newRR || newRR >= upperBound;
+            if (thisIsFirstSample || !artifactFound) {
                 //Log.d(TAG, "accept RR within threshold" + newrr);
                 // if in_RRs[(i-1)]*(1-artifact_correction_threshold) < in_RRs[i] < in_RRs[(i-1)]*(1+artifact_correction_threshold):
-                rrInterval[newestSample] = newRR;
-                rrIntervalTimestamp[newestSample] = currentTimeMS;
-                newestSample = (newestSample + 1) % maxrrs;
+                if (!disableArtifactCorrection) {
+                    rrInterval[newestSample] = newRR;
+                    rrIntervalTimestamp[newestSample] = currentTimeMS;
+                    newestSample = (newestSample + 1) % maxrrs;
+                }
                 thisIsFirstSample = false;
-            } else {
+            }
+            if (artifactFound) {
                 //Log.d(TAG, "drop...");
                 artifactTimestamp[newestArtifactSample] = currentTimeMS;
                 newestArtifactSample = (newestArtifactSample + 1) % maxrrs;
