@@ -17,6 +17,7 @@
     <color name="colorA1V2">#0BB110</color>
     <color name="colorBlue">#0532F8</color>
     <color name="rmssdSeries">#36F4EB</color>
+    <color name="peakECGSeries">#1C8651</color>
     <color name="hrWinSeries">#C64407</color>
     <color name="colorTextUnreliableData">#A99F9FB6</color>
     <color name="colorTextData">#000000</color>

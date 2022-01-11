@@ -1013,6 +1013,8 @@ public class MainActivity extends AppCompatActivity {
     LineGraphSeries<DataPoint> artifactSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> rmssdSeries = new LineGraphSeries<DataPoint>();
     LineGraphSeries<DataPoint> hrWinSeries = new LineGraphSeries<DataPoint>();
+    LineGraphSeries<DataPoint> ecgPeakSeries = new LineGraphSeries<DataPoint>();
+
     final int maxDataPoints = 65535;
     final double graphViewPortWidth = 2.0;
     final int graphMaxHR = 200;
@@ -1907,6 +1909,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
         graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
+        //
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);
         graphView.addSeries(a1175Series);
@@ -1918,6 +1921,7 @@ public class MainActivity extends AppCompatActivity {
         graphView.addSeries(rrSeries);
         graphView.addSeries(rmssdSeries);
         graphView.addSeries(hrWinSeries);
+        graphView.addSeries(ecgPeakSeries);
         // REQUIRED
         graphView.getSecondScale().addSeries(artifactSeries);
         graphView.getSecondScale().setMaxY(10);
@@ -1938,6 +1942,7 @@ public class MainActivity extends AppCompatActivity {
         artifactSeries.setColor(Color.BLUE);
         rmssdSeries.setColor(getResources().getColor(R.color.rmssdSeries));
         hrWinSeries.setColor(getResources().getColor(R.color.hrWinSeries));
+        ecgPeakSeries.setColor(getResources().getColor(R.color.peakECGSeries));
         // yellow is a lot less visible than red
         a1HRVvt1Series.setThickness(6);
         // red is a lot more visible than yellow
@@ -1949,6 +1954,7 @@ public class MainActivity extends AppCompatActivity {
         rmssdSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
         hrWinSeries.appendData(new DataPoint(0,0),false,maxDataPoints);
         artifactSeries.appendData(new DataPoint(0,0), false, maxDataPoints);
+        ecgPeakSeries.appendData(new DataPoint(0,0),false, maxDataPoints);
 
         a1V2Series.setOnDataPointTapListener(new OnDataPointTapListener() {
             @Override
@@ -1983,6 +1989,13 @@ public class MainActivity extends AppCompatActivity {
             public void onTap(Series series, DataPointInterface dataPoint) {
                 String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +dataPoint.getY()+"% ]";
                 Toast.makeText(thisContext, getString(R.string.Artifacts)+": "+text, Toast.LENGTH_LONG).show();
+            }
+        });
+        ecgPeakSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+            @Override
+            public void onTap(Series series, DataPointInterface dataPoint) {
+                String text = "["+formatMinAsTime(dataPoint.getX()) + ", " +(dataPoint.getY()*10.0)+"uV ]";
+                Toast.makeText(thisContext, "Peak ECG: "+text, Toast.LENGTH_LONG).show();
             }
         });
         rrSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
@@ -2165,7 +2178,8 @@ public class MainActivity extends AppCompatActivity {
     // 73 samples per slot at 125hz is very roughly 0.5s
     Queue<PolarEcgData> lastPolarEcgData = new ConcurrentLinkedQueue<PolarEcgData>();
 
-    Integer maxAbsVolts = 0;
+    Integer lastECGpeak = 0;
+    Integer peakECGuVolts = 0;
     private void ecgCallback(PolarEcgData polarEcgData) {
             // startup: record relative timestamps
             if (!ecgMonitoring) {
@@ -2174,7 +2188,7 @@ public class MainActivity extends AppCompatActivity {
                 ecgMonitoring = true;
             }
             for (Integer microVolts : polarEcgData.samples) {
-                maxAbsVolts = max(abs(microVolts), maxAbsVolts);
+                peakECGuVolts = max(abs(microVolts), peakECGuVolts);
             }
             lastPolarEcgData.add(polarEcgData);
             // throw away ECG logs, oldest-first, but only if not already logging
@@ -2593,8 +2607,11 @@ public class MainActivity extends AppCompatActivity {
             logmsg.append("RRs: " + data.rrsMs+" ");
             logmsg.append(rejMsg);
             logmsg.append("Total rejected: " + totalRejected+" ");
-            logmsg.append("uVolt: "+ maxAbsVolts +" ");
-            maxAbsVolts = 0;
+            logmsg.append("ECG Peak: "+ lastECGpeak +" uV");
+            lastECGpeak = peakECGuVolts;
+            if (elapsedSecondsTrunc % 2 == 0) {
+                peakECGuVolts = 0;
+            }
             String logstring = logmsg.toString();
 
             artifactsPercentWindowed = (int) round(nrArtifacts * 100 / (double) (nrArtifacts + nrSamples));
@@ -2666,6 +2683,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (graphFeatures.contains("artifacts")) {
                     artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                    ecgPeakSeries.appendData(new DataPoint(elapsedMinRound, lastECGpeak / 10.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeatures.contains("rmssd")) {
                     rmssdSeries.appendData(new DataPoint(elapsedMinRound, round(rmssdWindowed * 2)), scrollToEnd, maxDataPoints);
