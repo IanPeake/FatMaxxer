@@ -27,12 +27,13 @@
 
     <!-- requires translation -->
     <string-array name="graphFeaturesEntries">
-        <item>Heart Rate</item>
-        <item>RR /5</item>
+        <item>Heart Rate (BPM)</item>
+        <item>RR /5 (msec)</item>
         <item>Alpha1 x100 (2 min)</item>
-        <item>RMSSD x2 (2 min)</item>
-        <item>Heart Rate (2 min avg)</item>
-        <item>Artifacts (2 min, %)</item>
+        <item>RMSSD x2 (msec 2 min)</item>
+        <item>Heart Rate (BPM 2 min avg)</item>
+        <item>Artifacts (%, 2 min)</item>
+        <item>Peak ECG (uVolt, 2 sec)</item>
     </string-array>
 
     <string-array name="graphFeaturesValues">
@@ -42,6 +43,7 @@
         <item>rmssd</item>
         <item>hrWin</item>
         <item>artifacts</item>
+        <item>peakECG</item>
     </string-array>
 
     <string-array name="graphFeaturesDefaultValues">
@@ -49,6 +51,7 @@
         <item>rr</item>
         <item>a1</item>
         <item>artifacts</item>
+        <item>peakECG</item>
     </string-array>
 
     <string-array name="graphReplayFeaturesDefaultValues">

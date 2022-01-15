@@ -2683,6 +2683,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (graphFeatures.contains("artifacts")) {
                     artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                }
+                if (graphFeatures.contains("peakECG")) {
                     ecgPeakSeries.appendData(new DataPoint(elapsedMinRound, lastECGpeak / 10.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeatures.contains("rmssd")) {
