@@ -906,10 +906,13 @@ public class MainActivity extends AppCompatActivity {
     public boolean started = false;
     double rmssdWindowed = 0;
     // last known alpha1 (default resting nominally 1.0)
-    double alpha1V1Windowed = 1.0;
-    double alpha1V1RoundedWindowed = 1.0;
+    //double alpha1V1Windowed = 1.0;
+    //double alpha1V1RoundedWindowed = 1.0;
     double alpha1V2Windowed = 1.0;
     double alpha1V2RoundedWindowed = 1.0;
+    int zone = 1;
+    int zonePrev = 1;
+    public boolean zoneChange = false;
     int artifactsPercentWindowed;
     int lambdaSetting = 500;
     int currentHR;
@@ -2532,6 +2535,7 @@ public class MainActivity extends AppCompatActivity {
         if (hrNotificationCount % alpha1EvalPeriodSec == 0) {
 //            graphEnabled = true;
             //Log.d(TAG,"alpha1...");
+            zonePrev = zone;
             alpha1V2Windowed = dfaAlpha1V2(samples, 2, 4, 30);
             float a1v2x100 = (int)(100.0 * alpha1V2Windowed);
             alpha1V2RoundedWindowed = round(alpha1V2Windowed * 100) / 100.0;
@@ -2641,15 +2645,20 @@ public class MainActivity extends AppCompatActivity {
                 text_a1.setTextColor(getFatMaxxerColor(R.color.colorTextData));
                 text_secondary.setTextColor(getFatMaxxerColor(R.color.colorTextData));
             }
+            zonePrev = zone;
             if (elapsedSecondsTrunc > 30) {
                     if (alpha1V2RoundedWindowed < alpha1HRVvt2) {
                         text_a1.setBackgroundResource(R.color.colorMaxIntensity);
+                        zone = 3;
                     } else if (alpha1V2RoundedWindowed < alpha1HRVvt1) {
                         text_a1.setBackgroundResource(R.color.colorMedIntensity);
+                        zone = 2;
                     } else if (alpha1V2RoundedWindowed < alpha1MaxOptimal) {
                         text_a1.setBackgroundResource(R.color.colorFatMaxIntensity);
+                        zone = 1;
                     } else {
                         text_a1.setBackgroundResource(R.color.colorEasyIntensity);
+                        zone = 0;
                     }
             }
             Log.d(TAG, "HR "+data.hr + " " + alpha1V2RoundedWindowed + " " + rmssdWindowed);
@@ -2897,6 +2906,7 @@ public class MainActivity extends AppCompatActivity {
             double artifactsRateAlarmThreshold = Double.parseDouble(sharedPreferences.getString("artifactsRateAlarmThreshold", "5"));
             double upperOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "1.0"));
             double lowerOptimalAlpha1Threshold = Double.parseDouble(sharedPreferences.getString("upperOptimalAlpha1Threshold", "0.85"));
+            boolean audioOutputOnZoneChange = sharedPreferences.getBoolean("audioOutputOnZoneChane", false);
             String artifactsUpdate = "";
             String featuresUpdate = "";
             if (elapsedSecondsTrunc >30 && timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
@@ -2918,6 +2928,11 @@ public class MainActivity extends AppCompatActivity {
                         timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
                     featuresUpdate = getString(R.string.HeartRateFull_TextToSpeech)+" " + data.hr + ". "+getString(R.string.HeartRateVariabilityAbbrev_TextToSpeech)+" " + rmssd;
                 }
+            }
+            // this will clobber the standard behavior(?)
+            if (audioOutputOnZoneChange && (zone != zonePrev)) {
+                featuresUpdate = alpha1V2RoundedWindowed + " " + data.hr;
+                artifactsUpdate = getString(R.string.Dropped_TextToSpeech)+" " + artifactsPercentWindowed + " "+getString(R.string.Percent_TextToSpeech);
             }
             if (featuresUpdate.length() > 0) {
                 prevSpokenUpdateMS = currentTime_ms;

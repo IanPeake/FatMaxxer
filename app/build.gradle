@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     def versionPropsFile = rootProject.file('version.properties')
     if (versionPropsFile.canRead()) {
@@ -16,22 +16,13 @@ android {
             versionCode versionCodeIntegerFromProps
             versionName versionNameFromProps
             minSdkVersion 21
-            targetSdkVersion 29
+            targetSdkVersion 30
             testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         }
     }
     else {
         throw new GradleException("Could not read version.properties")
     }
-//
-//    defaultConfig {
-//        applicationId "online.fatmaxxer.publicRelease1"
-//        minSdkVersion 21
-//        targetSdkVersion 29
-//        versionCode 20
-//        versionName "20210621_133154.main.be35919"
-//        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-//    }
 
 
     buildTypes {
