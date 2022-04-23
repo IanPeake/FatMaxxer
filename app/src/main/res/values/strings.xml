@@ -93,5 +93,5 @@
     <string name="ValueOfLambdaForSmoothnessPriors">Value of Lambda for smoothness priors pre-DFA detrending</string>
     <string name="ImportCSVFailedDataIsNull">Import CSV failed: data is null</string>
     <string name="ImportCSVFailedCouldNotGetURIFromData">Import CSV failed: could not get Uri from data</string>
-    <string name="AudioOutputOnZoneChange">EnableAudioOutputOnZoneChangeString</string>
+    <string name="AudioOutputOnZoneChange">Audio output only on zone change</string>
 </resources>
