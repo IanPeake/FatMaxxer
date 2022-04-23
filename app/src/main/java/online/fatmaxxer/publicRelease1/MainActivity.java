@@ -2909,7 +2909,14 @@ public class MainActivity extends AppCompatActivity {
             boolean audioOutputOnZoneChange = sharedPreferences.getBoolean("audioOutputOnZoneChane", false);
             String artifactsUpdate = "";
             String featuresUpdate = "";
-            if (elapsedSecondsTrunc >30 && timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
+        // this will clobber the standard behavior(?)
+        if (audioOutputOnZoneChange) {
+            if (zone != zonePrev){
+                featuresUpdate = alpha1V2RoundedWindowed + " " + data.hr;
+                artifactsUpdate = getString(R.string.Dropped_TextToSpeech) + " " + artifactsPercentWindowed + " " + getString(R.string.Percent_TextToSpeech);
+            }
+        }
+        else if (elapsedSecondsTrunc >30 && timeSinceLastSpokenUpdate_s > minUpdateWaitSeconds) {
                 if (artifactsPercentWindowed > 0) {
                     artifactsUpdate = getString(R.string.Dropped_TextToSpeech)+" " + artifactsPercentWindowed + " "+getString(R.string.Percent_TextToSpeech);
                 }
@@ -2928,11 +2935,6 @@ public class MainActivity extends AppCompatActivity {
                         timeSinceLastSpokenUpdate_s >= maxUpdateWaitSeconds) {
                     featuresUpdate = getString(R.string.HeartRateFull_TextToSpeech)+" " + data.hr + ". "+getString(R.string.HeartRateVariabilityAbbrev_TextToSpeech)+" " + rmssd;
                 }
-            }
-            // this will clobber the standard behavior(?)
-            if (audioOutputOnZoneChange && (zone != zonePrev)) {
-                featuresUpdate = alpha1V2RoundedWindowed + " " + data.hr;
-                artifactsUpdate = getString(R.string.Dropped_TextToSpeech)+" " + artifactsPercentWindowed + " "+getString(R.string.Percent_TextToSpeech);
             }
             if (featuresUpdate.length() > 0) {
                 prevSpokenUpdateMS = currentTime_ms;
