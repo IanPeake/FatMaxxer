@@ -71,7 +71,7 @@
     <string name="ArtifactsSamplesThreshold_UI">artifacts / samples (%) [threshold]</string>
     <string name="Light">Light</string>
     <string name="RootMeanSquareSuccessiveDifferencesAbbrev">RMSSD</string>
-    <string name="EnableAudioUpdates">Enable audio updates</string>
+    <string name="EnableAudioUpdates">Audio updates</string>
     <string name="Alpha1UpdatesViaAudio">⍺1 updates via audio</string>
     <string name="EnableNotificationUpdates">Enable notification updates</string>
     <string name="Alpha1UpdatesViaOngoingNotification">⍺1 updates via ongoing notification</string>
@@ -93,4 +93,5 @@
     <string name="ValueOfLambdaForSmoothnessPriors">Value of Lambda for smoothness priors pre-DFA detrending</string>
     <string name="ImportCSVFailedDataIsNull">Import CSV failed: data is null</string>
     <string name="ImportCSVFailedCouldNotGetURIFromData">Import CSV failed: could not get Uri from data</string>
+    <string name="AudioOutputOnZoneChange">EnableAudioOutputOnZoneChangeString</string>
 </resources>

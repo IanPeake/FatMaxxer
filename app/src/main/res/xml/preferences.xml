@@ -4,7 +4,7 @@
 
     <SwitchPreferenceCompat
         app:key="audioOutputEnabled"
-        app:title="@string/EnableAudioUpdates"
+        app:title = "@string/EnableAudioUpdates"
         app:summary="@string/Alpha1UpdatesViaAudio"/>
 
     <SwitchPreferenceCompat
@@ -115,5 +115,10 @@
         app:useSimpleSummaryProvider="true"
         android:maxLength="3"
         />
+
+    <SwitchPreferenceCompat
+        app:key="audioOutputOnZoneChane"
+        app:title="@string/AudioOutputOnZoneChange"
+        app:summary="Audio output only on zone change"/>
 
 </PreferenceScreen>
