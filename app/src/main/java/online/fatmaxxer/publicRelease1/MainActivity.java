@@ -2691,7 +2691,7 @@ public class MainActivity extends AppCompatActivity {
                     a1V2Series.appendData(new DataPoint(elapsedMinRound, alpha1V2RoundedWindowed * 100.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeatures.contains("artifacts")) {
-                    artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed), scrollToEnd, maxDataPoints);
+                    artifactSeries.appendData(new DataPoint(elapsedMinRound, artifactsPercentWindowed / 10.0), scrollToEnd, maxDataPoints);
                 }
                 if (graphFeatures.contains("peakECG")) {
                     ecgPeakSeries.appendData(new DataPoint(elapsedMinRound, lastECGpeak / 10.0), scrollToEnd, maxDataPoints);
