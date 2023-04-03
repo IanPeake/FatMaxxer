@@ -38,6 +38,19 @@ The "Auto" setting uses a threshold of 5% when HR > 90 BPM and 25% when HR < 85 
 
 FatMaxxer now provides a 10 second ECG snapshot (H10 only, TBC) around all detected artifacts when Developer mode is enabled: (http://www.muscleoxygentraining.com/2021/07/ecg-artifact-strips-from-fatmaxxer-guide.html). A test segment (segment 0) is recorded at 10s elapsed time.
 
+## Google Play Privacy Policy ##
+
+This section refers to FatMaxxer, packaged as a Google Play application.
+
+FatMaxxer systematically collects and stores fitness data based in the form of heart beat intervals from an attached Bluetooth Low Energy devices.
+FatMaxxer systematically collects and stores the IDs of nearby Polar BLE devices, including user-initiated connections.
+Data is stored in a local private cache for approximately one week to enable the user to send crash logs, diagnostic and other performance data to third parties (such as the developer) for analysis.
+Data may be shared by user request with other applications only via android data sharing APIs.
+It cannot be guaranteed that shared data will be encrypted.
+
+After one week cached data is deleted.
+There is currently no way for the user to request that cached data will be deleted within the application.
+
 ## Testing ##
 
 Sideload a recent test version from the APK downloadable from the Github repository.
@@ -134,7 +147,7 @@ The graph will be slightly quantized for most plots except RRs.
 Replay is at up to 60x real time.
 
 ## Known issues / limitations ##
-- _Needless to say, I will not be held responsible for any app malfunction which causes you to overtrain!_
+- _Needless to say, I will not be held responsible for any app malfunction which causes you to overtrain or otherwise injure yourself_
 - GraphView plotter is quirky and could be replaced
 - Android may pause (kill) the app unpredictably. Enable the "Leave screen on" option, check on the app regularly, and avoid using other apps while in use.
 - Audio update period should not need to be customized; it should be detectable from metrics like ⍺1---it's an objective measure of effort, after all
