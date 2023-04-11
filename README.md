@@ -42,9 +42,10 @@ FatMaxxer now provides a 10 second ECG snapshot (H10 only, TBC) around all detec
 
 This section refers to FatMaxxer, packaged as a Google Play application.
 
-FatMaxxer systematically collects and stores fitness data based in the form of heart beat intervals from an attached Bluetooth Low Energy device.
+FatMaxxer systematically collects and stores fitness data in the form of heart beat intervals from an attached Bluetooth Low Energy device.
 FatMaxxer systematically collects and stores the IDs of nearby Polar BLE devices, including user-initiated connections.
-Data is stored in a local private cache for approximately one week to enable the user to send crash logs, diagnostic and other performance data to third parties (such as the developer) for analysis.
+FatMaxxer systematically collects and stores data derived from heart beat intervals and BLE devices.
+Data are stored in a local private cache for approximately one week to enable the user to send crash logs, diagnostic and other performance data to third parties (such as the FatMaxxer developer) for troubleshooting or analysis or both.
 Data may be shared by user request with other applications only via android data sharing APIs.
 It cannot be guaranteed that shared data will be encrypted.
 
