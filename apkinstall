@@ -1,2 +1,4 @@
 cp ./app/build/outputs/apk/debug/app-debug.apk .
+# in case of signature mismatch
+# adb uninstall online.fatmaxxer.publicRelease1
 adb install -r app-debug.apk

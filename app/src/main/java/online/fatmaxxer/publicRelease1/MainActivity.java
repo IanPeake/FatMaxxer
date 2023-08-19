@@ -272,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
                     .addCategory(Intent.CATEGORY_LAUNCHER)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             // https://stackoverflow.com/a/42002705/16251655
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
             //notificationBuilder.setContentIntent(pendingIntent)
 
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, SERVICE_CHANNEL_ID);
@@ -1388,7 +1388,10 @@ public class MainActivity extends AppCompatActivity {
             Cursor cursor = getContentResolver().query(uri, null, null, null, null);
             try {
                 if (cursor != null && cursor.moveToFirst()) {
-                    result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                    int columnIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (columnIndex>-1) {
+                        result = cursor.getString(columnIndex);
+                    }
                 }
             } finally {
                 cursor.close();
@@ -2111,7 +2114,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && savedInstanceState == null) {
-            this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, "android.permission.BLUETOOTH_ADVERTISE"}, 1);
+            //this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, "android.permission.BLUETOOTH_ADVERTISE"}, 1);
+            this.requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, 1);
+            //requestPermissions(new Object[](Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT), PERMISSION_REQUEST_CODE);
         }
 
         expireLogFiles();
@@ -2571,7 +2576,7 @@ public class MainActivity extends AppCompatActivity {
                     notificationIntent.setAction(Intent.ACTION_MAIN);
                     notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                     notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
                     //notification.setContentIntent(pendingIntent)
 
                     uiNotificationBuilder = new NotificationCompat.Builder(this, UI_CHANNEL_ID)

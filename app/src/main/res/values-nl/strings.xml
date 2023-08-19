@@ -80,7 +80,7 @@
 <string name="KeepLogs">Bewaar logs</string>
 <string name="PreserveThisActivitysLogsOnExit">Behoud huidige logs bij afsluiten</string>
 <string name="ArtifactRejectionThreshold">Artefact drempel</string>
-<string name="RrsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
+<string name="RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected">Een RR die afwijkt van de vorige met een waarde hoger dan de ingestelde drempel wordt verworpen.</string>
 <string name="Alpha1InterCalculationPeriodSeconds">⍺1 berekeningsinterval (sec)</string>
 <string name="TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"><![CDATA[⍺1 berekeningsinterval, >= 5 sec]]></string>
 <string name="SelectGraphFeatures">Selecteer grafiek elementen</string>
