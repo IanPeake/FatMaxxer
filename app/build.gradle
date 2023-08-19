@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     def versionPropsFile = rootProject.file('version.properties')
     if (versionPropsFile.canRead()) {
@@ -16,7 +16,7 @@ android {
             versionCode versionCodeIntegerFromProps
             versionName versionNameFromProps
             minSdkVersion 24
-            targetSdkVersion 31
+            targetSdkVersion 33
             testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         }
     }
