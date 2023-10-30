@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./apkinstall                            && \
+#./apkinstall                            && \
 cp ./app/release/app-release.aab .      && \
 ./versionreport                         && \
 git commit -m 'build/s' -a              && \
