@@ -19,6 +19,9 @@ See Bruce Rogers' FAQ (http://www.muscleoxygentraining.com/2021/01/dfa-a1-and-ex
 In action:
 <img src="http://img.youtube.com/vi/Br2O0e7XoJ8/0.jpg">
 
+## Update Aug 19 ##
+New builds are now available targeting Android 13 (SDK version 33). See APK on github and in closed testing. Feedback welcome.
+
 ## Overview ##
 FatMaxxer is an Android app which uses the Polar H10 to advise Detrended Fluctuation Analysis alpha1 (DFA, ⍺1) in real time.
 
