@@ -5,7 +5,7 @@ measured using just a Polar H10 heart rate strap, according to recent research (
 **This app requires a Polar H10** (or possibly H9). 
 
 <b>NEWS: The FatMaxxer app has been delisted from the Google Play Store. Google now requires individual developers to publish their personal residential address, which I have refused to do. The github repository and APK build remain available as before.</b>
-~~ Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1 ~~ .
+<del>Public Release: https://play.google.com/store/apps/details?id=online.fatmaxxer.publicRelease1</del>.
 ~~ The Google Play version may lag significantly behind the open source project hosted on Github and early test builds
 (https://github.com/IanPeake/FatMaxxer#testers-wanted) .~~
 
