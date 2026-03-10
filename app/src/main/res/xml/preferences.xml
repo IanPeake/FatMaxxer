@@ -2,123 +2,118 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <SwitchPreferenceCompat
-        app:key="audioOutputEnabled"
-        app:title = "@string/EnableAudioUpdates"
-        app:summary="@string/Alpha1UpdatesViaAudio"/>
+    <PreferenceCategory
+        app:title="Guidance & Alerts">
 
-    <SwitchPreferenceCompat
-        app:key="notificationsEnabled"
-        app:title="@string/EnableNotificationUpdates"
-        app:summary="@string/Alpha1UpdatesViaOngoingNotification"/>
+        <SwitchPreferenceCompat
+            app:key="audioOutputEnabled"
+            app:title="@string/EnableAudioUpdates"
+            app:summary="@string/Alpha1UpdatesViaAudio" />
 
-    <ListPreference
-        app:key="notificationDetail"
-        app:title="@string/NotificationDetail"
-        app:summary=""
-        app:defaultValue="full"
-        app:entries="@array/notificationDetailEntries"
-        app:useSimpleSummaryProvider="true"
-        app:entryValues="@array/notificationDetailValues"/>
+        <SwitchPreferenceCompat
+            app:key="audioOutputOnZoneChane"
+            app:title="@string/AudioOutputOnZoneChange"
+            app:summary="Speak only when the effort zone changes" />
 
-    <SwitchPreferenceCompat
-        app:key="keepScreenOn"
-        app:title="@string/KeepScreenOn"
-        app:summary=""/>
+        <SwitchPreferenceCompat
+            app:key="notificationsEnabled"
+            app:title="@string/EnableNotificationUpdates"
+            app:summary="@string/Alpha1UpdatesViaOngoingNotification" />
 
-    <!--
-    <SwitchPreferenceCompat
-        app:key="keepLogs"
-        app:title="@string/KeepLogs"
-        app:summary="@string/PreserveThisActivitysLogsOnExit"/>
-        -->
+        <ListPreference
+            app:key="notificationDetail"
+            app:title="@string/NotificationDetail"
+            app:defaultValue="full"
+            app:entries="@array/notificationDetailEntries"
+            app:useSimpleSummaryProvider="true"
+            app:entryValues="@array/notificationDetailValues" />
+    </PreferenceCategory>
 
-    <SwitchPreferenceCompat
-        app:key="removeArtifacts"
-        app:title="Remove Artifacts"
-        app:defaultValue="true"
-        app:summary="RR intervals deemed to be artifacts will be ignored"/>
+    <PreferenceCategory
+        app:title="Signal Quality & Calculation">
 
-    <ListPreference
-        app:key="artifactThreshold"
-        app:title="@string/ArtifactRejectionThreshold"
-        app:summary="@string/RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected"
-        app:defaultValue="Auto"
-        app:entries="@array/artifactThresholdEntries"
-        app:useSimpleSummaryProvider="true"
-        app:entryValues="@array/artifactThresholdEntryValues"/>
+        <SwitchPreferenceCompat
+            app:key="removeArtifacts"
+            app:title="Remove artifacts"
+            app:defaultValue="true"
+            app:summary="Ignore RR intervals that look like artifacts" />
 
-    <EditTextPreference
-        app:key="alpha1CalcPeriod"
-        app:title="@string/Alpha1InterCalculationPeriodSeconds"
-        android:digits="0123456789"
-        android:maxLength="4"
-        app:defaultValue="20"
-        app:useSimpleSummaryProvider="true"
-        app:summary="@string/TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds"/>
+        <ListPreference
+            app:key="artifactThreshold"
+            app:title="@string/ArtifactRejectionThreshold"
+            app:summary="@string/RRsDifferingByMoreThanPlusMinusThresholdFromThePreviousAreRejected"
+            app:defaultValue="Auto"
+            app:entries="@array/artifactThresholdEntries"
+            app:useSimpleSummaryProvider="true"
+            app:entryValues="@array/artifactThresholdEntryValues" />
 
-    <MultiSelectListPreference
-        android:dialogTitle="@string/SelectGraphFeatures"
-        android:key="graphFeaturesSelectorKey"
-        android:summary=""
-        android:title="@string/SelectGraphFeatures"
-        android:entries="@array/graphFeaturesEntries"
-        android:entryValues="@array/graphFeaturesValues"
-        android:defaultValue="@array/graphFeaturesDefaultValues"
-        />
+        <EditTextPreference
+            app:key="alpha1CalcPeriod"
+            app:title="@string/Alpha1InterCalculationPeriodSeconds"
+            android:digits="0123456789"
+            android:maxLength="4"
+            app:defaultValue="20"
+            app:useSimpleSummaryProvider="true"
+            app:summary="@string/TimeInSecondsToWaitBetweenAlpha1CalculationsGreaterThanOrEqualToFiveSeconds" />
 
-    <EditTextPreference
-        app:key="polarDeviceID"
-        app:title="@string/PreferredDeviceIDHex"
-        app:useSimpleSummaryProvider="true"
-        app:summary="@string/HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice"/>
+        <EditTextPreference
+            app:key="lambdaPref"
+            app:title="@string/LambdaInteger"
+            app:summary="@string/ValueOfLambdaForSmoothnessPriors"
+            android:digits="0123456789"
+            app:defaultValue="500"
+            app:useSimpleSummaryProvider="true"
+            android:maxLength="3" />
+    </PreferenceCategory>
 
-    <!--
-    <SwitchPreferenceCompat
-        app:key="experimental"
-        app:title="@string/DeveloperMode"
-        app:summary="@string/ExperimentalFeatures"/>
-        -->
+    <PreferenceCategory
+        app:title="Display & Graph">
 
-    <SwitchPreferenceCompat
-        app:key="enableECG"
-        app:title="Enable ECG artifact logging"
-        android:defaultValue="true"
-        app:summary="Enable ECG logging for artifacts"/>
+        <SwitchPreferenceCompat
+            app:key="keepScreenOn"
+            app:title="@string/KeepScreenOn" />
 
-    <SwitchPreferenceCompat
-        app:key="enableReplay"
-        app:title="Enable Log Replay"
-        app:summary="Enable log replay (disable auto-start)"/>
+        <MultiSelectListPreference
+            android:dialogTitle="@string/SelectGraphFeatures"
+            android:key="graphFeaturesSelectorKey"
+            android:title="@string/SelectGraphFeatures"
+            android:entries="@array/graphFeaturesEntries"
+            android:entryValues="@array/graphFeaturesValues"
+            android:defaultValue="@array/graphFeaturesDefaultValues" />
 
-    <SwitchPreferenceCompat
-        app:key="enableSensorEmulation"
-        app:title="Enable BLE Sensor Emulation"
-        app:summary="Try to emulate a BLE sensor transmitting a1 (requires restart)"/>
+        <MultiSelectListPreference
+            android:dialogTitle="@string/SelectReplayGraphFeatures"
+            android:key="graphReplayFeaturesSelectorKey"
+            android:title="@string/SelectReplayGraphFeatures"
+            android:entries="@array/graphFeaturesEntries"
+            android:entryValues="@array/graphFeaturesValues"
+            android:defaultValue="@array/graphReplayFeaturesDefaultValues" />
+    </PreferenceCategory>
 
-    <MultiSelectListPreference
-        android:dialogTitle="@string/SelectReplayGraphFeatures"
-        android:key="graphReplayFeaturesSelectorKey"
-        android:summary=""
-        android:title="@string/SelectReplayGraphFeatures"
-        android:entries="@array/graphFeaturesEntries"
-        android:entryValues="@array/graphFeaturesValues"
-        android:defaultValue="@array/graphReplayFeaturesDefaultValues"
-        />
+    <PreferenceCategory
+        app:title="Sensor & Developer">
 
-    <EditTextPreference
-        app:key="lambdaPref"
-        app:title="@string/LambdaInteger"
-        app:summary="@string/ValueOfLambdaForSmoothnessPriors"
-        android:digits="0123456789"
-        app:defaultValue="500"
-        app:useSimpleSummaryProvider="true"
-        android:maxLength="3"
-        />
+        <EditTextPreference
+            app:key="polarDeviceID"
+            app:title="@string/PreferredDeviceIDHex"
+            app:useSimpleSummaryProvider="true"
+            app:summary="@string/HexidecimalStringEightCharactersAutoSetToFirstConnectedDevice" />
 
-    <SwitchPreferenceCompat
-        app:key="audioOutputOnZoneChane"
-        app:title="@string/AudioOutputOnZoneChange"
-        app:summary="Audio output only on zone change"/>
+        <SwitchPreferenceCompat
+            app:key="enableECG"
+            app:title="Enable ECG artifact logging"
+            android:defaultValue="true"
+            app:summary="Enable ECG logging around detected artifacts" />
+
+        <SwitchPreferenceCompat
+            app:key="enableReplay"
+            app:title="Enable log replay"
+            app:summary="Enable log replay (disables auto-start)" />
+
+        <SwitchPreferenceCompat
+            app:key="enableSensorEmulation"
+            app:title="Enable BLE sensor emulation"
+            app:summary="Try to emulate a BLE sensor transmitting alpha1 (restart required)" />
+    </PreferenceCategory>
 
 </PreferenceScreen>

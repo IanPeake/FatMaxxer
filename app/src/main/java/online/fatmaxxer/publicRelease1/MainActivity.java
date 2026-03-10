@@ -31,6 +31,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,6 +48,7 @@ import androidx.core.content.FileProvider;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.tabs.TabLayout;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.DataPointInterface;
@@ -1003,6 +1005,10 @@ public class MainActivity extends AppCompatActivity {
 //    PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
 
     ScrollView scrollView;
+    TabLayout topTabs;
+    LinearLayout panelLive;
+    LinearLayout panelGraph;
+    LinearLayout panelSettings;
 
     GraphView graphView;
     LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<DataPoint>();
@@ -1022,6 +1028,38 @@ public class MainActivity extends AppCompatActivity {
     final double graphViewPortWidth = 2.0;
     final int graphMaxHR = 200;
     final int graphMaxErrorRatePercent = 10;
+
+    private void setupModernTabs() {
+        if (topTabs == null) return;
+        topTabs.removeAllTabs();
+        topTabs.addTab(topTabs.newTab().setText("Live"));
+        topTabs.addTab(topTabs.newTab().setText("Graph"));
+        topTabs.addTab(topTabs.newTab().setText("Settings"));
+        showTabPanel(0);
+        topTabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                showTabPanel(tab.getPosition());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                showTabPanel(tab.getPosition());
+            }
+        });
+    }
+
+    private void showTabPanel(int position) {
+        if (panelLive == null || panelGraph == null || panelSettings == null) return;
+        panelLive.setVisibility(position == 0 ? View.VISIBLE : View.GONE);
+        panelGraph.setVisibility(position == 1 ? View.VISIBLE : View.GONE);
+        panelSettings.setVisibility(position == 2 ? View.VISIBLE : View.GONE);
+        scrollView.post(() -> scrollView.smoothScrollTo(0, 0));
+    }
 
     /**
      * Return date in specified format.
@@ -1857,6 +1895,11 @@ public class MainActivity extends AppCompatActivity {
         //text.setMovementMethod(new ScrollingMovementMethod());
 
         scrollView = this.findViewById(R.id.application_container);
+        topTabs = this.findViewById(R.id.topTabs);
+        panelLive = this.findViewById(R.id.panel_live);
+        panelGraph = this.findViewById(R.id.panel_graph);
+        panelSettings = this.findViewById(R.id.panel_settings);
+        setupModernTabs();
         // FIXME: Why does the scrollable not start with top visible?
 
         testDFA_alpha1();
@@ -1915,6 +1958,17 @@ public class MainActivity extends AppCompatActivity {
         graphView.getViewport().setMinY(0);
         graphView.getViewport().setMaxY(graphMaxHR);
         graphView.getGridLabelRenderer().setNumVerticalLabels(5); // 5 is the magic number that works reliably...
+        graphView.getGridLabelRenderer().setNumHorizontalLabels(4);
+        graphView.getGridLabelRenderer().setHorizontalLabelsColor(getResources().getColor(R.color.colorText));
+        graphView.getGridLabelRenderer().setVerticalLabelsColor(getResources().getColor(R.color.colorText));
+        graphView.getGridLabelRenderer().setGridColor(getResources().getColor(R.color.colorTextUndefinedData));
+        graphView.getGridLabelRenderer().setTextSize(26f);
+        graphView.getGridLabelRenderer().setVerticalAxisTitle("HR / Alpha1 / RMSSD");
+        graphView.getGridLabelRenderer().setVerticalAxisTitleTextSize(28f);
+        graphView.getGridLabelRenderer().setVerticalAxisTitleColor(getResources().getColor(R.color.colorText));
+        graphView.getSecondScale().setVerticalAxisTitle("Artifacts %");
+        graphView.getSecondScale().setVerticalAxisTitleTextSize(26f);
+        graphView.getSecondScale().setVerticalAxisTitleColor(getResources().getColor(R.color.colorBlue));
         //
         graphView.addSeries(a125Series);
         graphView.addSeries(a1125Series);

@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorText">#000055</color>
-    <color name="colorBackground">#FFFFFF</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF8021</color>
+    <color name="colorPrimary">#2B5CFF</color>
+    <color name="colorPrimaryDark">#1737B6</color>
+    <color name="colorAccent">#00C2A8</color>
+
+    <color name="colorBackground">#F5F7FB</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorText">#0F172A</color>
+
     <color name="colorHighlight">#FF6666</color>
-    <color name="colorMaxIntensity">#FF5555</color>
-    <color name="colorMedIntensity">#9FDCA1E1</color>
-    <color name="colorFatMaxIntensity">#5BF55B</color>
-    <color name="colorEasyIntensity">#A600BCD4</color>
-    <color name="colorHRVvt1">#E0FFEB3B</color>
-    <color name="colorHRVvt2">#E3FF0000</color>
-    <color name="colorRed">#FC0707</color>
-    <color name="colorGreen">#0BB110</color>
-    <color name="colorA1V2">#0BB110</color>
-    <color name="colorBlue">#0532F8</color>
-    <color name="rmssdSeries">#36F4EB</color>
-    <color name="peakECGSeries">#1C8651</color>
-    <color name="hrWinSeries">#C64407</color>
-    <color name="colorTextUnreliableData">#A99F9FB6</color>
-    <color name="colorTextData">#000000</color>
-    <color name="colorTextUndefinedData">#77F49C9C</color>
+    <color name="colorMaxIntensity">#EF4444</color>
+    <color name="colorMedIntensity">#93C5FD</color>
+    <color name="colorFatMaxIntensity">#22C55E</color>
+    <color name="colorEasyIntensity">#22D3EE</color>
+    <color name="colorHRVvt1">#FDE047</color>
+    <color name="colorHRVvt2">#F43F5E</color>
+
+    <color name="colorRed">#EF4444</color>
+    <color name="colorGreen">#16A34A</color>
+    <color name="colorA1V2">#16A34A</color>
+    <color name="colorBlue">#2563EB</color>
+
+    <color name="rmssdSeries">#06B6D4</color>
+    <color name="peakECGSeries">#10B981</color>
+    <color name="hrWinSeries">#F97316</color>
+
+    <color name="colorTextUnreliableData">#94A3B8</color>
+    <color name="colorTextData">#0F172A</color>
+    <color name="colorTextUndefinedData">#CBD5E1</color>
 </resources>
